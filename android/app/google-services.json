@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "211163370475",
+    "project_id": "fintech-bridge",
+    "storage_bucket": "fintech-bridge.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:211163370475:android:622645d09c88ec50697fae",
+        "android_client_info": {
+          "package_name": "com.debra.fintechBridge"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "211163370475-q1h9ddakkgglln7i0st73s6h53tkjvgk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCh_3UelUs_dHI6gpWOV6nrvFXwT7XUA3g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "211163370475-q1h9ddakkgglln7i0st73s6h53tkjvgk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "211163370475-bkujhne1crvkta23f2pnlu0jst4ligfd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fintechBridge"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:211163370475:android:5a75285df8cd22f7697fae",
+        "android_client_info": {
+          "package_name": "com.example.fintech_bridge"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "211163370475-q1h9ddakkgglln7i0st73s6h53tkjvgk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCh_3UelUs_dHI6gpWOV6nrvFXwT7XUA3g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "211163370475-q1h9ddakkgglln7i0st73s6h53tkjvgk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "211163370475-bkujhne1crvkta23f2pnlu0jst4ligfd.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fintechBridge"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
