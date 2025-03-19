@@ -50,4 +50,28 @@ class Loan {
       'updatedAt': updatedAt,
     };
   }
+
+  Loan copyWith({
+    String? id,
+    String? studentId,
+    String? providerId,
+    double? amount,
+    String? status,
+    String? purpose,
+    DateTime? dueDate,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return Loan(
+      id: id ?? this.id,
+      studentId: studentId ?? this.studentId,
+      providerId: providerId ?? this.providerId,
+      amount: amount ?? this.amount,
+      status: status ?? this.status,
+      purpose: purpose ?? this.purpose,
+      dueDate: dueDate ?? this.dueDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }
