@@ -1,339 +1,444 @@
-// import '/flutter_flow/flutter_flow_theme.dart';
-// import '/flutter_flow/flutter_flow_util.dart';
-// import '/flutter_flow/flutter_flow_widgets.dart';
-// import 'package:flutter/material.dart';
-// import 'package:google_fonts/google_fonts.dart';
-// import 'package:provider/provider.dart';
-//
-// import 'login_page_model.dart';
-// export 'login_page_model.dart';
-//
-// class LoginPageWidget extends StatefulWidget {
-//   const LoginPageWidget({super.key});
-//
-//   static String routeName = 'LoginPage';
-//   static String routePath = '/loginPage';
-//
-//   @override
-//   State<LoginPageWidget> createState() => _LoginPageWidgetState();
-// }
-//
-// class _LoginPageWidgetState extends State<LoginPageWidget> {
-//   late LoginPageModel _model;
-//
-//   final scaffoldKey = GlobalKey<ScaffoldState>();
-//
-//   @override
-//   void initState() {
-//     super.initState();
-//     _model = createModel(context, () => LoginPageModel());
-//
-//     _model.textController1 ??= TextEditingController();
-//     _model.textFieldFocusNode1 ??= FocusNode();
-//
-//     _model.textController2 ??= TextEditingController();
-//     _model.textFieldFocusNode2 ??= FocusNode();
-//   }
-//
-//   @override
-//   void dispose() {
-//     _model.dispose();
-//
-//     super.dispose();
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: () {
-//         FocusScope.of(context).unfocus();
-//         FocusManager.instance.primaryFocus?.unfocus();
-//       },
-//       child: Scaffold(
-//         key: scaffoldKey,
-//         backgroundColor: FlutterFlowTheme.of(context).secondaryBackground,
-//         body: Padding(
-//           padding: const EdgeInsetsDirectional.fromSTEB(24, 24, 24, 0),
-//           child: SingleChildScrollView(
-//             primary: false,
-//             child: Column(
-//               mainAxisSize: MainAxisSize.max,
-//               crossAxisAlignment: CrossAxisAlignment.center,
-//               children: [
-//                 Container(
-//                   width: 140,
-//                   height: 140,
-//                   decoration: BoxDecoration(
-//                     borderRadius: BorderRadius.circular(70),
-//                   ),
-//                   child: Image.network(
-//                     '',
-//                     width: 140,
-//                     height: 140,
-//                     fit: BoxFit.contain,
-//                   ),
-//                 ),
-//                 Column(
-//                   mainAxisSize: MainAxisSize.max,
-//                   crossAxisAlignment: CrossAxisAlignment.center,
-//                   children: [
-//                     Text(
-//                       'Welcome Back',
-//                       style: FlutterFlowTheme.of(context).displaySmall.override(
-//                             fontFamily: 'Inter Tight',
-//                             letterSpacing: 0.0,
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                     ),
-//                     Text(
-//                       'Sign in to access your student loans',
-//                       style: FlutterFlowTheme.of(context).bodyLarge.override(
-//                             fontFamily: 'Inter',
-//                             color: FlutterFlowTheme.of(context).secondaryText,
-//                             letterSpacing: 0.0,
-//                           ),
-//                     ),
-//                   ].divide(const SizedBox(height: 12)),
-//                 ),
-//                 Material(
-//                   color: Colors.transparent,
-//                   elevation: 2,
-//                   shape: RoundedRectangleBorder(
-//                     borderRadius: BorderRadius.circular(16),
-//                   ),
-//                   child: Container(
-//                     width: MediaQuery.sizeOf(context).width,
-//                     decoration: BoxDecoration(
-//                       color: FlutterFlowTheme.of(context).secondaryBackground,
-//                       borderRadius: BorderRadius.circular(16),
-//                     ),
-//                     child: Padding(
-//                       padding: const EdgeInsetsDirectional.fromSTEB(24, 24, 24, 24),
-//                       child: Column(
-//                         mainAxisSize: MainAxisSize.max,
-//                         children: [
-//                           TextFormField(
-//                             controller: _model.textController1,
-//                             focusNode: _model.textFieldFocusNode1,
-//                             autofocus: false,
-//                             obscureText: false,
-//                             decoration: InputDecoration(
-//                               labelText: 'University Email',
-//                               labelStyle: FlutterFlowTheme.of(context)
-//                                   .bodyMedium
-//                                   .override(
-//                                     fontFamily: 'Inter',
-//                                     letterSpacing: 0.0,
-//                                   ),
-//                               hintStyle: FlutterFlowTheme.of(context)
-//                                   .bodyMedium
-//                                   .override(
-//                                     fontFamily: 'Inter',
-//                                     letterSpacing: 0.0,
-//                                   ),
-//                               enabledBorder: OutlineInputBorder(
-//                                 borderSide: const BorderSide(
-//                                   color: Color(0xFFE0E0E0),
-//                                   width: 1.0,
-//                                 ),
-//                                 borderRadius: BorderRadius.circular(12),
-//                               ),
-//                               focusedBorder: OutlineInputBorder(
-//                                 borderSide: const BorderSide(
-//                                   color: Color(0x00000000),
-//                                   width: 1.0,
-//                                 ),
-//                                 borderRadius: BorderRadius.circular(12),
-//                               ),
-//                               errorBorder: OutlineInputBorder(
-//                                 borderSide: const BorderSide(
-//                                   color: Color(0x00000000),
-//                                   width: 1.0,
-//                                 ),
-//                                 borderRadius: BorderRadius.circular(12),
-//                               ),
-//                               focusedErrorBorder: OutlineInputBorder(
-//                                 borderSide: const BorderSide(
-//                                   color: Color(0x00000000),
-//                                   width: 1.0,
-//                                 ),
-//                                 borderRadius: BorderRadius.circular(12),
-//                               ),
-//                               filled: true,
-//                               fillColor: FlutterFlowTheme.of(context)
-//                                   .secondaryBackground,
-//                               prefixIcon: const Icon(
-//                                 Icons.mail,
-//                               ),
-//                             ),
-//                             style:
-//                                 FlutterFlowTheme.of(context).bodyLarge.override(
-//                                       fontFamily: 'Inter',
-//                                       letterSpacing: 0.0,
-//                                     ),
-//                             minLines: 1,
-//                             keyboardType: TextInputType.emailAddress,
-//                             validator: _model.textController1Validator
-//                                 .asValidator(context),
-//                           ),
-//                           TextFormField(
-//                             controller: _model.textController2,
-//                             focusNode: _model.textFieldFocusNode2,
-//                             autofocus: false,
-//                             obscureText: !_model.passwordVisibility,
-//                             decoration: InputDecoration(
-//                               labelText: 'Password',
-//                               labelStyle: FlutterFlowTheme.of(context)
-//                                   .bodyMedium
-//                                   .override(
-//                                     fontFamily: 'Inter',
-//                                     letterSpacing: 0.0,
-//                                   ),
-//                               hintStyle: FlutterFlowTheme.of(context)
-//                                   .bodyMedium
-//                                   .override(
-//                                     fontFamily: 'Inter',
-//                                     letterSpacing: 0.0,
-//                                   ),
-//                               enabledBorder: OutlineInputBorder(
-//                                 borderSide: const BorderSide(
-//                                   color: Color(0xFFE0E0E0),
-//                                   width: 1.0,
-//                                 ),
-//                                 borderRadius: BorderRadius.circular(12),
-//                               ),
-//                               focusedBorder: OutlineInputBorder(
-//                                 borderSide: const BorderSide(
-//                                   color: Color(0x00000000),
-//                                   width: 1.0,
-//                                 ),
-//                                 borderRadius: BorderRadius.circular(12),
-//                               ),
-//                               errorBorder: OutlineInputBorder(
-//                                 borderSide: const BorderSide(
-//                                   color: Color(0x00000000),
-//                                   width: 1.0,
-//                                 ),
-//                                 borderRadius: BorderRadius.circular(12),
-//                               ),
-//                               focusedErrorBorder: OutlineInputBorder(
-//                                 borderSide: const BorderSide(
-//                                   color: Color(0x00000000),
-//                                   width: 1.0,
-//                                 ),
-//                                 borderRadius: BorderRadius.circular(12),
-//                               ),
-//                               filled: true,
-//                               fillColor: FlutterFlowTheme.of(context)
-//                                   .secondaryBackground,
-//                               prefixIcon: const Icon(
-//                                 Icons.lock,
-//                               ),
-//                               suffixIcon: InkWell(
-//                                 onTap: () => safeSetState(
-//                                   () => _model.passwordVisibility =
-//                                       !_model.passwordVisibility,
-//                                 ),
-//                                 focusNode: FocusNode(skipTraversal: true),
-//                                 child: Icon(
-//                                   _model.passwordVisibility
-//                                       ? Icons.visibility_outlined
-//                                       : Icons.visibility_off_outlined,
-//                                   size: 22,
-//                                 ),
-//                               ),
-//                             ),
-//                             style:
-//                                 FlutterFlowTheme.of(context).bodyLarge.override(
-//                                       fontFamily: 'Inter',
-//                                       letterSpacing: 0.0,
-//                                     ),
-//                             minLines: 1,
-//                             validator: _model.textController2Validator
-//                                 .asValidator(context),
-//                           ),
-//                           Row(
-//                             mainAxisSize: MainAxisSize.max,
-//                             mainAxisAlignment: MainAxisAlignment.end,
-//                             children: [
-//                               Text(
-//                                 'Forgot Password?',
-//                                 style: FlutterFlowTheme.of(context)
-//                                     .bodyMedium
-//                                     .override(
-//                                       fontFamily: 'Inter',
-//                                       color: const Color(0xFF1A2980),
-//                                       letterSpacing: 0.0,
-//                                     ),
-//                               ),
-//                             ],
-//                           ),
-//                           FFButtonWidget(
-//                             onPressed: () {
-//                               print('Button pressed ...');
-//                             },
-//                             text: 'Log In',
-//                             options: FFButtonOptions(
-//                               width: MediaQuery.sizeOf(context).width,
-//                               height: 56,
-//                               padding: const EdgeInsets.all(8),
-//                               iconPadding:
-//                                   const EdgeInsetsDirectional.fromSTEB(0, 0, 0, 0),
-//                               color: const Color(0xFF1A2980),
-//                               textStyle: FlutterFlowTheme.of(context)
-//                                   .titleMedium
-//                                   .override(
-//                                     fontFamily: 'Inter Tight',
-//                                     color: Colors.white,
-//                                     letterSpacing: 0.0,
-//                                   ),
-//                               elevation: 2,
-//                               borderRadius: BorderRadius.circular(28),
-//                             ),
-//                           ),
-//                         ].divide(const SizedBox(height: 20)),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//                 Row(
-//                   mainAxisSize: MainAxisSize.max,
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     Text(
-//                       'Don\'t have an account? ',
-//                       style: FlutterFlowTheme.of(context).bodyMedium.override(
-//                             fontFamily: 'Inter',
-//                             color: FlutterFlowTheme.of(context).secondaryText,
-//                             letterSpacing: 0.0,
-//                           ),
-//                     ),
-//                     Text(
-//                       'Register',
-//                       style: FlutterFlowTheme.of(context).bodyMedium.override(
-//                             fontFamily: 'Inter',
-//                             color: const Color(0xFF1A2980),
-//                             letterSpacing: 0.0,
-//                             fontWeight: FontWeight.w600,
-//                           ),
-//                     ),
-//                   ].divide(const SizedBox(width: 4)),
-//                 ),
-//                 SizedBox(
-//                   width: MediaQuery.sizeOf(context).width,
-//                   height: 200,
-//                   child: Image.network(
-//                     '',
-//                     width: MediaQuery.sizeOf(context).width,
-//                     height: 200,
-//                     fit: BoxFit.contain,
-//                   ),
-//                 ),
-//               ].divide(const SizedBox(height: 32)),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
+import 'package:fintech_bridge/services/auth_service.dart';
+import 'package:fintech_bridge/utils/constants.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:fintech_bridge/screens/loading_screen.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
+  final scaffoldKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
+  bool _passwordVisibility = false;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  // List of valid university email domains
+  final List<String> _validUniversityDomains = [
+    'kabarak.ac.ke',
+    'strathmore.edu',
+    'uonbi.ac.ke',
+    'ku.ac.ke',
+    'tukenya.ac.ke',
+    'jkuat.ac.ke',
+    'usiu.ac.ke',
+    'mku.ac.ke',
+    'egerton.ac.ke',
+    // Add more university domains as needed
+    'gmail.com',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeIn,
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  // Validate if the email is a university email
+  bool _isUniversityEmail(String email) {
+    if (email.isEmpty) return false;
+
+    // Extract domain from email
+    final domainMatch = RegExp(r'^[^@]+@([^@]+)$').firstMatch(email);
+    if (domainMatch == null) return false;
+
+    final domain = domainMatch.group(1)?.toLowerCase();
+    return domain != null && _validUniversityDomains.contains(domain);
+  }
+
+  void _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill all fields')));
+      return;
+    }
+
+    // Check if it's a university email
+    if (!_isUniversityEmail(_emailController.text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please use a valid university email')));
+      return;
+    }
+
+    // Show loading overlay
+    LoadingOverlay.show(context, message: 'Logging in...');
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+    try {
+      final user = await authService.loginWithEmailAndPassword(
+        _emailController.text,
+        _passwordController.text,
+      );
+
+      // Hide loading overlay
+      LoadingOverlay.hide();
+
+      if (user != null && mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      // Hide loading overlay
+      LoadingOverlay.hide();
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${e.toString()}')));
+    }
+  }
+
+  void _handleGoogleSignIn() async {
+    // Show loading overlay
+    LoadingOverlay.show(context, message: 'Signing in with Google...');
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+    try {
+      // Use the loginWithGoogle method instead of signInWithGoogle
+      final user = await authService.loginWithGoogle(
+        emailValidator: _isUniversityEmail,
+      );
+
+      // Hide loading overlay
+      LoadingOverlay.hide();
+
+      if (user != null && mounted) {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } catch (e) {
+      // Hide loading overlay
+      LoadingOverlay.hide();
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google sign-in failed: ${e.toString()}')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Get device size to ensure proper fitting
+    final size = MediaQuery.of(context).size;
+
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: AppConstants.backgroundColor,
+        // Use SafeArea to respect device dimensions
+        body: Container(
+          height: size.height,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFFF9FAFC),
+                Color(0xFFEEF1F7),
+              ],
+            ),
+          ),
+          child: SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              // Use SingleChildScrollView to ensure scrollability on small devices
+              child: SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: size.height -
+                        MediaQuery.of(context).padding.top -
+                        MediaQuery.of(context).padding.bottom,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 20),
+                        // Logo with shadow
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.12),
+                                blurRadius: 20,
+                                spreadRadius: 1,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Image.asset(
+                              'assets/icons/logo.png',
+                              width: 60,
+                              height: 60,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        // Welcome text
+                        Text(
+                          'Welcome Back',
+                          style: AppConstants.displaySmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppConstants.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Subtitle
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppConstants.primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'Sign in to access your student loans',
+                            style: AppConstants.bodyMedium.copyWith(
+                              color: AppConstants.primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        // Login form
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                spreadRadius: 0,
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            children: [
+                              // Email field
+                              TextFormField(
+                                controller: _emailController,
+                                focusNode: _emailFocusNode,
+                                autofocus: false,
+                                obscureText: false,
+                                style: AppConstants.bodyLarge,
+                                decoration: AppConstants.inputDecoration(
+                                  labelText: 'University Email',
+                                  prefixIcon: Icons.email_outlined,
+                                ),
+                                keyboardType: TextInputType.emailAddress,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your email';
+                                  }
+                                  if (!RegExp(
+                                          r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
+                                      .hasMatch(value)) {
+                                    return 'Please enter a valid email';
+                                  }
+                                  if (!_isUniversityEmail(value)) {
+                                    return 'Please use a university email';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 20),
+                              // Password field
+                              TextFormField(
+                                controller: _passwordController,
+                                focusNode: _passwordFocusNode,
+                                autofocus: false,
+                                obscureText: !_passwordVisibility,
+                                style: AppConstants.bodyLarge,
+                                decoration: AppConstants.inputDecoration(
+                                  labelText: 'Password',
+                                  prefixIcon: Icons.lock_outlined,
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _passwordVisibility
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined,
+                                      color: AppConstants.textSecondaryColor,
+                                      size: 22,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _passwordVisibility =
+                                            !_passwordVisibility;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your password';
+                                  }
+                                  if (value.length < 6) {
+                                    return 'Password must be at least 6 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              // Forgot password
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () => Navigator.pushNamed(
+                                      context, '/forgot-password'),
+                                  child: Text(
+                                    'Forgot Password?',
+                                    style: AppConstants.bodyMedium.copyWith(
+                                      color: AppConstants.primaryColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              // Login button
+                              AppConstants.gradientButton(
+                                text: 'Log In',
+                                onPressed: _handleLogin,
+                              ),
+                              const SizedBox(height: 20),
+                              // Divider
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: 1,
+                                      color: Colors.grey.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    child: Text(
+                                      'OR',
+                                      style: AppConstants.bodyMedium.copyWith(
+                                        color: AppConstants.textSecondaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Container(
+                                      height: 1,
+                                      color: Colors.grey.withOpacity(0.3),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              // Google sign in button
+                              ElevatedButton.icon(
+                                icon: const FaIcon(
+                                  FontAwesomeIcons.google,
+                                  color: Colors.red,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  'Continue with Google',
+                                  style: AppConstants.bodyMedium.copyWith(
+                                    color: AppConstants.textColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: AppConstants.textColor,
+                                  elevation: 1,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    side: BorderSide(
+                                      color: Colors.grey.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                    horizontal: 24,
+                                  ),
+                                  minimumSize: const Size(double.infinity, 50),
+                                ),
+                                onPressed: _handleGoogleSignIn,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        // Register option
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Don\'t have an account? ',
+                              style: AppConstants.bodyMedium.copyWith(
+                                color: AppConstants.textSecondaryColor,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/register'),
+                              child: Text(
+                                'Register',
+                                style: AppConstants.bodyMedium.copyWith(
+                                  color: AppConstants.primaryColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
