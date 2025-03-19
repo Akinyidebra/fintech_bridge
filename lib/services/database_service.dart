@@ -1,10 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/models/provider_model.dart';
-import 'package:fintech_bridge/utils/constants.dart';
+import 'package:fintech_bridge/models/admin_model.dart';
 
 class DatabaseService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -23,206 +22,211 @@ class DatabaseService extends ChangeNotifier {
   // Get current user
   User? get currentUser => _auth.currentUser;
   
-  // Get current user data
-  Future<UserModel?> getCurrentUserData() async {
-    if (currentUser == null) return null;
-    
+  // Get all students
+  Future<Map<String, dynamic>> getAllStudents() async {
     _setLoading(true);
     try {
-      DocumentSnapshot doc = await _firestore.collection('users').doc(currentUser!.uid).get();
+      final studentDocs = await _firestore.collection('students').get();
+      
+      List<Student> students = [];
+      for (var doc in studentDocs.docs) {
+        students.add(Student.fromFirestore(doc));
+      }
+      
+      return {'success': true, 'data': students};
+    } catch (e) {
+      return {'success': false, 'message': 'Failed to retrieve students data'};
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Get all providers
+  Future<Map<String, dynamic>> getAllProviders() async {
+    _setLoading(true);
+    try {
+      final providerDocs = await _firestore.collection('providers').get();
+      
+      List<Provider> providers = [];
+      for (var doc in providerDocs.docs) {
+        providers.add(Provider.fromFirestore(doc));
+      }
+      
+      return {'success': true, 'data': providers};
+    } catch (e) {
+      return {'success': false, 'message': 'Failed to retrieve providers data'};
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Get student by ID
+  Future<Map<String, dynamic>> getStudentById(String studentId) async {
+    _setLoading(true);
+    try {
+      DocumentSnapshot doc = await _firestore.collection('students').doc(studentId).get();
+      
       if (doc.exists) {
-        return UserModel.fromFirestore(doc);
+        return {'success': true, 'data': Student.fromFirestore(doc)};
+      } else {
+        return {'success': false, 'message': 'Student not found'};
       }
-      return null;
     } catch (e) {
-      _showToast('Error fetching user data: ${e.toString()}');
-      return null;
+      return {'success': false, 'message': 'Failed to retrieve student data'};
     } finally {
       _setLoading(false);
     }
   }
-  
-  // Get provider data if user is a provider
-  Future<ProviderModel?> getProviderData() async {
-    if (currentUser == null) return null;
-    
+
+  // Get provider by ID
+  Future<Map<String, dynamic>> getProviderById(String providerId) async {
     _setLoading(true);
     try {
-      // First check if user is a provider
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(currentUser!.uid).get();
-      if (!userDoc.exists || userDoc.get('role') != 'provider') {
-        return null;
-      }
+      DocumentSnapshot doc = await _firestore.collection('providers').doc(providerId).get();
       
-      DocumentSnapshot providerDoc = await _firestore.collection('providers').doc(currentUser!.uid).get();
-      if (providerDoc.exists) {
-        return ProviderModel.fromFirestore(providerDoc);
+      if (doc.exists) {
+        return {'success': true, 'data': Provider.fromFirestore(doc)};
+      } else {
+        return {'success': false, 'message': 'Provider not found'};
       }
-      return null;
     } catch (e) {
-      _showToast('Error fetching provider data: ${e.toString()}');
-      return null;
+      return {'success': false, 'message': 'Failed to retrieve provider data'};
     } finally {
       _setLoading(false);
     }
   }
-  
-  // Update provider data
-  Future<bool> updateProviderData({
-    required String businessName,
-    required String businessDescription,
-    String? businessWebsite,
-    List<String>? loanTypes,
-  }) async {
-    if (currentUser == null) return false;
-    
+
+  // Get admin by ID
+  Future<Map<String, dynamic>> getAdminById(String adminId) async {
     _setLoading(true);
     try {
-      // Check if user is a provider
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(currentUser!.uid).get();
-      if (!userDoc.exists || userDoc.get('role') != 'provider') {
-        _showToast('Only providers can update provider data');
-        return false;
+      DocumentSnapshot doc = await _firestore.collection('admins').doc(adminId).get();
+      
+      if (doc.exists) {
+        return {'success': true, 'data': Admin.fromFirestore(doc)};
+      } else {
+        return {'success': false, 'message': 'Admin not found'};
       }
-      
-      Map<String, dynamic> updateData = {
-        'businessName': businessName,
-        'businessDescription': businessDescription,
-        'updatedAt': DateTime.now(),
-      };
-      
-      if (businessWebsite != null) {
-        updateData['businessWebsite'] = businessWebsite;
-      }
-      
-      if (loanTypes != null) {
-        updateData['loanTypes'] = loanTypes;
-      }
-      
-      await _firestore.collection('providers').doc(currentUser!.uid).update(updateData);
-      
-      _showToast('Provider profile updated successfully');
-      return true;
     } catch (e) {
-      _showToast('Failed to update provider data: ${e.toString()}');
-      return false;
+      return {'success': false, 'message': 'Failed to retrieve admin data'};
     } finally {
       _setLoading(false);
     }
   }
-  
-  // Get all approved providers
-  Future<List<Map<String, dynamic>>> getApprovedProviders() async {
-    _setLoading(true);
-    try {
-      final providerQuery = await _firestore.collection('providers')
-          .where('isApproved', isEqualTo: true)
-          .get();
-      
-      List<Map<String, dynamic>> providers = [];
-      
-      for (var doc in providerQuery.docs) {
-        final providerModel = ProviderModel.fromFirestore(doc);
-        
-        // Get the user info for this provider
-        final userDoc = await _firestore.collection('users').doc(providerModel.id).get();
-        if (userDoc.exists) {
-          final userModel = UserModel.fromFirestore(userDoc);
-          
-          providers.add({
-            'provider': providerModel,
-            'user': userModel,
-          });
-        }
-      }
-      
-      return providers;
-    } catch (e) {
-      _showToast('Error fetching providers: ${e.toString()}');
-      return [];
-    } finally {
-      _setLoading(false);
-    }
-  }
-  
-  // Admin: Get all pending provider approvals
-  Future<List<Map<String, dynamic>>> getPendingProviderApprovals() async {
+
+  // Admin: Get all pending provider approvals - assuming you have a field to track approval status
+  Future<Map<String, dynamic>> getPendingProviders() async {
     _setLoading(true);
     try {
       // Check if current user is admin
-      if (currentUser == null) return [];
-      
-      final userDoc = await _firestore.collection('users').doc(currentUser!.uid).get();
-      if (!userDoc.exists || userDoc.get('role') != 'admin') {
-        return [];
+      if (currentUser == null) {
+        return {'success': false, 'message': 'No user signed in'};
       }
       
-      final providerQuery = await _firestore.collection('providers')
-          .where('isApproved', isEqualTo: false)
+      // Verify admin role
+      DocumentSnapshot adminDoc = await _firestore.collection('admins').doc(currentUser!.uid).get();
+      if (!adminDoc.exists) {
+        return {'success': false, 'message': 'Unauthorized access'};
+      }
+      
+      // Query providers that need approval
+      // Note: You might need to add an "approved" field to your Provider model
+      // This is an example query - adjust according to your actual implementation
+      final pendingProvidersDocs = await _firestore.collection('providers')
+          .where('approved', isEqualTo: false)
           .get();
       
-      List<Map<String, dynamic>> providers = [];
-      
-      for (var doc in providerQuery.docs) {
-        final providerModel = ProviderModel.fromFirestore(doc);
-        
-        // Get the user info for this provider
-        final userDoc = await _firestore.collection('users').doc(providerModel.id).get();
-        if (userDoc.exists) {
-          final userModel = UserModel.fromFirestore(userDoc);
-          
-          providers.add({
-            'provider': providerModel,
-            'user': userModel,
-          });
-        }
+      List<Provider> pendingProviders = [];
+      for (var doc in pendingProvidersDocs.docs) {
+        pendingProviders.add(Provider.fromFirestore(doc));
       }
       
-      return providers;
+      return {'success': true, 'data': pendingProviders};
     } catch (e) {
-      _showToast('Error fetching pending approvals: ${e.toString()}');
-      return [];
+      return {'success': false, 'message': 'Failed to retrieve pending providers'};
     } finally {
       _setLoading(false);
     }
   }
-  
+
   // Admin: Approve or reject provider
-  Future<bool> updateProviderApprovalStatus(String providerId, bool isApproved) async {
+  Future<Map<String, dynamic>> updateProviderApprovalStatus(String providerId, bool isApproved) async {
     _setLoading(true);
     try {
       // Check if current user is admin
-      if (currentUser == null) return false;
-      
-      final userDoc = await _firestore.collection('users').doc(currentUser!.uid).get();
-      if (!userDoc.exists || userDoc.get('role') != 'admin') {
-        _showToast('Only admins can approve providers');
-        return false;
+      if (currentUser == null) {
+        return {'success': false, 'message': 'No user signed in'};
       }
       
+      // Verify admin role
+      DocumentSnapshot adminDoc = await _firestore.collection('admins').doc(currentUser!.uid).get();
+      if (!adminDoc.exists) {
+        return {'success': false, 'message': 'Unauthorized access'};
+      }
+      
+      // Get provider document
+      DocumentSnapshot providerDoc = await _firestore.collection('providers').doc(providerId).get();
+      if (!providerDoc.exists) {
+        return {'success': false, 'message': 'Provider not found'};
+      }
+      
+      // Update approval status
+      // Note: You might need to add an "approved" field to your Provider model
       await _firestore.collection('providers').doc(providerId).update({
-        'isApproved': isApproved,
+        'approved': isApproved,
         'updatedAt': DateTime.now(),
       });
       
-      _showToast(isApproved ? 'Provider approved successfully' : 'Provider rejected');
-      return true;
+      return {
+        'success': true, 
+        'message': isApproved ? 'Provider approved successfully' : 'Provider rejected'
+      };
     } catch (e) {
-      _showToast('Error updating provider status: ${e.toString()}');
-      return false;
+      return {'success': false, 'message': 'Failed to update provider status'};
     } finally {
       _setLoading(false);
     }
   }
-  
-  // Show toast messages
-  void _showToast(String message) {
-    Fluttertoast.showToast(
-      msg: message,
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,
-      backgroundColor: AppConstants.primaryColor,
-      textColor: Colors.white,
-    );
+
+  // Get providers filtered by loan type
+  Future<Map<String, dynamic>> getProvidersByLoanType(String loanType) async {
+    _setLoading(true);
+    try {
+      final providerDocs = await _firestore.collection('providers')
+          .where('loanTypes', arrayContains: loanType)
+          .get();
+      
+      List<Provider> providers = [];
+      for (var doc in providerDocs.docs) {
+        providers.add(Provider.fromFirestore(doc));
+      }
+      
+      return {'success': true, 'data': providers};
+    } catch (e) {
+      return {'success': false, 'message': 'Failed to retrieve providers data'};
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Get providers sorted by interest rate
+  Future<Map<String, dynamic>> getProvidersSortedByInterestRate() async {
+    _setLoading(true);
+    try {
+      final providerDocs = await _firestore.collection('providers')
+          .orderBy('interestRate', descending: false)
+          .get();
+      
+      List<Provider> providers = [];
+      for (var doc in providerDocs.docs) {
+        providers.add(Provider.fromFirestore(doc));
+      }
+      
+      return {'success': true, 'data': providers};
+    } catch (e) {
+      return {'success': false, 'message': 'Failed to retrieve providers data'};
+    } finally {
+      _setLoading(false);
+    }
   }
 }
