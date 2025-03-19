@@ -8,8 +8,8 @@ class Notification {
   final String title;
   final String message;
   final bool isRead;
-  final String? relatedEntityId; // Can be loanId, transactionId, etc.
-  final String? type; // Can be 'loan', 'payment', 'system', etc.
+  final String? relatedEntityId;
+  final String? type;
   final DateTime createdAt;
 
   Notification({
@@ -24,16 +24,16 @@ class Notification {
   });
 
   factory Notification.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map;
+    Map data = doc.data() as Map<String, dynamic>;
     return Notification(
       id: doc.id,
-      userId: data['userId'],
-      title: data['title'],
-      message: data['message'],
+      userId: data['userId'] ?? '',
+      title: data['title'] ?? 'Notification',
+      message: data['message'] ?? '',
       isRead: data['isRead'] ?? false,
       relatedEntityId: data['relatedEntityId'],
       type: data['type'],
-      createdAt: data['createdAt'].toDate(),
+      createdAt: (data['createdAt'] as Timestamp).toDate(),
     );
   }
 
@@ -53,67 +53,132 @@ class Notification {
 class NotificationService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
-  // Loading state
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
-  
-  // Set loading state
+
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
-  
-  // Get current user
+
   User? get currentUser => _auth.currentUser;
 
-  // Get notifications for current user
-  Future<Map<String, dynamic>> getUserNotifications({bool unreadOnly = false}) async {
+  Future<Map<String, dynamic>> createNotification({
+    required String userId,
+    required String title,
+    required String message,
+    String? relatedEntityId,
+    String? type,
+  }) async {
     _setLoading(true);
     try {
-      if (currentUser == null) {
-        return {'success': false, 'message': 'No user signed in'};
-      }
-      
-      Query query = _firestore.collection('notifications')
-          .where('userId', isEqualTo: currentUser!.uid)
-          .orderBy('createdAt', descending: true);
-          
-      if (unreadOnly) {
-        query = query.where('isRead', isEqualTo: false);
-      }
-      
-      final notificationDocs = await query.get();
-      
-      List<Notification> notifications = [];
-      for (var doc in notificationDocs.docs) {
-        notifications.add(Notification.fromFirestore(doc));
-      }
-      
-      return {'success': true, 'data': notifications};
+      final notification = Notification(
+        id: '',
+        userId: userId,
+        title: title,
+        message: message,
+        isRead: false,
+        relatedEntityId: relatedEntityId,
+        type: type,
+        createdAt: DateTime.now(),
+      );
+
+      final docRef = await _firestore
+          .collection('notifications')
+          .add(notification.toMap());
+      return {
+        'success': true,
+        'message': 'Notification created',
+        'data': notification.copyWith(id: docRef.id)
+      };
     } catch (e) {
-      return {'success': false, 'message': 'Failed to retrieve notifications'};
+      return {'success': false, 'message': 'Failed to create notification'};
     } finally {
       _setLoading(false);
     }
   }
-  
-  // Mark notification as read
-  Future<Map<String, dynamic>> markNotificationAsRead(String notificationId) async {
+
+  Future<Map<String, dynamic>> getUserNotifications(
+      {bool unreadOnly = false}) async {
     _setLoading(true);
     try {
       if (currentUser == null) {
-        return {'success': false, 'message': 'No user signed in'};
+        return {
+          'success': false,
+          'message': 'Please sign in to view notifications'
+        };
       }
-      
-      // Get notification document
-      DocumentSnapshot notificationDoc = await _firestore.collection('notifications').doc(notificationId).get();
-      if (!notificationDoc.exists) {
+
+      Query query = _firestore
+          .collection('notifications')
+          .where('userId', isEqualTo: currentUser!.uid)
+          .orderBy('createdAt', descending: true);
+
+      if (unreadOnly) {
+        query = query.where('isRead', isEqualTo: false);
+      }
+
+      final snapshot = await query.get();
+      final notifications =
+          snapshot.docs.map((doc) => Notification.fromFirestore(doc)).toList();
+
+      return {'success': true, 'data': notifications};
+    } catch (e) {
+      return {'success': false, 'message': 'Failed to load notifications'};
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<Map<String, dynamic>> markNotificationAsRead(
+      String notificationId) async {
+    _setLoading(true);
+    try {
+      if (currentUser == null) {
+        return {'success': false, 'message': 'Authentication required'};
+      }
+
+      final doc = await _firestore
+          .collection('notifications')
+          .doc(notificationId)
+          .get();
+      if (!doc.exists) {
         return {'success': false, 'message': 'Notification not found'};
       }
-      
-      Notification notification = Notification.fromFirestore(notificationDoc);
-      
-      // Verify notification belongs to current user
+
+      final notification = Notification.fromFirestore(doc);
       if (notification.userId != currentUser!.uid) {
-        
+        return {'success': false, 'message': 'Unauthorized action'};
+      }
+
+      await _firestore.collection('notifications').doc(notificationId).update({
+        'isRead': true,
+      });
+
+      return {'success': true, 'message': 'Marked as read'};
+    } catch (e) {
+      return {'success': false, 'message': 'Failed to update notification'};
+    } finally {
+      _setLoading(false);
+    }
+  }
+}
+
+extension NotificationCopyWith on Notification {
+  Notification copyWith({
+    String? id,
+    bool? isRead,
+  }) {
+    return Notification(
+      id: id ?? this.id,
+      userId: userId,
+      title: title,
+      message: message,
+      isRead: isRead ?? this.isRead,
+      relatedEntityId: relatedEntityId,
+      type: type,
+      createdAt: createdAt,
+    );
+  }
+}
