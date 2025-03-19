@@ -3,7 +3,6 @@ import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/screens/loading_screen.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -118,32 +117,6 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  void _handleGoogleSignIn() async {
-    // Show loading overlay
-    LoadingOverlay.show(context, message: 'Signing in with Google...');
-
-    final authService = Provider.of<AuthService>(context, listen: false);
-    try {
-      // Use the loginWithGoogle method instead of signInWithGoogle
-      final user = await authService.loginWithGoogle(
-        emailValidator: _isUniversityEmail,
-      );
-
-      // Hide loading overlay
-      LoadingOverlay.hide();
-
-      if (user != null && mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-    } catch (e) {
-      // Hide loading overlay
-      LoadingOverlay.hide();
-
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google sign-in failed: ${e.toString()}')));
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -340,68 +313,6 @@ class _LoginScreenState extends State<LoginScreen>
                               AppConstants.gradientButton(
                                 text: 'Log In',
                                 onPressed: _handleLogin,
-                              ),
-                              const SizedBox(height: 20),
-                              // Divider
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      height: 1,
-                                      color: Colors.grey.withOpacity(0.3),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
-                                    child: Text(
-                                      'OR',
-                                      style: AppConstants.bodyMedium.copyWith(
-                                        color: AppConstants.textSecondaryColor,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      height: 1,
-                                      color: Colors.grey.withOpacity(0.3),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 20),
-                              // Google sign in button
-                              ElevatedButton.icon(
-                                icon: const FaIcon(
-                                  FontAwesomeIcons.google,
-                                  color: Colors.red,
-                                  size: 18,
-                                ),
-                                label: Text(
-                                  'Continue with Google',
-                                  style: AppConstants.bodyMedium.copyWith(
-                                    color: AppConstants.textColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: AppConstants.textColor,
-                                  elevation: 1,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                    side: BorderSide(
-                                      color: Colors.grey.withOpacity(0.3),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 24,
-                                  ),
-                                  minimumSize: const Size(double.infinity, 50),
-                                ),
-                                onPressed: _handleGoogleSignIn,
                               ),
                             ],
                           ),

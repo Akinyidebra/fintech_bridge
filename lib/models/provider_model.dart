@@ -1,37 +1,48 @@
+// provider_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ProviderModel {
+class Provider {
   final String id;
-  final bool isApproved;
-  final String? businessName;
-  final String? businessDescription;
-  final String? businessWebsite;
-  final List<String>? loanTypes;
+  final String businessName;
+  final String businessEmail;
+  final String registrationNumber;
+  final String phone;
+  final String businessType;
+  final List<String> loanTypes;
+  final String? website;
+  final String? description;
+  final double interestRate;
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  ProviderModel({
+  Provider({
     required this.id,
-    required this.isApproved,
-    this.businessName,
-    this.businessDescription,
-    this.businessWebsite,
-    this.loanTypes,
+    required this.businessName,
+    required this.businessEmail,
+    required this.registrationNumber,
+    required this.phone,
+    required this.businessType,
+    required this.loanTypes,
+    this.website,
+    this.description,
+    required this.interestRate,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  factory ProviderModel.fromFirestore(DocumentSnapshot doc) {
+  factory Provider.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map;
-    return ProviderModel(
+    return Provider(
       id: doc.id,
-      isApproved: data['isApproved'] ?? false,
       businessName: data['businessName'],
-      businessDescription: data['businessDescription'],
-      businessWebsite: data['businessWebsite'],
-      loanTypes: data['loanTypes'] != null 
-          ? List<String>.from(data['loanTypes']) 
-          : null,
+      businessEmail: data['businessEmail'],
+      registrationNumber: data['registrationNumber'],
+      phone: data['phone'],
+      businessType: data['businessType'],
+      loanTypes: List<String>.from(data['loanTypes']),
+      website: data['website'],
+      description: data['description'],
+      interestRate: data['interestRate'].toDouble(),
       createdAt: data['createdAt'].toDate(),
       updatedAt: data['updatedAt'].toDate(),
     );
@@ -39,11 +50,15 @@ class ProviderModel {
 
   Map<String, dynamic> toMap() {
     return {
-      'isApproved': isApproved,
       'businessName': businessName,
-      'businessDescription': businessDescription,
-      'businessWebsite': businessWebsite,
+      'businessEmail': businessEmail,
+      'registrationNumber': registrationNumber,
+      'phone': phone,
+      'businessType': businessType,
       'loanTypes': loanTypes,
+      'website': website,
+      'description': description,
+      'interestRate': interestRate,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
