@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/models/provider_model.dart';
 import 'package:fintech_bridge/models/admin_model.dart';
+import 'package:fintech_bridge/services/notification_service.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationService _notificationService = NotificationService();
   
   // Loading state
   bool _isLoading = false;
@@ -95,6 +97,15 @@ class AuthService extends ChangeNotifier {
 
         await _firestore.collection('students').doc(credential.user!.uid).set(student.toMap());
         
+        // Create notification for new student account
+        await _notificationService.createNotification(
+          userId: credential.user!.uid,
+          title: 'Welcome to Fintech Bridge',
+          message: 'Your student account has been created. Please verify your email to continue.',
+          relatedEntityId: credential.user!.uid,
+          type: 'ACCOUNT_CREATION',
+        );
+        
         return {
           'success': true, 
           'message': 'Registration successful! Please verify your email.',
@@ -116,6 +127,15 @@ class AuthService extends ChangeNotifier {
         );
 
         await _firestore.collection('providers').doc(credential.user!.uid).set(provider.toMap());
+        
+        // Create notification for new provider account
+        await _notificationService.createNotification(
+          userId: credential.user!.uid,
+          title: 'Welcome to Fintech Bridge',
+          message: 'Your provider account has been created. Please verify your email and complete your profile.',
+          relatedEntityId: credential.user!.uid,
+          type: 'ACCOUNT_CREATION',
+        );
         
         return {
           'success': true, 
@@ -175,6 +195,16 @@ class AuthService extends ChangeNotifier {
       DocumentSnapshot adminDoc = await _firestore.collection('admins').doc(credential.user!.uid).get();
       if (adminDoc.exists) {
         Admin admin = Admin.fromFirestore(adminDoc);
+        
+        // Create notification for admin login
+        await _notificationService.createNotification(
+          userId: credential.user!.uid,
+          title: 'Login Successful',
+          message: 'You have successfully logged in as an administrator.',
+          relatedEntityId: credential.user!.uid,
+          type: 'AUTH_LOGIN',
+        );
+        
         return {'success': true, 'message': 'Login successful', 'user': admin, 'role': 'admin'};
       }
       
@@ -182,6 +212,16 @@ class AuthService extends ChangeNotifier {
       DocumentSnapshot studentDoc = await _firestore.collection('students').doc(credential.user!.uid).get();
       if (studentDoc.exists) {
         Student student = Student.fromFirestore(studentDoc);
+        
+        // Create notification for student login
+        await _notificationService.createNotification(
+          userId: credential.user!.uid,
+          title: 'Welcome Back',
+          message: 'You have successfully logged in to your student account.',
+          relatedEntityId: credential.user!.uid,
+          type: 'AUTH_LOGIN',
+        );
+        
         return {'success': true, 'message': 'Login successful', 'user': student, 'role': 'student'};
       }
       
@@ -189,6 +229,16 @@ class AuthService extends ChangeNotifier {
       DocumentSnapshot providerDoc = await _firestore.collection('providers').doc(credential.user!.uid).get();
       if (providerDoc.exists) {
         Provider provider = Provider.fromFirestore(providerDoc);
+        
+        // Create notification for provider login
+        await _notificationService.createNotification(
+          userId: credential.user!.uid,
+          title: 'Welcome Back',
+          message: 'You have successfully logged in to your provider account.',
+          relatedEntityId: credential.user!.uid,
+          type: 'AUTH_LOGIN',
+        );
+        
         return {'success': true, 'message': 'Login successful', 'user': provider, 'role': 'provider'};
       }
       
@@ -241,6 +291,16 @@ class AuthService extends ChangeNotifier {
       }
       
       await currentUser!.sendEmailVerification();
+      
+      // Create notification for email verification
+      await _notificationService.createNotification(
+        userId: currentUser!.uid,
+        title: 'Verification Email Sent',
+        message: 'A new verification email has been sent to your email address. Please check your inbox.',
+        relatedEntityId: currentUser!.uid,
+        type: 'ACCOUNT_VERIFICATION',
+      );
+      
       return {'success': true, 'message': 'Verification email sent'};
     } catch (e) {
       return {'success': false, 'message': 'Failed to send verification email. Please try again.'};
@@ -257,7 +317,44 @@ class AuthService extends ChangeNotifier {
         return {'success': false, 'message': 'Email is required'};
       }
       
+      // Check if this email exists in our system
+      final userQuery = await _firestore.collection('students')
+          .where('universityEmail', isEqualTo: email)
+          .limit(1)
+          .get();
+          
+      final providerQuery = await _firestore.collection('providers')
+          .where('businessEmail', isEqualTo: email)
+          .limit(1)
+          .get();
+          
+      final adminQuery = await _firestore.collection('admins')
+          .where('adminEmail', isEqualTo: email)
+          .limit(1)
+          .get();
+      
+      String? userId;
+      if (userQuery.docs.isNotEmpty) {
+        userId = userQuery.docs.first.id;
+      } else if (providerQuery.docs.isNotEmpty) {
+        userId = providerQuery.docs.first.id;
+      } else if (adminQuery.docs.isNotEmpty) {
+        userId = adminQuery.docs.first.id;
+      }
+      
       await _auth.sendPasswordResetEmail(email: email);
+      
+      // Create notification if we found a user
+      if (userId != null) {
+        await _notificationService.createNotification(
+          userId: userId,
+          title: 'Password Reset Requested',
+          message: 'A password reset link has been sent to your email address. The link will expire in 1 hour.',
+          relatedEntityId: userId,
+          type: 'PASSWORD_RESET',
+        );
+      }
+      
       return {'success': true, 'message': 'Password reset email sent'};
     } on FirebaseAuthException catch (e) {
       String errorMessage;
@@ -357,6 +454,15 @@ class AuthService extends ChangeNotifier {
       // Update display name
       await currentUser!.updateDisplayName(fullName);
       
+      // Create notification for profile update
+      await _notificationService.createNotification(
+        userId: currentUser!.uid,
+        title: 'Profile Updated',
+        message: 'Your student profile has been updated successfully.',
+        relatedEntityId: currentUser!.uid,
+        type: 'PROFILE_UPDATE',
+      );
+      
       return {'success': true, 'message': 'Profile updated successfully', 'user': updatedStudent};
     } catch (e) {
       return {'success': false, 'message': 'Failed to update profile. Please try again.'};
@@ -410,6 +516,15 @@ class AuthService extends ChangeNotifier {
       // Update display name
       await currentUser!.updateDisplayName(businessName);
       
+      // Create notification for profile update
+      await _notificationService.createNotification(
+        userId: currentUser!.uid,
+        title: 'Provider Profile Updated',
+        message: 'Your provider profile has been updated successfully.',
+        relatedEntityId: currentUser!.uid,
+        type: 'PROFILE_UPDATE',
+      );
+      
       return {'success': true, 'message': 'Profile updated successfully', 'user': updatedProvider};
     } catch (e) {
       return {'success': false, 'message': 'Failed to update profile. Please try again.'};
@@ -454,6 +569,15 @@ class AuthService extends ChangeNotifier {
       
       await _firestore.collection('admins').doc(credential.user!.uid).set(admin.toMap());
       
+      // Create notification for admin creation
+      await _notificationService.createNotification(
+        userId: credential.user!.uid,
+        title: 'Admin Account Created',
+        message: 'Your administrator account has been created successfully.',
+        relatedEntityId: credential.user!.uid,
+        type: 'ACCOUNT_CREATION',
+      );
+      
       // Sign out after creating admin
       await _auth.signOut();
       
@@ -469,7 +593,19 @@ class AuthService extends ChangeNotifier {
   Future<Map<String, dynamic>> signOut() async {
     _setLoading(true);
     try {
+      String userId = currentUser!.uid;
+      
       await _auth.signOut();
+      
+      // Create notification for sign out (this won't be seen until next login)
+      await _notificationService.createNotification(
+        userId: userId,
+        title: 'Signed Out',
+        message: 'You have been signed out successfully.',
+        relatedEntityId: userId,
+        type: 'AUTH_LOGOUT',
+      );
+      
       return {'success': true, 'message': 'Signed out successfully'};
     } catch (e) {
       return {'success': false, 'message': 'Failed to sign out. Please try again.'};

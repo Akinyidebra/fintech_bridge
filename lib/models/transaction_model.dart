@@ -34,4 +34,20 @@ class Transaction {
       'createdAt': createdAt,
     };
   }
+
+  Transaction copyWith({
+    String? id,
+    String? loanId,
+    double? amount,
+    String? type,
+    DateTime? createdAt,
+  }) {
+    return Transaction(
+      id: id ?? this.id,
+      loanId: loanId ?? this.loanId,
+      amount: amount ?? this.amount,
+      type: type ?? this.type,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }
