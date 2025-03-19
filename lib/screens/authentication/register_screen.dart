@@ -24,6 +24,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _courseController = TextEditingController();
+  final TextEditingController _yearOfStudyController = TextEditingController();
 
   // Focus nodes for text fields
   final FocusNode _fullNameFocusNode = FocusNode();
@@ -32,6 +34,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   final FocusNode _phoneFocusNode = FocusNode();
   final FocusNode _passwordFocusNode = FocusNode();
   final FocusNode _confirmPasswordFocusNode = FocusNode();
+  final FocusNode _courseFocusNode = FocusNode();
+  final FocusNode _yearOfStudyFocusNode = FocusNode();
 
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
@@ -63,7 +67,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     'usiu.ac.ke',
     'mku.ac.ke',
     'egerton.ac.ke',
-    // Add more university domains as needed
     'gmail.com',
   ];
 
@@ -94,6 +97,8 @@ class _RegisterScreenState extends State<RegisterScreen>
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _courseController.dispose();
+    _yearOfStudyController.dispose();
 
     // Dispose focus nodes
     _fullNameFocusNode.dispose();
@@ -102,6 +107,8 @@ class _RegisterScreenState extends State<RegisterScreen>
     _phoneFocusNode.dispose();
     _passwordFocusNode.dispose();
     _confirmPasswordFocusNode.dispose();
+    _courseFocusNode.dispose();
+    _yearOfStudyFocusNode.dispose();
 
     // Dispose animation controller
     _animationController.dispose();
@@ -113,7 +120,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _isUniversityEmail(String email) {
     if (email.isEmpty) return false;
 
-    // Extract domain from email
     final domainMatch = RegExp(r'^[^@]+@([^@]+)$').firstMatch(email);
     if (domainMatch == null) return false;
 
@@ -121,7 +127,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     return domain != null && _validUniversityDomains.contains(domain);
   }
 
-  // Add image picker method
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
@@ -143,38 +148,37 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
 
     if (_formKey.currentState!.validate()) {
-      // Show loading overlay
       LoadingOverlay.show(context, message: 'Registering...');
       setState(() => _isLoading = true);
 
       final authService = Provider.of<AuthService>(context, listen: false);
+      final course = _selectedRole == 'student' ? _courseController.text : '';
+      final yearOfStudy = _selectedRole == 'student'
+          ? int.tryParse(_yearOfStudyController.text) ?? 0
+          : 0;
 
-      try {
-        final user = await authService.registerWithEmailAndPassword(
-          fullName: _fullNameController.text,
-          email: _emailController.text,
-          password: _passwordController.text,
-          studentId: _studentIdController.text,
-          phone: _phoneController.text,
-          role: _selectedRole,
-          profileImageBase64: _profileImageBase64,
-          emailValidator: _isUniversityEmail,
-        );
+      final result = await authService.registerWithEmailAndPassword(
+        fullName: _fullNameController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
+        studentId: _studentIdController.text,
+        phone: _phoneController.text,
+        role: _selectedRole,
+        course: course,
+        yearOfStudy: yearOfStudy,
+        profileImage: _profileImageBase64,
+        emailValidator: _isUniversityEmail,
+      );
 
-        // Hide loading overlay
-        LoadingOverlay.hide();
+      LoadingOverlay.hide();
+      setState(() => _isLoading = false);
 
-        if (user != null && mounted) {
-          Navigator.pushReplacementNamed(context, '/verify-email');
-        }
-      } catch (e) {
-        // Hide loading overlay
-        LoadingOverlay.hide();
-        // Show error message
+      if (result['success'] == true && mounted) {
+        Navigator.pushReplacementNamed(context, '/verify-email');
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Registration failed: ${e.toString()}')));
-      } finally {
-        setState(() => _isLoading = false);
+          SnackBar(content: Text(result['message'] ?? 'Registration failed')),
+        );
       }
     }
   }
@@ -233,13 +237,30 @@ class _RegisterScreenState extends State<RegisterScreen>
     return null;
   }
 
+  String? _validateCourse(String? value) {
+    if (_selectedRole == 'student' && (value == null || value.isEmpty)) {
+      return 'Course is required';
+    }
+    return null;
+  }
+
+  String? _validateYearOfStudy(String? value) {
+    if (_selectedRole == 'student') {
+      if (value == null || value.isEmpty) {
+        return 'Year of study is required';
+      }
+      final year = int.tryParse(value);
+      if (year == null || year < 1 || year > 5) {
+        return 'Enter a valid year (1-5)';
+      }
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // Unfocus when tapping outside inputs
-        FocusScope.of(context).unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: AppConstants.backgroundColor,
         body: Container(
@@ -290,6 +311,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                         ),
                         const SizedBox(height: 24),
+
                         // Header
                         Text(
                           'Create Account',
@@ -299,6 +321,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                         ),
                         const SizedBox(height: 12),
+
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -351,6 +374,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                         ),
                         const SizedBox(height: 8),
+
                         Text(
                           'Add profile photo',
                           style: AppConstants.bodyMedium.copyWith(
@@ -393,11 +417,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 children: [
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedRole = 'student';
-                                        });
-                                      },
+                                      onTap: () => setState(
+                                          () => _selectedRole = 'student'),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 16),
@@ -422,7 +443,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                                     blurRadius: 8,
                                                     spreadRadius: 0,
                                                     offset: const Offset(0, 3),
-                                                  ),
+                                                  )
                                                 ]
                                               : null,
                                         ),
@@ -456,11 +477,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          _selectedRole = 'provider';
-                                        });
-                                      },
+                                      onTap: () => setState(
+                                          () => _selectedRole = 'provider'),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 16),
@@ -485,7 +503,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                                     blurRadius: 8,
                                                     spreadRadius: 0,
                                                     offset: const Offset(0, 3),
-                                                  ),
+                                                  )
                                                 ]
                                               : null,
                                         ),
@@ -557,6 +575,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 20),
+
                               // Full Name
                               TextFormField(
                                 controller: _fullNameController,
@@ -569,6 +588,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 validator: _validateFullName,
                               ),
                               const SizedBox(height: 20),
+
                               // Email
                               TextFormField(
                                 controller: _emailController,
@@ -582,6 +602,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 validator: _validateEmail,
                               ),
                               const SizedBox(height: 20),
+
                               // Student ID
                               TextFormField(
                                 controller: _studentIdController,
@@ -597,6 +618,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 validator: _validateStudentId,
                               ),
                               const SizedBox(height: 20),
+
                               // Phone Number
                               TextFormField(
                                 controller: _phoneController,
@@ -609,6 +631,37 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 keyboardType: TextInputType.phone,
                                 validator: _validatePhone,
                               ),
+
+                              // Student-specific fields
+                              if (_selectedRole == 'student') ...[
+                                const SizedBox(height: 20),
+
+                                // Course
+                                TextFormField(
+                                  controller: _courseController,
+                                  focusNode: _courseFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Course',
+                                    prefixIcon: Icons.school_outlined,
+                                  ),
+                                  style: AppConstants.bodyLarge,
+                                  validator: _validateCourse,
+                                ),
+                                const SizedBox(height: 20),
+
+                                // Year of Study
+                                TextFormField(
+                                  controller: _yearOfStudyController,
+                                  focusNode: _yearOfStudyFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Year of Study',
+                                    prefixIcon: Icons.calendar_today_outlined,
+                                  ),
+                                  style: AppConstants.bodyLarge,
+                                  keyboardType: TextInputType.number,
+                                  validator: _validateYearOfStudy,
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -637,6 +690,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 20),
+
                               // Password
                               TextFormField(
                                 controller: _passwordController,
@@ -653,17 +707,15 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       size: 22,
                                       color: AppConstants.textSecondaryColor,
                                     ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _passwordVisible = !_passwordVisible;
-                                      });
-                                    },
+                                    onPressed: () => setState(() =>
+                                        _passwordVisible = !_passwordVisible),
                                   ),
                                 ),
                                 style: AppConstants.bodyLarge,
                                 validator: _validatePassword,
                               ),
                               const SizedBox(height: 20),
+
                               // Confirm Password
                               TextFormField(
                                 controller: _confirmPasswordController,
@@ -680,12 +732,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       size: 22,
                                       color: AppConstants.textSecondaryColor,
                                     ),
-                                    onPressed: () {
-                                      setState(() {
+                                    onPressed: () => setState(() =>
                                         _confirmPasswordVisible =
-                                            !_confirmPasswordVisible;
-                                      });
-                                    },
+                                            !_confirmPasswordVisible),
                                   ),
                                 ),
                                 style: AppConstants.bodyLarge,
@@ -738,18 +787,16 @@ class _RegisterScreenState extends State<RegisterScreen>
                           children: [
                             Checkbox(
                               value: _agreedToTerms,
-                              onChanged: (newValue) {
-                                setState(() {
-                                  _agreedToTerms = newValue!;
-                                });
-                              },
+                              onChanged: (newValue) =>
+                                  setState(() => _agreedToTerms = newValue!),
                               activeColor: AppConstants.primaryColor,
                             ),
                             Expanded(
                               child: Text(
                                 'I agree to the Terms & Conditions and Privacy Policy',
                                 style: AppConstants.bodyMedium.copyWith(
-                                    color: AppConstants.textSecondaryColor),
+                                  color: AppConstants.textSecondaryColor,
+                                ),
                               ),
                             ),
                           ],
@@ -759,9 +806,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         // Register button
                         AppConstants.gradientButton(
                           text: 'Register',
-                          onPressed: _agreedToTerms
-                              ? _register
-                              : () {}, // Empty function instead of null
+                          onPressed: _agreedToTerms ? _register : () {},
                           isLoading: _isLoading,
                         ),
                         const SizedBox(height: 24),
@@ -777,10 +822,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                             ),
                             TextButton(
-                              onPressed: () {
-                                Navigator.pushReplacementNamed(
-                                    context, '/login');
-                              },
+                              onPressed: () => Navigator.pushReplacementNamed(
+                                  context, '/login'),
                               child: Text(
                                 'Login',
                                 style: AppConstants.bodyMedium.copyWith(
@@ -791,7 +834,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                             ),
                           ],
                         ),
-                        // Add some bottom padding for scrolling
                         const SizedBox(height: 40),
                       ],
                     ),

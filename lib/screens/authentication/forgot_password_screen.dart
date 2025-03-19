@@ -22,12 +22,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final authService = Provider.of<AuthService>(context, listen: false);
     final success = await authService.sendPasswordResetEmail(_emailController.text);
 
-    if (success && mounted) {
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset link sent to your email')),
-      );
-    }
+    // if (success && mounted) {
+    //   Navigator.pop(context);
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text('Password reset link sent to your email')),
+    //   );
+    // }
     setState(() => _isLoading = false);
   }
 
