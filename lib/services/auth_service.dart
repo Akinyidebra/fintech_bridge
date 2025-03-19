@@ -6,7 +6,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/models/provider_model.dart';
-import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
 class AuthService extends ChangeNotifier {

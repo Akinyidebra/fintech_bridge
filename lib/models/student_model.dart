@@ -1,41 +1,41 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class UserModel {
+class Student {
   final String id;
   final String fullName;
-  final String email;
+  final String universityEmail;
   final String studentId;
   final String phone;
-  final String role;
+  final String course;
+  final int yearOfStudy;
   final String? profileImage;
-  final bool isVerified;
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  UserModel({
+  Student({
     required this.id,
     required this.fullName,
-    required this.email,
+    required this.universityEmail,
     required this.studentId,
     required this.phone,
-    required this.role,
+    required this.course,
+    required this.yearOfStudy,
     this.profileImage,
-    required this.isVerified,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  factory UserModel.fromFirestore(DocumentSnapshot doc) {
+  factory Student.fromFirestore(DocumentSnapshot doc) {
     Map data = doc.data() as Map;
-    return UserModel(
+    return Student(
       id: doc.id,
-      fullName: data['fullName'] ?? '',
-      email: data['email'] ?? '',
-      studentId: data['studentId'] ?? '',
-      phone: data['phone'] ?? '',
-      role: data['role'] ?? 'user',
+      fullName: data['fullName'],
+      universityEmail: data['universityEmail'],
+      studentId: data['studentId'],
+      phone: data['phone'],
+      course: data['course'],
+      yearOfStudy: data['yearOfStudy'],
       profileImage: data['profileImage'],
-      isVerified: data['isVerified'] ?? false,
       createdAt: data['createdAt'].toDate(),
       updatedAt: data['updatedAt'].toDate(),
     );
@@ -44,12 +44,12 @@ class UserModel {
   Map<String, dynamic> toMap() {
     return {
       'fullName': fullName,
-      'email': email,
+      'universityEmail': universityEmail,
       'studentId': studentId,
       'phone': phone,
-      'role': role,
+      'course': course,
+      'yearOfStudy': yearOfStudy,
       'profileImage': profileImage,
-      'isVerified': isVerified,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
