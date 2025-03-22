@@ -5,6 +5,8 @@ class Admin {
   final String fullName;
   final String adminEmail;
   final String role;
+  final String? profileImage;
+  final String? phone;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -13,6 +15,8 @@ class Admin {
     required this.fullName,
     required this.adminEmail,
     required this.role,
+    this.profileImage,
+    this.phone,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,6 +28,8 @@ class Admin {
       fullName: data['fullName'],
       adminEmail: data['adminEmail'],
       role: data['role'],
+      profileImage: data['profileImage'],
+      phone: data['phone'],
       createdAt: data['createdAt'].toDate(),
       updatedAt: data['updatedAt'].toDate(),
     );
@@ -34,6 +40,8 @@ class Admin {
       'fullName': fullName,
       'adminEmail': adminEmail,
       'role': role,
+      'profileImage': profileImage,
+      'phone': phone,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };

@@ -1,10 +1,12 @@
+import 'package:fintech_bridge/screens/admin_dashboard.dart';
+import 'package:fintech_bridge/screens/provider_dashboard.dart';
+import 'package:fintech_bridge/screens/student_dashboard.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/auth_service.dart';
 import 'package:fintech_bridge/screens/authentication/login_screen.dart';
 import 'package:fintech_bridge/screens/authentication/verification_screen.dart';
-import 'package:fintech_bridge/screens/home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -68,11 +70,13 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _checkAuthStatus() async {
     final authService = Provider.of<AuthService>(context, listen: false);
 
-    // Create default admin account if first run
+    // Create default admin account if first run with complete profile details
     await authService.createAdminAccount(
-      email: "admin@fintechbridge.com",
+      email: "debraakinyi12@gmail.com",
       password: "Admin123!",
-      fullName: "System Administrator",
+      fullName: "Debra Akinyi",
+      phone: "+254111537179",
+      profileImage: null,
     );
 
     // Check if user is already logged in
@@ -84,11 +88,32 @@ class _SplashScreenState extends State<SplashScreen>
       final isVerified = user.emailVerified;
 
       if (isVerified) {
-        // User is logged in and verified, navigate to home
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+        // User is logged in and verified, navigate to dashboard
+        final userData = await authService.getUserData();
+        if (userData['success'] == true) {
+          switch (userData['role']) {
+            case 'admin':
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminDashboard()),
+              );
+              break;
+            case 'student':
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const StudentDashboard()),
+              );
+              break;
+            case 'provider':
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const ProviderDashboard()),
+              );
+              break;
+          }
+        } else {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
       } else {
         // User is logged in but not verified, navigate to verification screen
         Navigator.pushReplacement(

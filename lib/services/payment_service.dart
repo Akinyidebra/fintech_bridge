@@ -1,12 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
-import 'package:fintech_bridge/services/notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/models/loan_model.dart';
 import 'package:fintech_bridge/models/transaction_model.dart' as tm;
 
 class PaymentService extends ChangeNotifier {
-  final NotificationService _notificationService = NotificationService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -83,17 +81,6 @@ class PaymentService extends ChangeNotifier {
       if (updateData.isNotEmpty) {
         await _firestore.collection('loans').doc(loanId).update(updateData);
       }
-
-      // Send notification
-      await _notificationService.createNotification(
-        userId: loan.studentId,
-        title: 'Payment Processed',
-        message: totalRepaid >= loan.amount
-            ? 'Loan fully repaid! Thank you!'
-            : 'Payment of \$$amount processed successfully',
-        relatedEntityId: loanId,
-        type: 'PAYMENT',
-      );
 
       return {
         'success': true,

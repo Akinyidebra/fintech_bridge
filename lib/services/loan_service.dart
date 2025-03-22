@@ -1,12 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
-import 'package:fintech_bridge/services/notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/models/loan_model.dart';
 import 'package:fintech_bridge/models/transaction_model.dart' as tm;
 
 class LoanService extends ChangeNotifier {
-  final NotificationService _notificationService = NotificationService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -50,14 +48,6 @@ class LoanService extends ChangeNotifier {
       );
 
       final loanRef = await _firestore.collection('loans').add(loan.toMap());
-
-      await _notificationService.createNotification(
-        userId: providerId,
-        title: 'New Loan Request',
-        message: 'New loan request of \$$amount from student',
-        relatedEntityId: loanRef.id,
-        type: 'LOAN_REQUEST',
-      );
 
       return {
         'success': true,
@@ -176,23 +166,6 @@ class LoanService extends ChangeNotifier {
           createdAt: DateTime.now(),
         );
         await _firestore.collection('transactions').add(transaction.toMap());
-        
-        // Send notification
-        await _notificationService.createNotification(
-          userId: loan.studentId,
-          title: 'Loan Approved',
-          message: 'Your loan request of \$${loan.amount} has been approved',
-          relatedEntityId: loanId,
-          type: 'LOAN_UPDATE',
-        );
-      } else if (status == 'REJECTED') {
-        await _notificationService.createNotification(
-          userId: loan.studentId,
-          title: 'Loan Rejected',
-          message: 'Your loan request of \$${loan.amount} was rejected',
-          relatedEntityId: loanId,
-          type: 'LOAN_UPDATE',
-        );
       }
 
       return {

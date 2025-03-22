@@ -9,6 +9,9 @@ class Student {
   final String course;
   final int yearOfStudy;
   final String? profileImage;
+  final bool verified;
+  final DateTime? verifiedAt;
+  final List<String>? identificationImages; // For ID front/back and selfie
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -21,6 +24,9 @@ class Student {
     required this.course,
     required this.yearOfStudy,
     this.profileImage,
+    this.verified = false,
+    this.verifiedAt,
+    this.identificationImages,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -36,6 +42,11 @@ class Student {
       course: data['course'],
       yearOfStudy: data['yearOfStudy'],
       profileImage: data['profileImage'],
+      verified: data['verified'] ?? false,
+      verifiedAt: data['verifiedAt'] != null ? data['verifiedAt'].toDate() : null,
+      identificationImages: data['identificationImages'] != null 
+          ? List<String>.from(data['identificationImages']) 
+          : null,
       createdAt: data['createdAt'].toDate(),
       updatedAt: data['updatedAt'].toDate(),
     );
@@ -50,6 +61,9 @@ class Student {
       'course': course,
       'yearOfStudy': yearOfStudy,
       'profileImage': profileImage,
+      'verified': verified,
+      'verifiedAt': verifiedAt,
+      'identificationImages': identificationImages,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
