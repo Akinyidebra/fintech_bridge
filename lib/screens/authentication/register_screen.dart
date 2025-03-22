@@ -26,8 +26,13 @@ class _RegisterScreenState extends State<RegisterScreen>
       TextEditingController();
   final TextEditingController _courseController = TextEditingController();
   final TextEditingController _yearOfStudyController = TextEditingController();
+  final TextEditingController _businessTypeController = TextEditingController();
+  final TextEditingController _loanTypesController = TextEditingController();
+  final TextEditingController _interestRateController = TextEditingController();
+  final TextEditingController _websiteController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
 
-  // Focus nodes for text fields
+  // Focus nodes
   final FocusNode _fullNameFocusNode = FocusNode();
   final FocusNode _emailFocusNode = FocusNode();
   final FocusNode _studentIdFocusNode = FocusNode();
@@ -36,27 +41,22 @@ class _RegisterScreenState extends State<RegisterScreen>
   final FocusNode _confirmPasswordFocusNode = FocusNode();
   final FocusNode _courseFocusNode = FocusNode();
   final FocusNode _yearOfStudyFocusNode = FocusNode();
+  final FocusNode _businessTypeFocusNode = FocusNode();
+  final FocusNode _loanTypesFocusNode = FocusNode();
+  final FocusNode _interestRateFocusNode = FocusNode();
+  final FocusNode _websiteFocusNode = FocusNode();
+  final FocusNode _descriptionFocusNode = FocusNode();
 
-  // Form key for validation
   final _formKey = GlobalKey<FormState>();
-
-  // Password visibility state
   bool _passwordVisible = false;
   bool _confirmPasswordVisible = false;
-
-  // Terms and conditions checkbox
   bool _agreedToTerms = true;
-
-  // User type selection
-  String _selectedRole = 'student'; // Default role is student
+  String _selectedRole = 'student';
   String? _profileImageBase64;
   bool _isLoading = false;
-
-  // Animation controller for fade-in effect
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
-  // List of valid university email domains
   final List<String> _validUniversityDomains = [
     'kabarak.ac.ke',
     'strathmore.edu',
@@ -77,20 +77,14 @@ class _RegisterScreenState extends State<RegisterScreen>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeIn,
-      ),
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-
     _animationController.forward();
   }
 
   @override
   void dispose() {
-    // Dispose controllers
     _fullNameController.dispose();
     _emailController.dispose();
     _studentIdController.dispose();
@@ -99,8 +93,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     _confirmPasswordController.dispose();
     _courseController.dispose();
     _yearOfStudyController.dispose();
+    _businessTypeController.dispose();
+    _loanTypesController.dispose();
+    _interestRateController.dispose();
+    _websiteController.dispose();
+    _descriptionController.dispose();
 
-    // Dispose focus nodes
     _fullNameFocusNode.dispose();
     _emailFocusNode.dispose();
     _studentIdFocusNode.dispose();
@@ -109,34 +107,42 @@ class _RegisterScreenState extends State<RegisterScreen>
     _confirmPasswordFocusNode.dispose();
     _courseFocusNode.dispose();
     _yearOfStudyFocusNode.dispose();
+    _businessTypeFocusNode.dispose();
+    _loanTypesFocusNode.dispose();
+    _interestRateFocusNode.dispose();
+    _websiteFocusNode.dispose();
+    _descriptionFocusNode.dispose();
 
-    // Dispose animation controller
     _animationController.dispose();
-
     super.dispose();
   }
 
-  // Validate if the email is a university email
   bool _isUniversityEmail(String email) {
-    if (email.isEmpty) return false;
-
     final domainMatch = RegExp(r'^[^@]+@([^@]+)$').firstMatch(email);
-    if (domainMatch == null) return false;
-
-    final domain = domainMatch.group(1)?.toLowerCase();
+    final domain = domainMatch?.group(1)?.toLowerCase();
     return domain != null && _validUniversityDomains.contains(domain);
   }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
-      setState(() {
-        _profileImageBase64 = base64Encode(bytes);
-      });
+      setState(() => _profileImageBase64 = base64Encode(bytes));
     }
+  }
+
+  // Added missing validation methods
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) return 'Password is required';
+    if (value.length < 8) return 'Password must be at least 8 characters';
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) return 'Please confirm your password';
+    if (value != _passwordController.text) return 'Passwords do not match';
+    return null;
   }
 
   void _register() async {
@@ -152,106 +158,119 @@ class _RegisterScreenState extends State<RegisterScreen>
       setState(() => _isLoading = true);
 
       final authService = Provider.of<AuthService>(context, listen: false);
-      final course = _selectedRole == 'student' ? _courseController.text : '';
-      final yearOfStudy = _selectedRole == 'student'
-          ? int.tryParse(_yearOfStudyController.text) ?? 0
-          : 0;
+      Map<String, dynamic> result;
 
-      final result = await authService.registerWithEmailAndPassword(
-        fullName: _fullNameController.text,
-        email: _emailController.text,
-        password: _passwordController.text,
-        studentId: _studentIdController.text,
-        phone: _phoneController.text,
-        role: _selectedRole,
-        course: course,
-        yearOfStudy: yearOfStudy,
-        profileImage: _profileImageBase64,
-        emailValidator: _isUniversityEmail,
-      );
+      try {
+        if (_selectedRole == 'student') {
+          result = await authService.registerStudent(
+            fullName: _fullNameController.text,
+            email: _emailController.text,
+            password: _passwordController.text,
+            studentId: _studentIdController.text,
+            phone: _phoneController.text,
+            course: _courseController.text,
+            yearOfStudy: int.parse(_yearOfStudyController.text),
+            profileImage: _profileImageBase64,
+            emailValidator: _isUniversityEmail,
+          );
+        } else {
+          List<String> loanTypes = _loanTypesController.text
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
 
-      LoadingOverlay.hide();
-      setState(() => _isLoading = false);
+          result = await authService.registerProvider(
+            businessName: _fullNameController.text,
+            email: _emailController.text,
+            password: _passwordController.text,
+            phone: _phoneController.text,
+            businessType: _businessTypeController.text,
+            loanTypes: loanTypes,
+            interestRate: double.parse(_interestRateController.text),
+            website: _websiteController.text.isNotEmpty
+                ? _websiteController.text
+                : null,
+            description: _descriptionController.text.isNotEmpty
+                ? _descriptionController.text
+                : null,
+            profileImage: _profileImageBase64,
+            emailValidator: (email) => true,
+          );
+        }
 
-      if (result['success'] == true && mounted) {
-        Navigator.pushReplacementNamed(context, '/verify-email');
-      } else {
+        LoadingOverlay.hide();
+        setState(() => _isLoading = false);
+
+        if (result['success'] == true && mounted) {
+          Navigator.pushReplacementNamed(context, '/verify-email');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message'] ?? 'Registration failed')),
+          );
+        }
+      } catch (e) {
+        LoadingOverlay.hide();
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Registration failed')),
+          const SnackBar(content: Text('Error processing registration')),
         );
       }
     }
   }
 
+  // Validation methods
   String? _validateFullName(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Full name is required';
-    }
+    if (value == null || value.isEmpty) return 'This field is required';
     return null;
   }
 
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Email is required';
-    }
+    if (value == null || value.isEmpty) return 'Email is required';
     if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Please enter a valid email';
+      return 'Invalid email format';
     }
-    if (!_isUniversityEmail(value)) {
-      return 'Please use a university email';
+    if (_selectedRole == 'student' && !_isUniversityEmail(value)) {
+      return 'Use a university email';
     }
     return null;
   }
 
   String? _validateStudentId(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Student ID is required';
-    }
-    return null;
-  }
-
-  String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Phone number is required';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Password is required';
-    }
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters';
-    }
-    return null;
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Confirm password is required';
-    }
-    if (value != _passwordController.text) {
-      return 'Passwords do not match';
-    }
-    return null;
-  }
-
-  String? _validateCourse(String? value) {
     if (_selectedRole == 'student' && (value == null || value.isEmpty)) {
-      return 'Course is required';
+      return 'Student ID required';
     }
     return null;
   }
 
-  String? _validateYearOfStudy(String? value) {
-    if (_selectedRole == 'student') {
-      if (value == null || value.isEmpty) {
-        return 'Year of study is required';
-      }
-      final year = int.tryParse(value);
-      if (year == null || year < 1 || year > 5) {
-        return 'Enter a valid year (1-5)';
+  String? _validateBusinessType(String? value) {
+    if (_selectedRole == 'provider' && (value == null || value.isEmpty)) {
+      return 'Business type required';
+    }
+    return null;
+  }
+
+  String? _validateLoanTypes(String? value) {
+    if (_selectedRole == 'provider' && (value == null || value.isEmpty)) {
+      return 'Enter loan types (comma separated)';
+    }
+    return null;
+  }
+
+  String? _validateInterestRate(String? value) {
+    if (_selectedRole == 'provider') {
+      if (value == null || value.isEmpty) return 'Interest rate required';
+      final rate = double.tryParse(value);
+      if (rate == null || rate <= 0) return 'Invalid rate';
+    }
+    return null;
+  }
+
+  String? _validateWebsite(String? value) {
+    if (value != null && value.isNotEmpty) {
+      final uri = Uri.tryParse(value);
+      if (uri == null || uri.scheme.isEmpty || uri.host.isEmpty) {
+        return 'Invalid URL';
       }
     }
     return null;
@@ -268,10 +287,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFF9FAFC),
-                Color(0xFFEEF1F7),
-              ],
+              colors: [Color(0xFFF9FAFC), Color(0xFFEEF1F7)],
             ),
           ),
           child: SafeArea(
@@ -283,8 +299,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                   child: Form(
                     key: _formKey,
                     child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // App logo
                         Container(
@@ -552,7 +566,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                         ),
                         const SizedBox(height: 20),
 
-                        // Personal Information
+                        // Personal Information Section
                         Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -569,22 +583,24 @@ class _RegisterScreenState extends State<RegisterScreen>
                           padding: const EdgeInsets.all(24),
                           child: Column(
                             children: [
-                              const Text(
-                                'Personal Information',
+                              Text(
+                                _selectedRole == 'student'
+                                    ? 'Personal Information'
+                                    : 'Business Information',
                                 style: AppConstants.headlineSmall,
-                                textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 20),
 
-                              // Full Name
+                              // Full Name/Business Name
                               TextFormField(
                                 controller: _fullNameController,
                                 focusNode: _fullNameFocusNode,
                                 decoration: AppConstants.inputDecoration(
-                                  labelText: 'Full Name',
+                                  labelText: _selectedRole == 'student'
+                                      ? 'Full Name'
+                                      : 'Business Name',
                                   prefixIcon: Icons.person_outline,
                                 ),
-                                style: AppConstants.bodyLarge,
                                 validator: _validateFullName,
                               ),
                               const SizedBox(height: 20),
@@ -594,30 +610,26 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 controller: _emailController,
                                 focusNode: _emailFocusNode,
                                 decoration: AppConstants.inputDecoration(
-                                  labelText: 'University Email',
+                                  labelText: 'Email Address',
                                   prefixIcon: Icons.mail_outline,
                                 ),
-                                style: AppConstants.bodyLarge,
-                                keyboardType: TextInputType.emailAddress,
                                 validator: _validateEmail,
                               ),
                               const SizedBox(height: 20),
 
-                              // Student ID
-                              TextFormField(
-                                controller: _studentIdController,
-                                focusNode: _studentIdFocusNode,
-                                decoration: AppConstants.inputDecoration(
-                                  labelText: _selectedRole == 'student'
-                                      ? 'Student ID'
-                                      : 'Provider ID',
-                                  prefixIcon: Icons.badge,
+                              // Student ID (only for students)
+                              if (_selectedRole == 'student')
+                                TextFormField(
+                                  controller: _studentIdController,
+                                  focusNode: _studentIdFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Student ID',
+                                    prefixIcon: Icons.badge,
+                                  ),
+                                  validator: _validateStudentId,
                                 ),
-                                style: AppConstants.bodyLarge,
-                                keyboardType: TextInputType.text,
-                                validator: _validateStudentId,
-                              ),
-                              const SizedBox(height: 20),
+                              if (_selectedRole == 'student')
+                                const SizedBox(height: 20),
 
                               // Phone Number
                               TextFormField(
@@ -627,16 +639,13 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   labelText: 'Phone Number',
                                   prefixIcon: Icons.phone,
                                 ),
-                                style: AppConstants.bodyLarge,
-                                keyboardType: TextInputType.phone,
-                                validator: _validatePhone,
+                                validator: (value) =>
+                                    value?.isEmpty ?? true ? 'Required' : null,
                               ),
+                              const SizedBox(height: 20),
 
                               // Student-specific fields
                               if (_selectedRole == 'student') ...[
-                                const SizedBox(height: 20),
-
-                                // Course
                                 TextFormField(
                                   controller: _courseController,
                                   focusNode: _courseFocusNode,
@@ -644,12 +653,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     labelText: 'Course',
                                     prefixIcon: Icons.school_outlined,
                                   ),
-                                  style: AppConstants.bodyLarge,
-                                  validator: _validateCourse,
+                                  validator: (value) => value?.isEmpty ?? true
+                                      ? 'Required'
+                                      : null,
                                 ),
                                 const SizedBox(height: 20),
-
-                                // Year of Study
                                 TextFormField(
                                   controller: _yearOfStudyController,
                                   focusNode: _yearOfStudyFocusNode,
@@ -657,9 +665,70 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     labelText: 'Year of Study',
                                     prefixIcon: Icons.calendar_today_outlined,
                                   ),
-                                  style: AppConstants.bodyLarge,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Required';
+                                    }
+                                    final year = int.tryParse(value);
+                                    if (year == null || year < 1 || year > 5) {
+                                      return 'Invalid year';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+
+                              // Provider-specific fields
+                              if (_selectedRole == 'provider') ...[
+                                TextFormField(
+                                  controller: _businessTypeController,
+                                  focusNode: _businessTypeFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Business Type',
+                                    prefixIcon: Icons.business_outlined,
+                                  ),
+                                  validator: _validateBusinessType,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _loanTypesController,
+                                  focusNode: _loanTypesFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Loan Types (comma separated)',
+                                    prefixIcon: Icons.list_alt,
+                                  ),
+                                  validator: _validateLoanTypes,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _interestRateController,
+                                  focusNode: _interestRateFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Interest Rate (%)',
+                                    prefixIcon: Icons.percent,
+                                  ),
                                   keyboardType: TextInputType.number,
-                                  validator: _validateYearOfStudy,
+                                  validator: _validateInterestRate,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _websiteController,
+                                  focusNode: _websiteFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Website (optional)',
+                                    prefixIcon: Icons.language,
+                                  ),
+                                  validator: _validateWebsite,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _descriptionController,
+                                  focusNode: _descriptionFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Description (optional)',
+                                    prefixIcon: Icons.description,
+                                  ),
+                                  maxLines: 3,
                                 ),
                               ],
                             ],

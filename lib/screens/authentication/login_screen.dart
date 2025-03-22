@@ -1,3 +1,6 @@
+import 'package:fintech_bridge/screens/admin_dashboard.dart';
+import 'package:fintech_bridge/screens/provider_dashboard.dart';
+import 'package:fintech_bridge/screens/student_dashboard.dart';
 import 'package:fintech_bridge/services/auth_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
@@ -21,21 +24,6 @@ class _LoginScreenState extends State<LoginScreen>
   bool _passwordVisibility = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-
-  // List of valid university email domains
-  final List<String> _validUniversityDomains = [
-    'kabarak.ac.ke',
-    'strathmore.edu',
-    'uonbi.ac.ke',
-    'ku.ac.ke',
-    'tukenya.ac.ke',
-    'jkuat.ac.ke',
-    'usiu.ac.ke',
-    'mku.ac.ke',
-    'egerton.ac.ke',
-    // Add more university domains as needed
-    'gmail.com',
-  ];
 
   @override
   void initState() {
@@ -65,29 +53,10 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  // Validate if the email is a university email
-  bool _isUniversityEmail(String email) {
-    if (email.isEmpty) return false;
-
-    // Extract domain from email
-    final domainMatch = RegExp(r'^[^@]+@([^@]+)$').firstMatch(email);
-    if (domainMatch == null) return false;
-
-    final domain = domainMatch.group(1)?.toLowerCase();
-    return domain != null && _validUniversityDomains.contains(domain);
-  }
-
   void _handleLogin() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please fill all fields')));
-      return;
-    }
-
-    // Check if it's a university email
-    if (!_isUniversityEmail(_emailController.text)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please use a valid university email')));
       return;
     }
 
@@ -104,8 +73,29 @@ class _LoginScreenState extends State<LoginScreen>
       // Hide loading overlay
       LoadingOverlay.hide();
 
-      if (user != null && mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
+      if (user['success'] == true && mounted) {
+        switch (user['role']) {
+          case 'admin':
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            );
+            break;
+          case 'student':
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const StudentDashboard()),
+            );
+            break;
+          case 'provider':
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProviderDashboard()),
+            );
+            break;
+          default:
+            Navigator.pushReplacementNamed(context, '/login');
+        }
       }
     } catch (e) {
       // Hide loading overlay
@@ -116,7 +106,6 @@ class _LoginScreenState extends State<LoginScreen>
           SnackBar(content: Text('Login failed: ${e.toString()}')));
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 obscureText: false,
                                 style: AppConstants.bodyLarge,
                                 decoration: AppConstants.inputDecoration(
-                                  labelText: 'University Email',
+                                  labelText: 'Email',
                                   prefixIcon: Icons.email_outlined,
                                 ),
                                 keyboardType: TextInputType.emailAddress,
@@ -248,9 +237,6 @@ class _LoginScreenState extends State<LoginScreen>
                                           r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$')
                                       .hasMatch(value)) {
                                     return 'Please enter a valid email';
-                                  }
-                                  if (!_isUniversityEmail(value)) {
-                                    return 'Please use a university email';
                                   }
                                   return null;
                                 },

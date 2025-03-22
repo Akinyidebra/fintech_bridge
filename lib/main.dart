@@ -1,6 +1,5 @@
 import 'package:fintech_bridge/screens/authentication/login_screen.dart';
 import 'package:fintech_bridge/screens/authentication/register_screen.dart';
-import 'package:fintech_bridge/screens/home_screen.dart';
 import 'package:fintech_bridge/screens/splash_screen.dart';
 import 'package:fintech_bridge/services/auth_service.dart';
 import 'package:fintech_bridge/services/database_service.dart';
@@ -16,17 +15,18 @@ import 'package:fintech_bridge/screens/authentication/forgot_password_screen.dar
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
-        ChangeNotifierProvider<DatabaseService>(create: (_) => DatabaseService()),
+        ChangeNotifierProvider<DatabaseService>(
+            create: (_) => DatabaseService()),
       ],
       child: const MyApp(),
     ),
@@ -51,7 +51,6 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const HomeScreen(),
         '/verify-email': (context) => const VerificationScreen(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
       },

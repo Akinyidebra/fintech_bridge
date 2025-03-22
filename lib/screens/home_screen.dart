@@ -1,3 +1,4 @@
+import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -89,6 +90,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ?.copyWith(
                                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                                       letterSpacing: 0.0,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pushReplacementNamed(
+                                        context, '/login'),
+                                    child: Text(
+                                      'Logout',
+                                      style: AppConstants.bodyMedium.copyWith(
+                                        color: AppConstants.primaryColor,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ],
