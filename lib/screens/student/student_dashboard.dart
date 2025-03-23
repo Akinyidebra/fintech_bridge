@@ -1,3 +1,8 @@
+import 'package:fintech_bridge/screens/student/loan_application_screen.dart';
+import 'package:fintech_bridge/screens/student/loan_details_screen.dart';
+import 'package:fintech_bridge/screens/student/my_loans_screen.dart';
+import 'package:fintech_bridge/screens/student/profile_screen.dart';
+import 'package:fintech_bridge/screens/student/transaction_screen.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
 
@@ -9,43 +14,160 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
+  int _currentIndex = 0;
+
+  final List<Widget> _screens = [
+    const DashboardContent(),
+    const LoanApplicationScreen(
+      loanType: '',
+    ),
+    const MyLoansScreen(),
+    const ProfileScreen(),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
-      body: SafeArea(
-        child: Column(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  Widget _buildBottomNavBar() {
+    return Container(
+      padding: const EdgeInsets.only(top: 12, bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildWelcomeCard(),
-                      const SizedBox(height: 24),
-                      _buildFinancialOverview(),
-                      const SizedBox(height: 24),
-                      _buildRecommendedLoans(),
-                      const SizedBox(height: 24),
-                      _buildRecentActivity(),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
+            _buildNavItem(
+              icon: Icons.home_rounded,
+              label: 'Home',
+              isSelected: _currentIndex == 0,
+              onTap: () => setState(() => _currentIndex = 0),
             ),
-            _buildBottomNavBar(),
+            _buildNavItem(
+              icon: Icons.add_box_rounded,
+              label: 'Apply',
+              isSelected: _currentIndex == 1,
+              onTap: () => setState(() => _currentIndex = 1),
+            ),
+            _buildNavItem(
+              icon: Icons.account_balance_rounded,
+              label: 'Loans',
+              isSelected: _currentIndex == 2,
+              onTap: () => setState(() => _currentIndex = 2),
+            ),
+            _buildNavItem(
+              icon: Icons.person_rounded,
+              label: 'Profile',
+              isSelected: _currentIndex == 3,
+              onTap: () => setState(() => _currentIndex = 3),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppConstants.primaryColor.withOpacity(0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: isSelected
+                  ? AppConstants.primaryColor
+                  : AppConstants.textSecondaryColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isSelected
+                  ? AppConstants.primaryColor
+                  : AppConstants.textSecondaryColor,
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontFamily: 'Poppins',
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DashboardContent extends StatelessWidget {
+  const DashboardContent({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        children: [
+          _buildHeader(context),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildWelcomeCard(context),
+                    const SizedBox(height: 24),
+                    _buildFinancialOverview(context),
+                    const SizedBox(height: 24),
+                    _buildRecommendedLoans(context),
+                    const SizedBox(height: 24),
+                    _buildRecentActivity(context),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
@@ -120,7 +242,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildWelcomeCard() {
+  Widget _buildWelcomeCard(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(top: 20),
       padding: const EdgeInsets.all(24),
@@ -232,20 +354,28 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     ],
                   ),
                 ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                GestureDetector(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TransactionsScreen(),
+                    ),
                   ),
-                  child: const Text(
-                    'View Details',
-                    style: TextStyle(
-                      color: AppConstants.primaryColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Poppins',
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      'View Details',
+                      style: TextStyle(
+                        color: AppConstants.primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Poppins',
+                      ),
                     ),
                   ),
                 ),
@@ -257,7 +387,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildFinancialOverview() {
+  Widget _buildFinancialOverview(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -379,7 +509,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildRecommendedLoans() {
+  Widget _buildRecommendedLoans(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -401,6 +531,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ),
         const SizedBox(height: 14),
         _buildLoanCard(
+          context: context,
           title: 'Student Plus Loan',
           description: 'Fixed Rate 4.5% APR',
           features: ['No origination fees', 'Fast approval process'],
@@ -409,6 +540,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ),
         const SizedBox(height: 16),
         _buildLoanCard(
+          context: context,
           title: 'Graduate Loan',
           description: 'Variable Rate from 3.2% APR',
           features: ['Flexible repayment options', 'Low interest rate'],
@@ -420,6 +552,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildLoanCard({
+    required BuildContext context,
     required String title,
     required String description,
     required List<String> features,
@@ -524,7 +657,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          LoanApplicationScreen(loanType: title),
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppConstants.primaryColor,
                     foregroundColor: Colors.white,
@@ -563,7 +702,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildRecentActivity() {
+  Widget _buildRecentActivity(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -585,36 +724,43 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ),
         const SizedBox(height: 14),
         _buildActivityItem(
+          context: context,
           icon: Icons.check_circle_rounded,
           iconColor: AppConstants.successColor,
           title: 'Payment Successful',
           date: 'Feb 15, 2024',
           amount: '\$350',
           backgroundColor: AppConstants.successColor.withOpacity(0.05),
+          loanId: 'L1001',
         ),
         const SizedBox(height: 12),
         _buildActivityItem(
+          context: context,
           icon: Icons.description_rounded,
           iconColor: AppConstants.primaryColor,
           title: 'Statement Available',
           date: 'Feb 1, 2024',
           showArrow: true,
           backgroundColor: AppConstants.primaryColor.withOpacity(0.05),
+          loanId: 'L1002',
         ),
         const SizedBox(height: 12),
         _buildActivityItem(
+          context: context,
           icon: Icons.notifications_rounded,
           iconColor: AppConstants.accentColor,
           title: 'Loan Approved',
           date: 'Jan 22, 2024',
           showArrow: true,
           backgroundColor: AppConstants.accentColor.withOpacity(0.05),
+          loanId: 'L1003',
         ),
       ],
     );
   }
 
   Widget _buildActivityItem({
+    required BuildContext context,
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -622,196 +768,91 @@ class _StudentDashboardState extends State<StudentDashboard> {
     String? amount,
     bool showArrow = false,
     Color? backgroundColor,
+    String? loanId,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.black.withOpacity(0.03),
-          width: 1,
+    return GestureDetector(
+      onTap: () {
+        if (loanId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoanDetailsScreen(loanId: loanId),
+            ),
+          );
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: backgroundColor ?? Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: Colors.black.withOpacity(0.03),
+            width: 1,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  date,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    color: AppConstants.textSecondaryColor,
-                    fontSize: 12,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          if (amount != null)
-            Text(
-              amount,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 20,
+              ),
             ),
-          if (showArrow)
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: AppConstants.textSecondaryColor,
-              size: 16,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    date,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      color: AppConstants.textSecondaryColor,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return Container(
-      padding: const EdgeInsets.only(top: 12, bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(
-                  icon: Icons.home_rounded,
-                  label: 'Home',
-                  isSelected: true,
+            if (amount != null)
+              Text(
+                amount,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
                 ),
-                _buildNavItem(
-                  icon: Icons.account_balance_wallet_rounded,
-                  label: 'Apply',
-                ),
-                _buildFloatingNavItem(),
-                _buildNavItem(
-                  icon: Icons.payments_rounded,
-                  label: 'My Loans',
-                ),
-                _buildNavItem(
-                  icon: Icons.person_rounded,
-                  label: 'Profile',
-                ),
-              ],
-            );
-          },
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            if (showArrow)
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppConstants.textSecondaryColor,
+                size: 16,
+              ),
+          ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem({
-    required IconData icon,
-    required String label,
-    bool isSelected = false,
-  }) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppConstants.primaryColor.withOpacity(0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: isSelected
-                ? AppConstants.primaryColor
-                : AppConstants.textSecondaryColor,
-            size: 24,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: isSelected
-                ? AppConstants.primaryColor
-                : AppConstants.textSecondaryColor,
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            fontFamily: 'Poppins',
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFloatingNavItem() {
-    return Container(
-      height: 56,
-      width: 56,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: AppConstants.cardGradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppConstants.primaryColor.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: const Icon(
-        Icons.explore_rounded,
-        color: Colors.white,
-        size: 28,
       ),
     );
   }

@@ -1,17 +1,18 @@
 import 'package:fintech_bridge/screens/authentication/login_screen.dart';
 import 'package:fintech_bridge/screens/authentication/register_screen.dart';
+import 'package:fintech_bridge/screens/authentication/verification_screen.dart';
 import 'package:fintech_bridge/screens/splash_screen.dart';
 import 'package:fintech_bridge/services/auth_service.dart';
 import 'package:fintech_bridge/services/database_service.dart';
+import 'package:fintech_bridge/services/loan_service.dart';
+import 'package:fintech_bridge/services/payment_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'screens/authentication/verification_screen.dart';
 import 'package:fintech_bridge/screens/authentication/forgot_password_screen.dart';
 
-// main.dart
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +28,8 @@ void main() async {
         ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
         ChangeNotifierProvider<DatabaseService>(
             create: (_) => DatabaseService()),
+        ChangeNotifierProvider<LoanService>(create: (_) => LoanService()),
+        ChangeNotifierProvider<PaymentService>(create: (_) => PaymentService()),
       ],
       child: const MyApp(),
     ),

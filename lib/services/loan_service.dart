@@ -164,6 +164,8 @@ class LoanService extends ChangeNotifier {
           amount: loan.amount,
           type: 'DISBURSEMENT',
           createdAt: DateTime.now(),
+          status: 'COMPLETED',
+          description: 'Loan disbursement',
         );
         await _firestore.collection('transactions').add(transaction.toMap());
       }

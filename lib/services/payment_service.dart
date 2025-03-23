@@ -58,6 +58,8 @@ class PaymentService extends ChangeNotifier {
         amount: amount,
         type: 'REPAYMENT',
         createdAt: DateTime.now(),
+        status: 'COMPLETED',
+        description: 'Loan repayment',
       );
 
       final transactionRef =

@@ -6,6 +6,8 @@ class Transaction {
   final double amount;
   final String type; // DISBURSEMENT/REPAYMENT
   final DateTime createdAt;
+  final String status;
+  final String description;
 
   Transaction({
     required this.id,
@@ -13,6 +15,8 @@ class Transaction {
     required this.amount,
     required this.type,
     required this.createdAt,
+    required this.status,
+    required this.description,
   });
 
   factory Transaction.fromFirestore(DocumentSnapshot doc) {
@@ -23,6 +27,8 @@ class Transaction {
       amount: data['amount'].toDouble(),
       type: data['type'],
       createdAt: data['createdAt'].toDate(),
+      status: data['status'] ?? '',
+      description: data['description'] ?? '',
     );
   }
 
@@ -32,6 +38,8 @@ class Transaction {
       'amount': amount,
       'type': type,
       'createdAt': createdAt,
+      'status': status,
+      'description': description,
     };
   }
 
@@ -41,6 +49,8 @@ class Transaction {
     double? amount,
     String? type,
     DateTime? createdAt,
+    String? status,
+    String? description,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -48,6 +58,8 @@ class Transaction {
       amount: amount ?? this.amount,
       type: type ?? this.type,
       createdAt: createdAt ?? this.createdAt,
+      status: status ?? this.status,
+      description: description ?? this.description,
     );
   }
 }

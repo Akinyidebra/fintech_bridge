@@ -1,6 +1,6 @@
-import 'package:fintech_bridge/screens/admin_dashboard.dart';
-import 'package:fintech_bridge/screens/provider_dashboard.dart';
-import 'package:fintech_bridge/screens/student_dashboard.dart';
+import 'package:fintech_bridge/screens/admin/admin_dashboard.dart';
+import 'package:fintech_bridge/screens/provider/provider_dashboard.dart';
+import 'package:fintech_bridge/screens/student/student_dashboard.dart';
 import 'package:fintech_bridge/services/auth_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
