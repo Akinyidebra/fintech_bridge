@@ -1,3 +1,4 @@
+import 'package:fintech_bridge/utils/dummy_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -42,6 +43,35 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     super.dispose();
   }
 
+  // Dummy method to simulate future loading
+  Future<Map<String, dynamic>> _loadDummyData() async {
+    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+    return {'data': DummyData.transactions, 'status': 'success'};
+  }
+
+  List<dynamic> _filterTransactions(List<dynamic> transactions) {
+    return transactions.where((transaction) {
+      final matchesSearch = _searchQuery.isEmpty ||
+          transaction.description
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
+
+      return matchesSearch;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _getActiveLoans(List<dynamic> transactions) {
+    return DummyData.loans
+        .where((loan) => loan.status == 'APPROVED')
+        .map((loan) => {
+              'id': loan.id,
+              'purpose': loan.purpose,
+              'totalAmount': loan.amount,
+              'paidAmount': 1000, // Dummy paid amount
+            })
+        .toList();
+  }
+
   void _handleTabSelection() {
     if (_tabController.indexIsChanging) {
       setState(() {
@@ -69,18 +99,25 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 290,
             pinned: true,
             elevation: 0,
             backgroundColor: AppConstants.primaryColor,
+            leadingWidth: 70,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            title: Text(
+              'Financial Activities',
+              style: AppConstants.headlineMedium.copyWith(color: Colors.white),
+            ),
+            centerTitle: false,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding:
-                  const EdgeInsets.only(left: 20, bottom: 16, right: 20),
-              title: innerBoxIsScrolled
-                  ? const Text('Financial Activities',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold))
-                  : null,
+              collapseMode: CollapseMode.pin,
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -91,47 +128,18 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20.0, vertical: 16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Financial Activities',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                        const SizedBox(height: 60),
+                        Container(
+                          decoration: AppConstants.gradientContainerDecoration,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: _buildHorizontalStats(),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Track your loans and payment history',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 14,
-                          ),
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            _buildQuickStat(
-                              icon: Icons.account_balance_wallet,
-                              title: 'Total Loans',
-                              value: '3',
-                            ),
-                            const SizedBox(width: 16),
-                            _buildQuickStat(
-                              icon: Icons.payments_outlined,
-                              title: 'Total Payments',
-                              value: '12',
-                            ),
-                            const SizedBox(width: 16),
-                            _buildQuickStat(
-                              icon: Icons.savings_outlined,
-                              title: 'Total Amount',
-                              value: '\$25,000',
-                            ),
-                          ],
                         ),
                       ],
                     ),
@@ -141,23 +149,20 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.download_rounded, color: Colors.white),
-                onPressed: () => _generateStatement(context),
-                tooltip: 'Download Statement',
-              ),
-              IconButton(
-                icon:
-                    const Icon(Icons.filter_list_rounded, color: Colors.white),
+                icon: const Icon(Icons.filter_list_rounded,
+                    color: AppConstants.cardColor),
                 onPressed: () => _showFilterBottomSheet(context),
                 tooltip: 'Filter Transactions',
               ),
             ],
             bottom: TabBar(
               controller: _tabController,
-              indicatorColor: AppConstants.accentColor,
+              indicatorColor: AppConstants.cardColor,
               indicatorWeight: 3,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
+              indicatorSize: TabBarIndicatorSize.label,
+              labelStyle: AppConstants.titleMedium.copyWith(color: Colors.white),
+              unselectedLabelStyle: AppConstants.bodyMediumSecondary
+                  .copyWith(color: Colors.white.withOpacity(0.8)),
               tabs: const [
                 Tab(text: 'All'),
                 Tab(text: 'Loans'),
@@ -167,10 +172,11 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           ),
         ],
         body: FutureBuilder(
-          future: paymentService.getStudentTransactions(),
+          future: _loadDummyData(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator(
+                  color: AppConstants.primaryColor));
             }
 
             if (!snapshot.hasData || snapshot.data!['data'].isEmpty) {
@@ -178,21 +184,15 @@ class _TransactionsScreenState extends State<TransactionsScreen>
             }
 
             final transactions = snapshot.data!['data'];
-
-            // Filter transactions based on selected filter and search query
             _filteredTransactions = _filterTransactions(transactions);
-
-            // Get active loans
             final activeLoans = _getActiveLoans(transactions);
 
-            // Get specific loan if loanId is provided
             if (widget.loanId != null && _selectedLoan == null) {
               _selectedLoan = activeLoans.firstWhere(
-                (loan) => loan['id'] == widget.loanId,
+                    (loan) => loan['id'] == widget.loanId,
                 orElse: () => activeLoans.isNotEmpty
                     ? activeLoans.first
-                    : throw Exception(
-                        'No loans found'), // Handle empty case properly
+                    : throw Exception('No loans found'),
               );
             } else if (_selectedLoan == null && activeLoans.isNotEmpty) {
               _selectedLoan = activeLoans.first;
@@ -202,7 +202,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
               children: [
                 if (_isShowingDateRangePicker) _buildDateRangePicker(),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: TextField(
                     controller: _searchController,
                     decoration: AppConstants.inputDecoration(
@@ -210,14 +210,14 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                       prefixIcon: Icons.search,
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                setState(() {
-                                  _searchController.clear();
-                                  _searchQuery = '';
-                                });
-                              },
-                            )
+                        icon: const Icon(Icons.clear, color: AppConstants.textSecondaryColor),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
                           : null,
                     ),
                     onChanged: (value) {
@@ -227,102 +227,15 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                     },
                   ),
                 ),
-                if (_selectedLoan != null) ...[
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _buildActiveLoanCard(_selectedLoan!),
-                  ),
-                ],
-                if (activeLoans.length > 1) ...[
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    height: 110,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: activeLoans.length,
-                      itemBuilder: (context, index) {
-                        final loan = activeLoans[index];
-                        final isSelected = _selectedLoan != null &&
-                            loan['id'] == _selectedLoan!['id'];
-
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedLoan = loan;
-                            });
-                          },
-                          child: Container(
-                            width: 200,
-                            margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppConstants.primaryLightColor
-                                  : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppConstants.primaryColor
-                                    : AppConstants.borderColor,
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  loan['purpose'],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : AppConstants.textColor,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '\$${loan['totalAmount']}',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : AppConstants.primaryColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                LinearProgressIndicator(
-                                  value:
-                                      loan['paidAmount'] / loan['totalAmount'],
-                                  backgroundColor: isSelected
-                                      ? Colors.white.withOpacity(0.3)
-                                      : AppConstants.backgroundSecondaryColor,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppConstants.accentColor,
-                                  minHeight: 6,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
                 Expanded(
-                  child:
-                      _filteredTransactions.isEmpty && _searchQuery.isNotEmpty
-                          ? _buildNoResultsFound()
-                          : _filteredTransactions.isEmpty
-                              ? _buildEmptyTabContent()
-                              : _buildTransactionsList(_filteredTransactions),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _filteredTransactions.isEmpty && _searchQuery.isNotEmpty
+                        ? _buildNoResultsFound()
+                        : _filteredTransactions.isEmpty
+                        ? _buildEmptyTabContent()
+                        : _buildTransactionsList(_filteredTransactions),
+                  ),
                 ),
               ],
             );
@@ -332,207 +245,41 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _generateStatement(context),
         backgroundColor: AppConstants.accentColor,
-        icon: const Icon(Icons.download_rounded),
-        label: const Text('Statement'),
+        icon: const Icon(Icons.download_rounded, color: AppConstants.cardColor),
+        label: Text('Statement',
+            style: AppConstants.titleMedium.copyWith(color: AppConstants.cardColor)),
       ),
     );
   }
 
-  Widget _buildActiveLoanCard(Map<String, dynamic> loan) {
-    final double paidPercentage = (loan['paidAmount'] / loan['totalAmount']);
-    final daysLeft = loan['dueDate'].difference(DateTime.now()).inDays;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppConstants.gradientContainerDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    loan['purpose'],
-                    style: AppConstants.bodyLarge.copyWith(color: Colors.white),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      loan['status'].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 50,
-                width: 50,
-                child: Stack(
-                  children: [
-                    CircularProgressIndicator(
-                      value: paidPercentage,
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      color: AppConstants.accentColor,
-                      strokeWidth: 6,
-                    ),
-                    Center(
-                      child: Text(
-                        '${(paidPercentage * 100).toStringAsFixed(0)}%',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+  Widget _buildHorizontalStats() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: _buildQuickStat(
+            icon: Icons.account_balance_wallet,
+            title: 'Total Loans',
+            value: '10',
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Total Amount',
-                      style: TextStyle(
-                          color: Colors.white.withOpacity(0.7), fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '\$${loan['totalAmount']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Paid Amount',
-                      style: TextStyle(
-                          color: Colors.white.withOpacity(0.7), fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '\$${loan['paidAmount']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Days Left',
-                      style: TextStyle(
-                          color: Colors.white.withOpacity(0.7), fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$daysLeft days',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickStat(
+            icon: Icons.payments_outlined,
+            title: 'Total Payments',
+            value: '10',
           ),
-          const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: paidPercentage,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            color: AppConstants.accentColor,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(10),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildQuickStat(
+            icon: Icons.savings_outlined,
+            title: 'Total Amount',
+            value: '\$85,000',
           ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Disbursed: ${DateFormat('MMM dd, yyyy').format(loan['disbursementDate'])}',
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.7), fontSize: 12),
-              ),
-              Text(
-                'Due: ${DateFormat('MMM dd, yyyy').format(loan['dueDate'])}',
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.7), fontSize: 12),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showLoanDetails(loan),
-                  icon: const Icon(Icons.visibility_outlined,
-                      color: Colors.white),
-                  label: const Text('View Details'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _makePayment(loan),
-                  icon: const Icon(Icons.payments_outlined),
-                  label: const Text('Make Payment'),
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: AppConstants.primaryColor,
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -541,36 +288,29 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     required String title,
     required String value,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Colors.white, size: 20),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppConstants.cardColor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppConstants.cardColor, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: AppConstants.headlineSmall.copyWith(color: AppConstants.cardColor),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: AppConstants.bodySmallSecondary.copyWith(
+              color: AppConstants.cardColor.withOpacity(0.8),
             ),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -695,7 +435,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            transaction.status.toUpperCase(),
+                            (transaction.status ?? 'pending').toUpperCase(),
                             style: TextStyle(
                               color: statusColors[
                                   transaction.status.toLowerCase()],
@@ -714,7 +454,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'ID: #${transaction.id.substring(0, 8)}',
+                      'ID: #${transaction.id.isNotEmpty ? transaction.id.substring(0, transaction.id.length >= 8 ? 8 : transaction.id.length) : 'N/A'}',
                       style: AppConstants.bodySmallSecondary,
                     ),
                     Row(
@@ -1250,88 +990,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
-  List<dynamic> _filterTransactions(List<dynamic> transactions) {
-    // Filter by transaction type
-    List<dynamic> filtered = [];
-
-    if (_selectedFilter == 'all') {
-      filtered = List.from(transactions);
-    } else if (_selectedFilter == 'loans') {
-      filtered = transactions
-          .where((t) => t.type == 'LOAN' || t.type == 'DISBURSEMENT')
-          .toList();
-    } else if (_selectedFilter == 'payments') {
-      filtered = transactions.where((t) => t.type == 'PAYMENT').toList();
-    } else if (_selectedFilter == 'disbursements') {
-      filtered = transactions.where((t) => t.type == 'DISBURSEMENT').toList();
-    } else if (_selectedFilter == 'applications') {
-      filtered = transactions.where((t) => t.type == 'APPLICATION').toList();
-    }
-
-    // Filter by date range
-    if (_startDate != null && _endDate != null) {
-      filtered = filtered.where((t) {
-        final transactionDate = t.createdAt;
-        return transactionDate.isAfter(_startDate!) &&
-            transactionDate.isBefore(_endDate!.add(const Duration(days: 1)));
-      }).toList();
-    }
-
-    // Filter by search query
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((t) {
-        return t.description.toLowerCase().contains(query) ||
-            t.type.toLowerCase().contains(query) ||
-            t.status.toLowerCase().contains(query) ||
-            t.id.toLowerCase().contains(query);
-      }).toList();
-    }
-
-    // Sort by date (newest first)
-    filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    return filtered;
-  }
-
-  List<Map<String, dynamic>> _getActiveLoans(List<dynamic> transactions) {
-    final loans = <Map<String, dynamic>>[];
-
-    // This would typically come from an API call
-    // For now, using mock data
-    loans.add({
-      'id': 'loan-001',
-      'purpose': 'Tuition Fee',
-      'totalAmount': 10000,
-      'paidAmount': 3500,
-      'status': 'active',
-      'disbursementDate': DateTime.now().subtract(const Duration(days: 60)),
-      'dueDate': DateTime.now().add(const Duration(days: 120)),
-    });
-
-    loans.add({
-      'id': 'loan-002',
-      'purpose': 'Housing',
-      'totalAmount': 8000,
-      'paidAmount': 2000,
-      'status': 'active',
-      'disbursementDate': DateTime.now().subtract(const Duration(days: 90)),
-      'dueDate': DateTime.now().add(const Duration(days: 90)),
-    });
-
-    loans.add({
-      'id': 'loan-003',
-      'purpose': 'Books & Supplies',
-      'totalAmount': 2500,
-      'paidAmount': 500,
-      'status': 'active',
-      'disbursementDate': DateTime.now().subtract(const Duration(days: 30)),
-      'dueDate': DateTime.now().add(const Duration(days: 150)),
-    });
-
-    return loans;
-  }
-
   void _showTransactionDetails(Transaction transaction) {
     showModalBottomSheet(
       context: context,
@@ -1463,59 +1121,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 'Time', DateFormat('hh:mm a').format(transaction.createdAt)),
             _buildDetailItem('Payment Method', 'Bank Transfer'),
             const Divider(height: 32),
-            const Text(
-              'Related Loan',
-              style: AppConstants.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppConstants.borderColor),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppConstants.primaryLightColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_outlined,
-                      color: AppConstants.primaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tuition Fee Loan',
-                          style: AppConstants.titleMedium,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Loan ID: loan-001',
-                          style: AppConstants.bodySmallSecondary,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  TextButton(
-                    onPressed: () {},
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppConstants.primaryColor,
-                    ),
-                    child: const Text('View'),
-                  ),
-                ],
-              ),
-            ),
-            const Spacer(),
             Row(
               children: [
                 Expanded(
@@ -1567,14 +1172,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
         ],
       ),
     );
-  }
-
-  void _showLoanDetails(Map<String, dynamic> loan) {
-    // Navigate to loan details screen
-  }
-
-  void _makePayment(Map<String, dynamic> loan) {
-    // Navigate to payment screen
   }
 
   void _generateStatement(BuildContext context) {

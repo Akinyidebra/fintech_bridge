@@ -1,0 +1,2 @@
+/home/artkins/mobile_programming/fintech_bridge/android/app/.cxx/Debug/146g2b33/x86_64/CMakeFiles/edit_cache.dir
+/home/artkins/mobile_programming/fintech_bridge/android/app/.cxx/Debug/146g2b33/x86_64/CMakeFiles/rebuild_cache.dir

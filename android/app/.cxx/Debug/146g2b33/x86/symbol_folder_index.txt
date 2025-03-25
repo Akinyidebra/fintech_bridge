@@ -1,0 +1,1 @@
+/home/artkins/mobile_programming/fintech_bridge/build/app/intermediates/cxx/Debug/146g2b33/obj/x86
