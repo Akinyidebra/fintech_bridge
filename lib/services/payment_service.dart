@@ -256,4 +256,6 @@ class PaymentService extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
+  getLoanTransactions(String id) {}
 }
