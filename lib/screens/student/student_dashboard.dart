@@ -1,10 +1,16 @@
+import 'package:fintech_bridge/models/loan_model.dart';
+import 'package:fintech_bridge/models/transaction_model.dart';
 import 'package:fintech_bridge/screens/student/loan_application_screen.dart';
 import 'package:fintech_bridge/screens/student/loan_details_screen.dart';
 import 'package:fintech_bridge/screens/student/my_loans_screen.dart';
 import 'package:fintech_bridge/screens/student/profile_screen.dart';
 import 'package:fintech_bridge/screens/student/transaction_screen.dart';
+import 'package:fintech_bridge/services/loan_service.dart';
+import 'package:fintech_bridge/services/payment_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -15,15 +21,20 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   int _currentIndex = 0;
+  late List<Widget> _screens;
 
-  final List<Widget> _screens = [
-    const DashboardContent(),
-    const LoanApplicationScreen(
-      loanType: '',
-    ),
-    const MyLoansScreen(),
-    const ProfileScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const DashboardContent(),
+      const LoanApplicationScreen(
+        loanType: '',
+      ),
+      const MyLoansScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,8 +143,31 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 }
 
-class DashboardContent extends StatelessWidget {
+class DashboardContent extends StatefulWidget {
   const DashboardContent({super.key});
+
+  @override
+  State<DashboardContent> createState() => _DashboardContentState();
+}
+
+class _DashboardContentState extends State<DashboardContent> {
+  late Future<Map<String, dynamic>> _loansFuture;
+  late Future<Map<String, dynamic>> _transactionsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshData();
+  }
+
+  void _refreshData() {
+    setState(() {
+      _loansFuture =
+          Provider.of<LoanService>(context, listen: false).getStudentLoans();
+      _transactionsFuture = Provider.of<PaymentService>(context, listen: false)
+          .getStudentTransactions();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,22 +176,27 @@ class DashboardContent extends StatelessWidget {
         children: [
           _buildHeader(context),
           Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildWelcomeCard(context),
-                    const SizedBox(height: 24),
-                    _buildFinancialOverview(context),
-                    const SizedBox(height: 24),
-                    _buildRecommendedLoans(context),
-                    const SizedBox(height: 24),
-                    _buildRecentActivity(context),
-                    const SizedBox(height: 20),
-                  ],
+            child: RefreshIndicator(
+              onRefresh: () async {
+                _refreshData();
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWelcomeCard(context),
+                      const SizedBox(height: 24),
+                      _buildFinancialOverview(context),
+                      const SizedBox(height: 24),
+                      _buildRecommendedLoans(context),
+                      const SizedBox(height: 24),
+                      _buildRecentActivity(context),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -185,7 +224,6 @@ class DashboardContent extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Replace Flexible with SizedBox to ensure logo has fixed dimensions
               SizedBox(
                 height: 32,
                 child: Image.asset(
@@ -216,26 +254,22 @@ class DashboardContent extends StatelessWidget {
               ),
             ],
           ),
-          Row(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: AppConstants.primaryColor,
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const ClipRRect(
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  child: CircleAvatar(
-                    radius: 14,
-                    backgroundImage:
-                        NetworkImage('https://i.pravatar.cc/150?img=5'),
-                  ),
-                ),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: AppConstants.primaryColor,
+                width: 2,
               ),
-            ],
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+              child: CircleAvatar(
+                radius: 14,
+                backgroundImage:
+                    NetworkImage('https://i.pravatar.cc/150?img=5'),
+              ),
+            ),
           ),
         ],
       ),
@@ -388,42 +422,63 @@ class DashboardContent extends StatelessWidget {
   }
 
   Widget _buildFinancialOverview(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 4.0, bottom: 16.0),
-          child: Text(
-            'Financial Summary',
-            style: AppConstants.headlineSmall,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        Row(
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _loansFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingIndicator();
+        }
+
+        if (snapshot.hasError) {
+          return _buildErrorCard('Error: ${snapshot.error}');
+        }
+
+        if (!snapshot.hasData || !(snapshot.data?['success'] ?? false)) {
+          return _buildErrorCard('Failed to load financial data');
+        }
+
+        final loans = snapshot.data!['data'] as List<Loan>;
+        final activeLoans =
+            loans.where((loan) => loan.status == 'APPROVED').length;
+        final nextPayment = loans.isNotEmpty ? loans.first.amount * 0.1 : 0;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _buildSummaryCard(
-                title: 'Next Payment',
-                amount: '\$350',
-                subtitle: 'Due Mar 15',
-                icon: Icons.calendar_today_rounded,
-                color: AppConstants.accentColor,
+            const Padding(
+              padding: EdgeInsets.only(left: 4.0, bottom: 16.0),
+              child: Text(
+                'Financial Summary',
+                style: AppConstants.headlineSmall,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildSummaryCard(
-                title: 'Total Loans',
-                amount: '2',
-                subtitle: 'Active Loans',
-                icon: Icons.account_balance_rounded,
-                color: AppConstants.secondaryColor,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard(
+                    title: 'Next Payment',
+                    amount: '\$${nextPayment.toStringAsFixed(2)}',
+                    subtitle:
+                        'Due ${DateFormat('MMM dd').format(DateTime.now().add(const Duration(days: 30)))}',
+                    icon: Icons.calendar_today_rounded,
+                    color: AppConstants.accentColor,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildSummaryCard(
+                    title: 'Total Loans',
+                    amount: activeLoans.toString(),
+                    subtitle: 'Active Loans',
+                    icon: Icons.account_balance_rounded,
+                    color: AppConstants.secondaryColor,
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -703,60 +758,88 @@ class DashboardContent extends StatelessWidget {
   }
 
   Widget _buildRecentActivity(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _transactionsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingIndicator();
+        }
+
+        if (snapshot.hasError) {
+          return _buildErrorCard('Error: ${snapshot.error}');
+        }
+
+        if (!snapshot.hasData || !(snapshot.data?['success'] ?? false)) {
+          return _buildErrorCard('Failed to load recent activity');
+        }
+
+        final transactions = snapshot.data!['data'] as List<Transaction>;
+        if (transactions.isEmpty) {
+          return _buildEmptySection('No recent transactions found');
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(left: 4.0),
-                child: Text(
-                  'Recent Activity',
-                  style: AppConstants.headlineSmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 4.0),
+                    child: Text(
+                      'Recent Activity',
+                      style: AppConstants.headlineSmall,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
+            const SizedBox(height: 14),
+            ...transactions.take(3).map((transaction) => _buildActivityItem(
+                  context: context,
+                  icon: _getTransactionIcon(transaction.type),
+                  iconColor: _getTransactionColor(transaction.type),
+                  title: transaction.description,
+                  date:
+                      DateFormat('MMM dd, yyyy').format(transaction.createdAt),
+                  amount: '\$${transaction.amount.toStringAsFixed(2)}',
+                  loanId: transaction.loanId,
+                )),
           ],
-        ),
-        const SizedBox(height: 14),
-        _buildActivityItem(
-          context: context,
-          icon: Icons.check_circle_rounded,
-          iconColor: AppConstants.successColor,
-          title: 'Payment Successful',
-          date: 'Feb 15, 2024',
-          amount: '\$350',
-          backgroundColor: AppConstants.successColor.withOpacity(0.05),
-          loanId: 'L1001',
-        ),
-        const SizedBox(height: 12),
-        _buildActivityItem(
-          context: context,
-          icon: Icons.description_rounded,
-          iconColor: AppConstants.primaryColor,
-          title: 'Statement Available',
-          date: 'Feb 1, 2024',
-          showArrow: true,
-          backgroundColor: AppConstants.primaryColor.withOpacity(0.05),
-          loanId: 'L1002',
-        ),
-        const SizedBox(height: 12),
-        _buildActivityItem(
-          context: context,
-          icon: Icons.notifications_rounded,
-          iconColor: AppConstants.accentColor,
-          title: 'Loan Approved',
-          date: 'Jan 22, 2024',
-          showArrow: true,
-          backgroundColor: AppConstants.accentColor.withOpacity(0.05),
-          loanId: 'L1003',
-        ),
-      ],
+        );
+      },
     );
+  }
+
+  IconData _getTransactionIcon(String type) {
+    switch (type.toUpperCase()) {
+      case 'PAYMENT':
+        return Icons.payment;
+      case 'DISBURSEMENT':
+        return Icons.account_balance_wallet;
+      case 'FEE':
+        return Icons.receipt;
+      case 'REFUND':
+        return Icons.undo;
+      default:
+        return Icons.swap_horiz;
+    }
+  }
+
+  Color _getTransactionColor(String type) {
+    switch (type.toUpperCase()) {
+      case 'PAYMENT':
+        return AppConstants.successColor;
+      case 'DISBURSEMENT':
+        return AppConstants.primaryColor;
+      case 'FEE':
+        return AppConstants.warningColor;
+      case 'REFUND':
+        return AppConstants.accentColor;
+      default:
+        return AppConstants.secondaryColor;
+    }
   }
 
   Widget _buildActivityItem({
@@ -782,6 +865,7 @@ class DashboardContent extends StatelessWidget {
         }
       },
       child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: backgroundColor ?? Colors.white,
@@ -853,6 +937,60 @@ class DashboardContent extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  // Helper methods
+  Widget _buildLoadingIndicator() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 30),
+      child: Center(
+        child: CircularProgressIndicator(color: AppConstants.primaryColor),
+      ),
+    );
+  }
+
+  Widget _buildErrorCard(String message) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppConstants.errorColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: AppConstants.errorColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppConstants.errorColor,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptySection(String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 30),
+      child: Column(
+        children: [
+          const Icon(Icons.info_outline,
+              size: 48, color: AppConstants.textSecondaryColor),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: AppConstants.bodyMediumSecondary,
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

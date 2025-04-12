@@ -172,31 +172,22 @@ class _TransactionsScreenState extends State<TransactionsScreen>
           ),
         ],
         body: FutureBuilder(
-          future: _loadDummyData(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(
-                  color: AppConstants.primaryColor));
-            }
+  future: Provider.of<PaymentService>(context).getStudentTransactions(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-            if (!snapshot.hasData || snapshot.data!['data'].isEmpty) {
-              return _buildEmptyState();
-            }
+    if (!snapshot.hasData || !snapshot.data!['success']) {
+      return _buildErrorState('Failed to load transactions');
+    }
 
-            final transactions = snapshot.data!['data'];
-            _filteredTransactions = _filterTransactions(transactions);
-            final activeLoans = _getActiveLoans(transactions);
+    final transactions = snapshot.data!['data'] as List<Transaction>;
+    _filteredTransactions = _filterTransactions(transactions);
 
-            if (widget.loanId != null && _selectedLoan == null) {
-              _selectedLoan = activeLoans.firstWhere(
-                    (loan) => loan['id'] == widget.loanId,
-                orElse: () => activeLoans.isNotEmpty
-                    ? activeLoans.first
-                    : throw Exception('No loans found'),
-              );
-            } else if (_selectedLoan == null && activeLoans.isNotEmpty) {
-              _selectedLoan = activeLoans.first;
-            }
+    if (_filteredTransactions.isEmpty) {
+      return _buildEmptyTabContent();
+    }
 
             return Column(
               children: [
@@ -228,15 +219,8 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                   ),
                 ),
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _filteredTransactions.isEmpty && _searchQuery.isNotEmpty
-                        ? _buildNoResultsFound()
-                        : _filteredTransactions.isEmpty
-                        ? _buildEmptyTabContent()
-                        : _buildTransactionsList(_filteredTransactions),
-                  ),
-                ),
+          child: _buildTransactionsList(_filteredTransactions),
+        ),
               ],
             );
           },
@@ -251,6 +235,24 @@ class _TransactionsScreenState extends State<TransactionsScreen>
       ),
     );
   }
+
+  Widget _buildErrorState(String message) {
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.error_outline, size: 48, color: Colors.red),
+        const SizedBox(height: 16),
+        Text(message),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          onPressed: () => setState(() {}),
+          child: const Text('Retry'),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildHorizontalStats() {
     return Row(

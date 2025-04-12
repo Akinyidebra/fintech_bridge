@@ -239,7 +239,7 @@ class _SplashScreenState extends State<SplashScreen>
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(15),
                       ),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(16),
                       child: const CircularProgressIndicator(
                         color: Colors.white,
                         strokeWidth: 3,
