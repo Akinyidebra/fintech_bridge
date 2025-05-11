@@ -20,7 +20,6 @@ class PaymentService extends ChangeNotifier {
 
   Future<Map<String, dynamic>> makeRepayment({
     required String loanId,
-    required double amount,
   }) async {
     _setLoading(true);
     try {
@@ -52,15 +51,23 @@ class PaymentService extends ChangeNotifier {
         };
       }
 
+      // Create repayment transaction
       final transaction = tm.Transaction(
         id: '',
         loanId: loanId,
-        amount: amount,
+        amount: loan.monthlyPayment,
         type: 'REPAYMENT',
         createdAt: DateTime.now(),
         status: 'COMPLETED',
         description: 'Loan repayment',
       );
+
+      // Update loan status
+      await _firestore.collection('loans').doc(loanId).update({
+        'remainingBalance': loan.remainingBalance - loan.monthlyPayment,
+        'nextDueDate': loan.nextDueDate.add(const Duration(days: 30)),
+        'updatedAt': DateTime.now(),
+      });
 
       final transactionRef =
           await _firestore.collection('transactions').add(transaction.toMap());
@@ -94,6 +101,9 @@ class PaymentService extends ChangeNotifier {
         'remainingAmount': (loan.amount - totalRepaid).clamp(0, double.infinity)
       };
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Payment processing failed. Please check your connection.'
@@ -141,6 +151,9 @@ class PaymentService extends ChangeNotifier {
 
       return {'success': true, 'data': allTransactions};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to retrieve payment history'
@@ -184,7 +197,9 @@ class PaymentService extends ChangeNotifier {
           .get();
 
       final totalRepaid = transactionDocs.docs.fold(
-          0.0, (accumulated, doc) => accumulated + tm.Transaction.fromFirestore(doc).amount);
+          0.0,
+          (accumulated, doc) =>
+              accumulated + tm.Transaction.fromFirestore(doc).amount);
       final remainingBalance =
           (loan.amount - totalRepaid).clamp(0, loan.amount);
 
@@ -198,6 +213,9 @@ class PaymentService extends ChangeNotifier {
         }
       };
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to calculate balance. Please try again.'
@@ -248,6 +266,9 @@ class PaymentService extends ChangeNotifier {
 
       return {'success': true, 'data': transaction};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to retrieve transaction details'

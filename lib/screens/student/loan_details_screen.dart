@@ -18,7 +18,6 @@ class LoanDetailsScreen extends StatefulWidget {
 }
 
 class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
-  double _paymentAmount = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -72,13 +71,13 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
   }
 
   Widget _buildLoadingState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(color: AppConstants.primaryColor),
-          const SizedBox(height: 20),
-          const Text('Loading loan details...'),
+          SizedBox(height: 20),
+          Text('Loading loan details...'),
         ],
       ),
     );
@@ -635,10 +634,10 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
         color: AppConstants.backgroundSecondaryColor,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: const Row(
         children: [
           Icon(Icons.info_outline, color: AppConstants.textSecondaryColor),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Text('No payment history available', style: AppConstants.bodyMedium),
         ],
       ),
@@ -754,7 +753,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
                   setState(() {
-                    _paymentAmount = double.tryParse(value) ?? 0.0;
                   });
                 },
                 decoration: InputDecoration(
@@ -872,7 +870,6 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
     final paymentService = Provider.of<PaymentService>(context, listen: false);
     final result = await paymentService.makeRepayment(
       loanId: widget.loanId,
-      amount: _paymentAmount,
     );
 
     if (result['success']) {

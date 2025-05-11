@@ -35,6 +35,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': students};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve students data'};
     } finally {
       _setLoading(false);
@@ -54,6 +57,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': providers};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve providers data'};
     } finally {
       _setLoading(false);
@@ -73,6 +79,9 @@ class DatabaseService extends ChangeNotifier {
         return {'success': false, 'message': 'Student not found'};
       }
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve student data'};
     } finally {
       _setLoading(false);
@@ -92,6 +101,9 @@ class DatabaseService extends ChangeNotifier {
         return {'success': false, 'message': 'Provider not found'};
       }
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve provider data'};
     } finally {
       _setLoading(false);
@@ -111,6 +123,9 @@ class DatabaseService extends ChangeNotifier {
         return {'success': false, 'message': 'Admin not found'};
       }
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve admin data'};
     } finally {
       _setLoading(false);
@@ -165,6 +180,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': false, 'message': 'User profile not found'};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve user profile'};
     } finally {
       _setLoading(false);
@@ -207,6 +225,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': pendingStudents};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to retrieve pending student verifications'
@@ -252,6 +273,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': pendingProviders};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to retrieve pending providers'
@@ -301,6 +325,9 @@ class DatabaseService extends ChangeNotifier {
         'message': 'Student account verified successfully'
       };
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to verify student account'};
     } finally {
       _setLoading(false);
@@ -351,6 +378,9 @@ class DatabaseService extends ChangeNotifier {
             isApproved ? 'Provider approved successfully' : 'Provider rejected'
       };
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to update provider status'};
     } finally {
       _setLoading(false);
@@ -374,6 +404,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': providers};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to retrieve verified providers'
@@ -401,6 +434,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': providers};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve providers data'};
     } finally {
       _setLoading(false);
@@ -425,6 +461,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': providers};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve providers data'};
     } finally {
       _setLoading(false);
@@ -474,6 +513,9 @@ class DatabaseService extends ChangeNotifier {
         'data': updatedStudent
       };
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to update profile'};
     } finally {
       _setLoading(false);
@@ -523,6 +565,9 @@ class DatabaseService extends ChangeNotifier {
         'data': updatedProvider
       };
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to update profile'};
     } finally {
       _setLoading(false);
@@ -549,6 +594,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': loanTypes.toList()};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve loan types'};
     } finally {
       _setLoading(false);
@@ -602,6 +650,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': statistics};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to retrieve provider statistics'
@@ -651,6 +702,9 @@ class DatabaseService extends ChangeNotifier {
 
       return {'success': true, 'data': statistics};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to retrieve student statistics'
