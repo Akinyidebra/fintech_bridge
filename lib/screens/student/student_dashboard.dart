@@ -1,13 +1,18 @@
+import 'dart:convert';
 import 'package:fintech_bridge/models/loan_model.dart';
+import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/models/transaction_model.dart';
+import 'package:fintech_bridge/models/provider_model.dart' as model;
 import 'package:fintech_bridge/screens/student/loan_application_screen.dart';
 import 'package:fintech_bridge/screens/student/loan_details_screen.dart';
 import 'package:fintech_bridge/screens/student/my_loans_screen.dart';
 import 'package:fintech_bridge/screens/student/profile_screen.dart';
 import 'package:fintech_bridge/screens/student/transaction_screen.dart';
+import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/services/loan_service.dart';
 import 'package:fintech_bridge/services/payment_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -28,9 +33,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     super.initState();
     _screens = [
       const DashboardContent(),
-      const LoanApplicationScreen(
-        loanType: '',
-      ),
+      const LoanApplicationScreen(loanType: ''),
       const MyLoansScreen(),
       const ProfileScreen(),
     ];
@@ -153,6 +156,8 @@ class DashboardContent extends StatefulWidget {
 class _DashboardContentState extends State<DashboardContent> {
   late Future<Map<String, dynamic>> _loansFuture;
   late Future<Map<String, dynamic>> _transactionsFuture;
+  late Future<Map<String, dynamic>> _userProfileFuture;
+  late Future<double> _totalBalanceFuture;
 
   @override
   void initState() {
@@ -161,12 +166,46 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 
   void _refreshData() {
+    final loanService = Provider.of<LoanService>(context, listen: false);
+    final paymentService = Provider.of<PaymentService>(context, listen: false);
+    final dbService = Provider.of<DatabaseService>(context, listen: false);
+
     setState(() {
-      _loansFuture =
-          Provider.of<LoanService>(context, listen: false).getStudentLoans();
-      _transactionsFuture = Provider.of<PaymentService>(context, listen: false)
-          .getStudentTransactions();
+      _userProfileFuture = dbService.getCurrentUserProfile();
+      _loansFuture = loanService.getStudentLoans();
+      _transactionsFuture = paymentService.getStudentTransactions();
+      _totalBalanceFuture = _calculateTotalBalance(loanService, paymentService);
     });
+  }
+
+  Future<double> _calculateTotalBalance(
+      LoanService loanService, PaymentService paymentService) async {
+    try {
+      final loansResult = await loanService.getStudentLoans();
+      if (!loansResult['success'] || loansResult['data'] is! List<Loan>) {
+        return 0.0;
+      }
+
+      double total = 0.0;
+      final approvedLoans = (loansResult['data'] as List<Loan>)
+          .where((l) => l.status == 'APPROVED');
+
+      for (Loan loan in approvedLoans) {
+        try {
+          final balanceResult =
+              await paymentService.getRemainingBalance(loan.id);
+          if (balanceResult['success']) {
+            total += balanceResult['data']['remainingBalance'];
+          }
+        } catch (e) {
+          print('Error fetching balance for loan ${loan.id}: $e');
+        }
+      }
+      return total;
+    } catch (e) {
+      print('Total balance calculation error: $e');
+      return 0.0;
+    }
   }
 
   @override
@@ -177,9 +216,7 @@ class _DashboardContentState extends State<DashboardContent> {
           _buildHeader(context),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: () async {
-                _refreshData();
-              },
+              onRefresh: () async => _refreshData(),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 child: Padding(
@@ -207,217 +244,292 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                height: 32,
-                child: Image.asset(
-                  'assets/icons/logo.png',
-                  fit: BoxFit.contain,
-                ),
-              ),
-              const SizedBox(width: 12),
-              RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'Fin',
-                      style: AppConstants.titleLarge.copyWith(
-                        color: AppConstants.primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    TextSpan(
-                      text: 'Tech Bridge',
-                      style: AppConstants.titleLarge.copyWith(
-                        color: AppConstants.accentColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _userProfileFuture,
+      builder: (context, snapshot) {
+        String profileImage = '';
+        if (snapshot.hasData && snapshot.data!['success']) {
+          final student = snapshot.data!['data'] as Student;
+          profileImage = student.profileImage ?? '';
+        } else if (snapshot.connectionState == ConnectionState.waiting) {
+          // Don't change profileImage during loading, maintain previous state
+        } else {
+          // Error or no data - use default empty string
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: AppConstants.primaryColor,
-                width: 2,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    height: 32,
+                    child: Image.asset(
+                      'assets/icons/logo.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'Fin',
+                          style: AppConstants.titleLarge.copyWith(
+                            color: AppConstants.primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'Tech Bridge',
+                          style: AppConstants.titleLarge.copyWith(
+                            color: AppConstants.accentColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const ClipRRect(
-              borderRadius: BorderRadius.all(Radius.circular(12)),
-              child: CircleAvatar(
-                radius: 14,
-                backgroundImage:
-                    NetworkImage('https://i.pravatar.cc/150?img=5'),
-              ),
-            ),
+              _buildProfileAvatar(profileImage),
+            ],
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildProfileAvatar(String imageUrl) {
+    if (imageUrl.isEmpty) {
+      return _buildDefaultAvatar();
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: AppConstants.primaryColor, width: 2),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: imageUrl.isNotEmpty
+            ? _buildCachedBase64Image(imageUrl)
+            : _buildDefaultAvatar(),
       ),
     );
   }
 
+  Widget _buildCachedBase64Image(String data) {
+    try {
+      // Handle data URI scheme (e.g., "data:image/png;base64,iVBOR...")
+      final base64Data = data.contains('base64,') ? data.split(',').last : data;
+
+      final bytes = base64Decode(base64Data);
+      return Image.memory(
+        bytes,
+        width: 28,
+        height: 28,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildDefaultAvatar(),
+        gaplessPlayback: true, // Prevents blinking during image loading
+      );
+    } catch (e) {
+      return _buildDefaultAvatar();
+    }
+  }
+
+  Widget _buildDefaultAvatar() {
+    return const CircleAvatar(
+      radius: 14,
+      backgroundColor: AppConstants.backgroundSecondaryColor,
+      child: Icon(Icons.person, color: AppConstants.textSecondaryColor),
+    );
+  }
+
   Widget _buildWelcomeCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(top: 20),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: AppConstants.cardGradient,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppConstants.primaryColor.withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _userProfileFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingIndicator();
+        }
+
+        if (!snapshot.hasData || !snapshot.data!['success']) {
+          return _buildErrorCard('Failed to load profile data');
+        }
+
+        final student = snapshot.data!['data'] as Student;
+        final role = snapshot.data!['role'];
+
+        return Container(
+          margin: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: AppConstants.cardGradient,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppConstants.primaryColor.withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Flexible(
-                child: Text(
-                  'Hello, Opiyo Don Paul Onyimbo!',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Poppins',
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Hello, ${student.fullName}!',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Poppins',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  _buildRoleBadge(role),
+                ],
+              ),
+              Text(
+                'ID: ${student.studentId}',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                  fontFamily: 'Poppins',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 20),
+              _buildBalanceSection(context, student),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRoleBadge(String role) {
+    return Container(
+      margin: const EdgeInsets.only(left: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        role.toUpperCase(),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Poppins',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBalanceSection(BuildContext context, Student student) {
+    return FutureBuilder<double>(
+      future: _totalBalanceFuture,
+      builder: (context, snapshot) {
+        final totalBalance = snapshot.hasData ? snapshot.data! : 0.0;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Balance',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                        fontFamily: 'Poppins',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '\$${totalBalance.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const TransactionsScreen(),
+                  ),
                 ),
-                child: const Text(
-                  'Student',
-                  style: TextStyle(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
                     color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'Poppins',
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    'View Details',
+                    style: TextStyle(
+                      color: AppConstants.primaryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Poppins',
+                    ),
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            'ID: 20245ST1234',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
-              fontFamily: 'Poppins',
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Total Balance',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
-                          fontFamily: 'Poppins',
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      const Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              '\$24,500',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Poppins',
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const TransactionsScreen(),
-                    ),
-                  ),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      'View Details',
-                      style: TextStyle(
-                        color: AppConstants.primaryColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -430,17 +542,34 @@ class _DashboardContentState extends State<DashboardContent> {
         }
 
         if (snapshot.hasError) {
-          return _buildErrorCard('Error: ${snapshot.error}');
+          return _buildEmptySection('Unable to load financial summary');
         }
 
         if (!snapshot.hasData || !(snapshot.data?['success'] ?? false)) {
-          return _buildErrorCard('Failed to load financial data');
+          return _buildEmptySection('No financial data available');
         }
 
         final loans = snapshot.data!['data'] as List<Loan>;
+        if (loans.isEmpty) {
+          return _buildEmptySection(
+              'No active loans found. Apply for a loan to see your financial summary.');
+        }
+
         final activeLoans =
-            loans.where((loan) => loan.status == 'APPROVED').length;
-        final nextPayment = loans.isNotEmpty ? loans.first.amount * 0.1 : 0;
+            loans.where((loan) => loan.status == 'APPROVED').toList();
+
+        // Calculate total upcoming payments
+        double nextPaymentTotal = activeLoans.fold(0.0, (sum, loan) {
+          if (loan.nextDueDate.isAfter(DateTime.now())) {
+            return sum + loan.monthlyPayment;
+          }
+          return sum;
+        });
+
+        // Find nearest due date
+        DateTime? nearestDueDate = activeLoans.isNotEmpty
+            ? activeLoans.map((l) => l.nextDueDate).reduce((a, b) => a.isBefore(b) ? a : b)
+            : null;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,9 +586,10 @@ class _DashboardContentState extends State<DashboardContent> {
                 Expanded(
                   child: _buildSummaryCard(
                     title: 'Next Payment',
-                    amount: '\$${nextPayment.toStringAsFixed(2)}',
-                    subtitle:
-                        'Due ${DateFormat('MMM dd').format(DateTime.now().add(const Duration(days: 30)))}',
+                    amount: '\$${nextPaymentTotal.toStringAsFixed(2)}',
+                    subtitle: nearestDueDate != null
+                        ? 'Due ${DateFormat('MMM dd').format(nearestDueDate)}'
+                        : 'No upcoming payments',
                     icon: Icons.calendar_today_rounded,
                     color: AppConstants.accentColor,
                   ),
@@ -468,7 +598,7 @@ class _DashboardContentState extends State<DashboardContent> {
                 Expanded(
                   child: _buildSummaryCard(
                     title: 'Total Loans',
-                    amount: activeLoans.toString(),
+                    amount: activeLoans.length.toString(),
                     subtitle: 'Active Loans',
                     icon: Icons.account_balance_rounded,
                     color: AppConstants.secondaryColor,
@@ -481,6 +611,7 @@ class _DashboardContentState extends State<DashboardContent> {
       },
     );
   }
+
 
   Widget _buildSummaryCard({
     required String title,
@@ -565,44 +696,60 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 
   Widget _buildRecommendedLoans(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return FutureBuilder<Map<String, dynamic>>(
+      future: Provider.of<DatabaseService>(context, listen: false)
+          .getVerifiedProviders(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingIndicator();
+        }
+
+        if (snapshot.hasError) {
+          return _buildEmptySection('Unable to load recommended loans');
+        }
+
+        if (!snapshot.hasData || !(snapshot.data?['success'] ?? false)) {
+          return _buildEmptySection('No recommended loans available');
+        }
+
+        final providers = snapshot.data!['data'] as List<model.Provider>;
+        if (providers.isEmpty) {
+          return _buildEmptySection('No loan providers available at this time');
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(left: 4.0),
-                child: Text(
-                  'Recommended Loans',
-                  style: AppConstants.headlineSmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 4.0),
+                    child: Text(
+                      'Recommended Loans',
+                      style: AppConstants.headlineSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
+            const SizedBox(height: 14),
+            ...providers.take(2).map((provider) => _buildLoanCard(
+                  context: context,
+                  title: provider.businessName,
+                  description: 'Interest Rate: ${provider.interestRate}%',
+                  features: provider.loanTypes,
+                  badgeText: provider.loanTypes.isNotEmpty
+                      ? provider.loanTypes.first
+                      : null,
+                  badgeColor: AppConstants.accentColor,
+                )),
           ],
-        ),
-        const SizedBox(height: 14),
-        _buildLoanCard(
-          context: context,
-          title: 'Student Plus Loan',
-          description: 'Fixed Rate 4.5% APR',
-          features: ['No origination fees', 'Fast approval process'],
-          badgeText: 'Popular',
-          badgeColor: AppConstants.accentColor,
-        ),
-        const SizedBox(height: 16),
-        _buildLoanCard(
-          context: context,
-          title: 'Graduate Loan',
-          description: 'Variable Rate from 3.2% APR',
-          features: ['Flexible repayment options', 'Low interest rate'],
-          badgeText: 'Best Value',
-          badgeColor: AppConstants.successColor,
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -615,6 +762,7 @@ class _DashboardContentState extends State<DashboardContent> {
     Color? badgeColor,
   }) {
     return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -676,7 +824,7 @@ class _DashboardContentState extends State<DashboardContent> {
             ],
           ),
           const SizedBox(height: 16),
-          ...features.map((feature) => Padding(
+          ...features.take(2).map((feature) => Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Row(
                   children: [
@@ -951,7 +1099,13 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
+  bool _isConnectionError(dynamic error) {
+    return error is FirebaseException &&
+        ['unavailable', 'network-error'].contains(error.code);
+  }
+
   Widget _buildErrorCard(String message) {
+    final isConnectionError = _isConnectionError(message);
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 20),
       padding: const EdgeInsets.all(16),
@@ -959,18 +1113,16 @@ class _DashboardContentState extends State<DashboardContent> {
         color: AppConstants.errorColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
         children: [
-          const Icon(Icons.error_outline, color: AppConstants.errorColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(
-                color: AppConstants.errorColor,
-                fontFamily: 'Poppins',
-              ),
-            ),
+          const Icon(Icons.wifi_off, color: AppConstants.errorColor),
+          const SizedBox(height: 12),
+          Text(
+            isConnectionError
+                ? 'No internet connection\nPlease check your network'
+                : 'Error: $message',
+            style: const TextStyle(color: AppConstants.errorColor),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -978,13 +1130,18 @@ class _DashboardContentState extends State<DashboardContent> {
   }
 
   Widget _buildEmptySection(String message) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 30),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: AppConstants.backgroundSecondaryColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         children: [
           const Icon(Icons.info_outline,
-              size: 48, color: AppConstants.textSecondaryColor),
-          const SizedBox(height: 16),
+              color: AppConstants.textSecondaryColor),
+          const SizedBox(height: 12),
           Text(
             message,
             style: AppConstants.bodyMediumSecondary,

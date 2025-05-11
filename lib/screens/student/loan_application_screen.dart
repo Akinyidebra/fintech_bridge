@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:fintech_bridge/models/provider_model.dart' as model;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/loan_service.dart';
@@ -5,8 +8,14 @@ import 'package:fintech_bridge/utils/constants.dart';
 
 class LoanApplicationScreen extends StatefulWidget {
   final String loanType;
+  // Make provider optional
+  final model.Provider? provider;
 
-  const LoanApplicationScreen({super.key, required this.loanType});
+  const LoanApplicationScreen({
+    super.key,
+    required this.loanType,
+    this.provider, // Optional provider
+  });
 
   @override
   State<LoanApplicationScreen> createState() => _LoanApplicationScreenState();
@@ -18,6 +27,13 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
   final _purposeController = TextEditingController();
   final _termController = TextEditingController();
   String _selectedPurpose = 'Education';
+
+  // Add dummy provider data
+  final _dummyProvider = {
+    'id': 'dummy-provider-001',
+    'name': 'Test Provider',
+    'interestRate': 4.5,
+  };
 
   final List<String> _loanPurposes = [
     'Education',
@@ -31,6 +47,8 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
   void initState() {
     super.initState();
     _termController.text = '12 months';
+    // Pre-fill amount with dummy data for testing
+    _amountController.text = '5000';
   }
 
   @override
@@ -42,10 +60,6 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppConstants.primaryColor),
-          onPressed: () => Navigator.pop(context),
-        ),
         title: Row(
           children: [
             SizedBox(
@@ -96,7 +110,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                 child: CircleAvatar(
                   radius: 14,
                   backgroundImage:
-                      NetworkImage('https://i.pravatar.cc/150?img=5'),
+                  NetworkImage('https://i.pravatar.cc/150?img=5'),
                 ),
               ),
             ),
@@ -186,6 +200,36 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                           ],
                         ),
                       ),
+                      // Display whether using dummy provider
+                      if (widget.provider == null)
+                        Container(
+                          margin: const EdgeInsets.only(top: 12),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.amber,
+                                size: 16,
+                              ),
+                              SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'Using test provider (DEMO MODE)',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -263,7 +307,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                               });
                             },
                             items: _loanPurposes.map<DropdownMenuItem<String>>(
-                              (String value) {
+                                  (String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
                                   child: Text(value),
@@ -289,7 +333,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                         decoration: InputDecoration(
                           labelText: 'Additional Details',
                           hintText:
-                              'Tell us more about how you plan to use this loan',
+                          'Tell us more about how you plan to use this loan',
                           labelStyle: const TextStyle(
                             color: AppConstants.textSecondaryColor,
                             fontSize: 14,
@@ -319,7 +363,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                         ),
                         maxLines: 3,
                         validator: (value) =>
-                            value!.isEmpty ? 'Required' : null,
+                        value!.isEmpty ? 'Required' : null,
                       ),
                     ],
                   ),
@@ -622,9 +666,9 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
             ),
             _termController.text == term
                 ? const Icon(
-                    Icons.check_circle_rounded,
-                    color: AppConstants.primaryColor,
-                  )
+              Icons.check_circle_rounded,
+              color: AppConstants.primaryColor,
+            )
                 : const SizedBox.shrink(),
           ],
         ),
@@ -634,6 +678,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
 
   void _submitApplication(LoanService loanService) async {
     if (_formKey.currentState!.validate()) {
+      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -666,31 +711,90 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
         },
       );
 
-      final result = await loanService.createLoanRequest(
-        providerId: 'selected_provider_id',
-        amount: double.parse(_amountController.text),
-        purpose: '$_selectedPurpose: ${_purposeController.text}',
-        dueDate: DateTime.now().add(const Duration(days: 90)),
-      );
+      try {
+        // Get provider data - use widget.provider if available, otherwise use dummy data
+        final providerId = widget.provider?.id ?? _dummyProvider['id'] as String;
+        final interestRate = widget.provider?.interestRate ?? _dummyProvider['interestRate'] as double;
 
-      Navigator.pop(context); // Close loading dialog
+        // Parse loan amount - handle comma in the input
+        final amountText = _amountController.text.replaceAll(',', '');
+        final amount = double.tryParse(amountText) ?? 0.0;
 
-      if (result['success']) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message']),
-            backgroundColor: Colors.green,
-          ),
+        if (amount <= 0) {
+          // Close loading dialog and show error
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enter a valid loan amount'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+
+        // Parse term months
+        final termMonths = int.parse(_termController.text.replaceAll(' months', ''));
+
+        // Calculate monthly payment
+        final monthlyPayment = _calculateMonthlyPayment(
+          amount: amount,
+          interestRate: interestRate,
+          termMonths: termMonths,
         );
-      } else {
+
+        // Submit loan request
+        final result = await loanService.createLoanRequest(
+          providerId: providerId,
+          amount: amount,
+          interestRate: interestRate,
+          termMonths: termMonths,
+          monthlyPayment: monthlyPayment,
+          purpose: '$_selectedPurpose: ${_purposeController.text}',
+          dueDate: DateTime.now().add(const Duration(days: 90)),
+        );
+
+        // Close loading dialog
+        Navigator.pop(context);
+
+        if (result['success']) {
+          // Show success and go back
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message']),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // Show error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message']),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        // Handle errors
+        Navigator.pop(context); // Close loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message']),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
+  }
+
+  double _calculateMonthlyPayment({
+    required double amount,
+    required double interestRate,
+    required int termMonths,
+  }) {
+    final monthlyRate = interestRate / 100 / 12;
+    final numerator = monthlyRate * pow(1 + monthlyRate, termMonths);
+    final denominator = pow(1 + monthlyRate, termMonths) - 1;
+    return amount * (numerator / denominator);
   }
 }

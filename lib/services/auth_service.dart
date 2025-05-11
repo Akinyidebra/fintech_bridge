@@ -124,6 +124,9 @@ class AuthService extends ChangeNotifier {
       }
       return {'success': false, 'message': errorMessage};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Registration failed. Please try again later.'
@@ -235,6 +238,9 @@ class AuthService extends ChangeNotifier {
       }
       return {'success': false, 'message': errorMessage};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Registration failed. Please try again later.'
@@ -295,6 +301,9 @@ class AuthService extends ChangeNotifier {
 
       return {'success': true, 'message': 'Admin account created successfully'};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to create admin account'};
     } finally {
       _setLoading(false);
@@ -357,6 +366,9 @@ class AuthService extends ChangeNotifier {
         'user': updatedStudent
       };
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to update profile. Please try again.'
@@ -428,6 +440,9 @@ class AuthService extends ChangeNotifier {
         'user': updatedProvider
       };
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to update profile. Please try again.'
@@ -529,6 +544,9 @@ class AuthService extends ChangeNotifier {
       }
       return {'success': false, 'message': errorMessage};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Login failed. Please try again later.'
@@ -560,6 +578,9 @@ class AuthService extends ChangeNotifier {
       await currentUser!.sendEmailVerification();
       return {'success': true, 'message': 'Verification email sent'};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to send verification email. Please try again.'
@@ -593,6 +614,9 @@ class AuthService extends ChangeNotifier {
       }
       return {'success': false, 'message': errorMessage};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Password reset failed. Please try again later.'
@@ -636,6 +660,9 @@ class AuthService extends ChangeNotifier {
 
       return {'success': false, 'message': 'User data not found'};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {'success': false, 'message': 'Failed to retrieve user data'};
     } finally {
       _setLoading(false);
@@ -649,6 +676,9 @@ class AuthService extends ChangeNotifier {
       await _auth.signOut();
       return {'success': true, 'message': 'Signed out successfully'};
     } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
       return {
         'success': false,
         'message': 'Failed to sign out. Please try again.'

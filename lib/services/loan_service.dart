@@ -23,6 +23,9 @@ class LoanService extends ChangeNotifier {
     required double amount,
     required String purpose,
     required DateTime dueDate,
+    required double interestRate,
+    required int termMonths,
+    required double monthlyPayment,
   }) async {
     _setLoading(true);
     try {
@@ -43,6 +46,11 @@ class LoanService extends ChangeNotifier {
         status: 'PENDING',
         purpose: purpose,
         dueDate: dueDate,
+        interestRate: interestRate,
+        termMonths: termMonths,
+        monthlyPayment: monthlyPayment,
+        remainingBalance: amount,
+        nextDueDate: DateTime.now().add(const Duration(days: 30)), // First payment in 30 days
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -55,7 +63,13 @@ class LoanService extends ChangeNotifier {
         'loan': loan.copyWith(id: loanRef.id)
       };
     } catch (e) {
-      return {'success': false, 'message': 'Failed to submit loan request. Please try again.'};
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to submit loan request. Please try again.'
+      };
     } finally {
       _setLoading(false);
     }
@@ -96,7 +110,13 @@ class LoanService extends ChangeNotifier {
         'data': loanDocs.docs.map((doc) => Loan.fromFirestore(doc)).toList()
       };
     } catch (e) {
-      return {'success': false, 'message': 'Failed to load your loans'};
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to load your loans'
+      };
     } finally {
       _setLoading(false);
     }
@@ -123,7 +143,13 @@ class LoanService extends ChangeNotifier {
         'data': loanDocs.docs.map((doc) => Loan.fromFirestore(doc)).toList()
       };
     } catch (e) {
-      return {'success': false, 'message': 'Failed to load provider loans'};
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to load provider loans'
+      };
     } finally {
       _setLoading(false);
     }
@@ -175,7 +201,13 @@ class LoanService extends ChangeNotifier {
         'message': 'Loan status updated to ${status.toLowerCase()}'
       };
     } catch (e) {
-      return {'success': false, 'message': 'Failed to update loan status'};
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to update loan status'
+      };
     } finally {
       _setLoading(false);
     }
@@ -199,7 +231,13 @@ class LoanService extends ChangeNotifier {
         'data': loanDocs.docs.map((doc) => Loan.fromFirestore(doc)).toList()
       };
     } catch (e) {
-      return {'success': false, 'message': 'Failed to load all loans'};
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to load all loans'
+      };
     } finally {
       _setLoading(false);
     }
@@ -221,7 +259,13 @@ class LoanService extends ChangeNotifier {
         'data': loanDocs.docs.map((doc) => Loan.fromFirestore(doc)).toList()
       };
     } catch (e) {
-      return {'success': false, 'message': 'Failed to filter loans'};
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to filter loans'
+      };
     } finally {
       _setLoading(false);
     }
@@ -253,7 +297,13 @@ class LoanService extends ChangeNotifier {
         'data': transactionDocs.docs.map((doc) => tm.Transaction.fromFirestore(doc)).toList()
       };
     } catch (e) {
-      return {'success': false, 'message': 'Failed to load transactions'};
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to load transactions'
+      };
     } finally {
       _setLoading(false);
     }
