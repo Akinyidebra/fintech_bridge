@@ -1,0 +1,1 @@
+/home/artkins/mobile_programming/fintech_bridge/build/app/intermediates/cxx/RelWithDebInfo/2q4dx53i/obj/x86
