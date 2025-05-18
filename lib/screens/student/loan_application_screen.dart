@@ -1,3 +1,5 @@
+// ignore_for_file: null_check_always_fails
+
 import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

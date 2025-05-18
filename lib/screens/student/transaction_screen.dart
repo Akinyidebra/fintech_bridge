@@ -1,4 +1,3 @@
-import 'package:fintech_bridge/utils/dummy_data.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +23,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
   bool _isShowingDateRangePicker = false;
   final TextEditingController _searchController = TextEditingController();
   List<dynamic> _filteredTransactions = [];
-  Map<String, dynamic>? _selectedLoan;
   String _searchQuery = '';
 
   @override
@@ -43,12 +41,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     super.dispose();
   }
 
-  // Dummy method to simulate future loading
-  Future<Map<String, dynamic>> _loadDummyData() async {
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-    return {'data': DummyData.transactions, 'status': 'success'};
-  }
-
   List<dynamic> _filterTransactions(List<dynamic> transactions) {
     return transactions.where((transaction) {
       final matchesSearch = _searchQuery.isEmpty ||
@@ -58,18 +50,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
       return matchesSearch;
     }).toList();
-  }
-
-  List<Map<String, dynamic>> _getActiveLoans(List<dynamic> transactions) {
-    return DummyData.loans
-        .where((loan) => loan.status == 'APPROVED')
-        .map((loan) => {
-              'id': loan.id,
-              'purpose': loan.purpose,
-              'totalAmount': loan.amount,
-              'paidAmount': 1000, // Dummy paid amount
-            })
-        .toList();
   }
 
   void _handleTabSelection() {
@@ -92,7 +72,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final paymentService = Provider.of<PaymentService>(context);
+    Provider.of<PaymentService>(context);
 
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
@@ -437,7 +417,7 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            (transaction.status ?? 'pending').toUpperCase(),
+                            (transaction.status).toUpperCase(),
                             style: TextStyle(
                               color: statusColors[
                                   transaction.status.toLowerCase()],
@@ -583,52 +563,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppConstants.primaryLightColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.account_balance_wallet_rounded,
-              size: 64,
-              color: AppConstants.primaryColor.withOpacity(0.7),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'No Financial Activity Yet',
-            style: AppConstants.headlineMedium,
-          ),
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'Your transactions and loan activities will appear here',
-              style: AppConstants.bodyMediumSecondary,
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: 200,
-            child: AppConstants.gradientButton(
-              text: 'Apply for a Loan',
-              onPressed: () {
-                // Navigate to loan application screen
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildEmptyTabContent() {
     final messages = {
       'all': 'No transactions found for the selected period',
@@ -676,50 +610,6 @@ class _TransactionsScreenState extends State<TransactionsScreen>
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoResultsFound() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: AppConstants.backgroundSecondaryColor,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.search_off_outlined,
-              size: 48,
-              color: AppConstants.textSecondaryColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No results found for "$_searchQuery"',
-            style: AppConstants.bodyMediumSecondary,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Try a different search term or filter',
-            style: AppConstants.bodySmallSecondary,
-          ),
-          const SizedBox(height: 24),
-          TextButton.icon(
-            onPressed: () {
-              setState(() {
-                _searchController.clear();
-                _searchQuery = '';
-              });
-            },
-            icon: const Icon(Icons.refresh),
-            label: const Text('Clear Search'),
-            style: AppConstants.textButtonStyle,
           ),
         ],
       ),
