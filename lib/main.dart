@@ -28,7 +28,7 @@ void main() async {
         ChangeNotifierProvider<AuthService>(create: (_) => AuthService()),
         ChangeNotifierProvider<DatabaseService>(
             create: (_) => DatabaseService()),
-        ChangeNotifierProvider<LoanService>(create: (_) => LoanService()),
+        ChangeNotifierProvider<LoanService>(create: (_) => LoanService(mpesaService: "", notificationService: "")),
         ChangeNotifierProvider<PaymentService>(create: (_) => PaymentService()),
       ],
       child: const MyApp(),

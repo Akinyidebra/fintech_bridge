@@ -70,14 +70,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       verified: data['verified'] ?? false,
       verifiedAt: data['verifiedAt'] != null
           ? data['verifiedAt'] is DateTime
-          ? data['verifiedAt']
-          : (data['verifiedAt'] as Timestamp).toDate()
+              ? data['verifiedAt']
+              : (data['verifiedAt'] as Timestamp).toDate()
           : null,
       identificationImages: data['identificationImages'] != null
           ? List<String>.from(data['identificationImages'])
           : null,
       mpesaPhone: data['mpesaPhone'] ?? data['phone'] ?? 'No Phone',
-      universityRegistrationNumber: data['universityRegistrationNumber'] ?? 'Not provided',
       institutionName: data['institutionName'] ?? 'Not provided',
       hasActiveLoan: data['hasActiveLoan'] ?? false,
       guarantorContacts: data['guarantorContacts'] != null
@@ -85,13 +84,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           : [],
       createdAt: data['createdAt'] != null
           ? data['createdAt'] is DateTime
-          ? data['createdAt']
-          : (data['createdAt'] as Timestamp).toDate()
+              ? data['createdAt']
+              : (data['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
       updatedAt: data['updatedAt'] != null
           ? data['updatedAt'] is DateTime
-          ? data['updatedAt']
-          : (data['updatedAt'] as Timestamp).toDate()
+              ? data['updatedAt']
+              : (data['updatedAt'] as Timestamp).toDate()
           : DateTime.now(),
     );
   }
@@ -180,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CircleAvatar(
                     radius: 14,
                     backgroundImage:
-                    NetworkImage('https://i.pravatar.cc/150?img=5'),
+                        NetworkImage('https://i.pravatar.cc/150?img=5'),
                   ),
                 ),
               ),
@@ -226,10 +225,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: CircleAvatar(
                   radius: 40,
                   backgroundImage: student.profileImage != null &&
-                      student.profileImage!.isNotEmpty
+                          student.profileImage!.isNotEmpty
                       ? NetworkImage(student.profileImage!)
                       : const AssetImage('assets/images/default_avatar.png')
-                  as ImageProvider,
+                          as ImageProvider,
                 ),
               ),
               const SizedBox(width: 16),
@@ -367,7 +366,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? Icons.verified_rounded
                                 : Icons.pending_rounded,
                             color:
-                            student.verified ? Colors.white : Colors.amber,
+                                student.verified ? Colors.white : Colors.amber,
                             size: 16,
                           ),
                           const SizedBox(width: 4),
@@ -499,8 +498,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Verification Status',
             student.verified ? 'Verified' : 'Pending Verification',
             (student.verified
-                ? AppConstants.successColor
-                : AppConstants.warningColor)
+                    ? AppConstants.successColor
+                    : AppConstants.warningColor)
                 .withOpacity(0.1),
             student.verified
                 ? AppConstants.successColor
@@ -568,14 +567,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Year ${student.yearOfStudy}',
             AppConstants.accentColor.withOpacity(0.1),
             AppConstants.accentColor,
-          ),
-          const Divider(height: 24),
-          _buildInfoRow(
-            Icons.badge_rounded,
-            'University Reg. Number',
-            student.universityRegistrationNumber,
-            AppConstants.primaryColor.withOpacity(0.1),
-            AppConstants.primaryColor,
           ),
           const Divider(height: 24),
           _buildInfoRow(
@@ -664,27 +655,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ...guarantors.map((contact) => Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.person_rounded,
-                  size: 18,
-                  color: AppConstants.accentColor,
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.person_rounded,
+                      size: 18,
+                      color: AppConstants.accentColor,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      contact,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppConstants.textColor,
+                        fontFamily: 'Poppins',
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  contact,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppConstants.textColor,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ],
-            ),
-          )),
+              )),
         ],
       ),
     );
@@ -716,7 +707,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 60, color: AppConstants.errorColor),
+          const Icon(Icons.error_outline,
+              size: 60, color: AppConstants.errorColor),
           const SizedBox(height: 16),
           Text(
             message,
@@ -800,12 +792,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoRow(
-      IconData icon,
-      String label,
-      String? value,
-      Color bgColor,
-      Color iconColor,
-      ) {
+    IconData icon,
+    String label,
+    String? value,
+    Color bgColor,
+    Color iconColor,
+  ) {
     final valueText = value ?? 'Not provided';
 
     return Row(
@@ -1029,7 +1021,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               await authService.signOut();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
+                (route) => false,
               );
             },
             style: ElevatedButton.styleFrom(
