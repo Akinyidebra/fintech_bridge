@@ -70,6 +70,50 @@ class NotificationService {
     }
   }
 
+  // Send push notification using Africa's Talking API instead of Firebase
+  Future<bool> sendPushNotification({
+    required String phone, // Changed from token to phone number
+    required String title,
+    required String body,
+    required Map<String, dynamic> data,
+  }) async {
+    try {
+      // Construct a message that includes the title, body, and relevant data
+      final message = '$title\n\n$body';
+      
+      // Use the existing SMS functionality to send the push notification
+      final success = await sendSMS(
+        phone: phone,
+        message: message,
+      );
+      
+      // Log the push notification
+      await _logPushNotification(
+        phone: phone,
+        title: title,
+        body: body,
+        data: data,
+        success: success,
+      );
+      
+      return success;
+    } catch (e) {
+      print('Error sending push notification: $e');
+      
+      // Log the error
+      await _logPushNotification(
+        phone: phone,
+        title: title,
+        body: body,
+        data: data,
+        success: false,
+        error: e.toString(),
+      );
+      
+      return false;
+    }
+  }
+
   // Log SMS notification to Firestore
   Future<void> _logSmsNotification({
     required String phone,
@@ -87,6 +131,31 @@ class NotificationService {
       });
     } catch (e) {
       print('Error logging SMS notification: $e');
+      // Silent failure for logging - shouldn't affect main functionality
+    }
+  }
+  
+  // Log push notification to Firestore
+  Future<void> _logPushNotification({
+    required String phone,
+    required String title,
+    required String body,
+    required Map<String, dynamic> data,
+    required bool success,
+    String? error,
+  }) async {
+    try {
+      await FirebaseFirestore.instance.collection('push_notifications').add({
+        'phone': phone,
+        'title': title,
+        'body': body,
+        'data': data,
+        'success': success,
+        'error': error,
+        'sentAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error logging push notification: $e');
       // Silent failure for logging - shouldn't affect main functionality
     }
   }

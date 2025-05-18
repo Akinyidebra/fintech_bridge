@@ -201,6 +201,69 @@ class MpesaService {
     }
   }
 
+  /// Verify an M-Pesa transaction using its ID
+  Future<Map<String, dynamic>> verifyTransaction({
+    required String transactionCode,
+    required double amount,
+  }) async {
+    try {
+      // In a real implementation, this would query M-Pesa's API
+      // For demonstration, we'll assume transaction is valid if code starts with 'MPE'
+      await Future.delayed(Duration(seconds: 1)); // Simulate API call
+
+      return {
+        'success': transactionCode.startsWith('MPE'),
+        'message': transactionCode.startsWith('MPE')
+            ? 'Transaction verified'
+            : 'Invalid transaction code',
+      };
+    } catch (e) {
+      return _handleError('Transaction verification', e);
+    }
+  }
+
+  /// Initiate STK Push for repayments
+  Future<Map<String, dynamic>> initiateSTKPush({
+    required String phone,
+    required double amount,
+    required String accountReference,
+    required String transactionDesc,
+    required String businessShortCode,
+    required String callbackUrl,
+  }) async {
+    try {
+      final formattedPhone = _formatPhone(phone);
+      final timestamp = _generateTimestamp();
+      final password = _generatePassword(businessShortCode, timestamp);
+
+      final token = await _getAccessToken();
+      final response = await http.post(
+        Uri.parse('$_baseUrl/mpesa/stkpush/v1/processrequest'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'BusinessShortCode': businessShortCode,
+          'Password': password,
+          'Timestamp': timestamp,
+          'TransactionType': 'CustomerPayBillOnline',
+          'Amount': amount.toInt(),
+          'PartyA': formattedPhone,
+          'PartyB': businessShortCode,
+          'PhoneNumber': formattedPhone,
+          'CallBackURL': callbackUrl,
+          'AccountReference': accountReference,
+          'TransactionDesc': transactionDesc,
+        }),
+      );
+
+      return _processResponse(response, 'STK Push initiation');
+    } catch (e) {
+      return _handleError('STK Push initiation', e);
+    }
+  }
+
   /// Initiate an STK Push request for loan disbursement
   ///
   /// [phone]: Customer's phone number
