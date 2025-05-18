@@ -13,6 +13,10 @@ class Loan {
   final double remainingBalance;
   final DateTime nextDueDate;
   final DateTime dueDate;
+  final String mpesaTransactionCode; // For disbursement tracking
+  final String repaymentMethod; // M-Pesa, Bank, etc.
+  final DateTime repaymentStartDate;
+  final double latePaymentPenaltyRate;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,6 +33,10 @@ class Loan {
     required this.remainingBalance,
     required this.nextDueDate,
     required this.dueDate,
+    required this.mpesaTransactionCode,
+    this.repaymentMethod = 'M-PESA',
+    required this.repaymentStartDate,
+    this.latePaymentPenaltyRate = 5.0, // 5% penalty
     required this.createdAt,
     required this.updatedAt,
   });
@@ -48,6 +56,10 @@ class Loan {
       remainingBalance: data['remainingBalance']?.toDouble() ?? 0.0,
       nextDueDate: data['nextDueDate']?.toDate() ?? DateTime.now(),
       dueDate: data['dueDate'].toDate(),
+      mpesaTransactionCode: data['mpesaTransactionCode'] ?? '',
+      repaymentMethod: data['repaymentMethod'] ?? 'M-PESA',
+      repaymentStartDate: data['repaymentStartDate']?.toDate() ?? DateTime.now(),
+      latePaymentPenaltyRate: data['latePaymentPenaltyRate']?.toDouble() ?? 5.0,
       createdAt: data['createdAt'].toDate(),
       updatedAt: data['updatedAt'].toDate(),
     );
@@ -66,6 +78,10 @@ class Loan {
       'remainingBalance': remainingBalance,
       'nextDueDate': nextDueDate,
       'dueDate': dueDate,
+      'mpesaTransactionCode': mpesaTransactionCode,
+      'repaymentMethod': repaymentMethod,
+      'repaymentStartDate': repaymentStartDate,
+      'latePaymentPenaltyRate': latePaymentPenaltyRate,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
@@ -84,6 +100,10 @@ class Loan {
     double? remainingBalance,
     DateTime? nextDueDate,
     DateTime? dueDate,
+    String? mpesaTransactionCode,
+    String? repaymentMethod,
+    DateTime? repaymentStartDate,
+    double? latePaymentPenaltyRate,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -100,6 +120,10 @@ class Loan {
       remainingBalance: remainingBalance ?? this.remainingBalance,
       nextDueDate: nextDueDate ?? this.nextDueDate,
       dueDate: dueDate ?? this.dueDate,
+      mpesaTransactionCode: mpesaTransactionCode ?? this.mpesaTransactionCode,
+      repaymentMethod: repaymentMethod ?? this.repaymentMethod,
+      repaymentStartDate: repaymentStartDate ?? this.repaymentStartDate,
+      latePaymentPenaltyRate: latePaymentPenaltyRate ?? this.latePaymentPenaltyRate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
