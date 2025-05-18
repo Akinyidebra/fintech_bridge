@@ -38,7 +38,6 @@ class AuthService extends ChangeNotifier {
     String? profileImage,
     List<String>? identificationImages,
     required String mpesaPhone,
-    required String universityRegistrationNumber,
     required String institutionName,
     List<String>? guarantorContacts,
     required bool Function(String) emailValidator,
@@ -52,7 +51,6 @@ class AuthService extends ChangeNotifier {
           studentId.isEmpty ||
           phone.isEmpty ||
           mpesaPhone.isEmpty ||
-          universityRegistrationNumber.isEmpty ||
           institutionName.isEmpty) {
         return {'success': false, 'message': 'All fields are required'};
       }
@@ -101,7 +99,6 @@ class AuthService extends ChangeNotifier {
         verifiedAt: null,
         identificationImages: identificationImages,
         mpesaPhone: mpesaPhone,
-        universityRegistrationNumber: universityRegistrationNumber,
         institutionName: institutionName,
         hasActiveLoan: false,
         guarantorContacts: guarantorContacts ?? [],
@@ -331,7 +328,6 @@ class AuthService extends ChangeNotifier {
     String? profileImage,
     List<String>? identificationImages,
     required String mpesaPhone,
-    required String universityRegistrationNumber,
     required String institutionName,
     List<String>? guarantorContacts,
   }) async {
@@ -365,7 +361,6 @@ class AuthService extends ChangeNotifier {
         identificationImages:
         identificationImages ?? student.identificationImages,
         mpesaPhone: mpesaPhone,
-        universityRegistrationNumber: universityRegistrationNumber,
         institutionName: institutionName,
         hasActiveLoan: student.hasActiveLoan,
         guarantorContacts: guarantorContacts ?? student.guarantorContacts,

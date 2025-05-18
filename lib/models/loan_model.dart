@@ -4,6 +4,10 @@ class Loan {
   final String id;
   final String studentId;
   final String providerId;
+  final String providerName;
+  final String loanType;
+  final String institutionName;
+  final String mpesaPhone;
   final double amount;
   final String status; // PENDING/APPROVED/REJECTED/PAID
   final String purpose;
@@ -13,7 +17,7 @@ class Loan {
   final double remainingBalance;
   final DateTime nextDueDate;
   final DateTime dueDate;
-  final String mpesaTransactionCode; // For disbursement tracking
+  final String mpesaTransactionCode;
   final String repaymentMethod; // M-Pesa, Bank, etc.
   final DateTime repaymentStartDate;
   final double latePaymentPenaltyRate;
@@ -24,6 +28,10 @@ class Loan {
     required this.id,
     required this.studentId,
     required this.providerId,
+    required this.providerName,
+    required this.loanType,
+    required this.institutionName,
+    required this.mpesaPhone,
     required this.amount,
     required this.status,
     required this.purpose,
@@ -45,23 +53,27 @@ class Loan {
     Map data = doc.data() as Map;
     return Loan(
       id: doc.id,
-      studentId: data['studentId'],
-      providerId: data['providerId'],
-      amount: data['amount'].toDouble(),
-      status: data['status'],
-      purpose: data['purpose'],
+      studentId: data['studentId'] ?? '',
+      providerId: data['providerId'] ?? '',
+      providerName: data['providerName'] ?? '',
+      loanType: data['loanType'] ?? '',
+      institutionName: data['institutionName'] ?? '',
+      mpesaPhone: data['mpesaPhone'] ?? '',
+      amount: data['amount']?.toDouble() ?? 0.0,
+      status: data['status'] ?? 'PENDING',
+      purpose: data['purpose'] ?? '',
       interestRate: data['interestRate']?.toDouble() ?? 0.0,
       termMonths: data['termMonths'] ?? 12,
       monthlyPayment: data['monthlyPayment']?.toDouble() ?? 0.0,
       remainingBalance: data['remainingBalance']?.toDouble() ?? 0.0,
       nextDueDate: data['nextDueDate']?.toDate() ?? DateTime.now(),
-      dueDate: data['dueDate'].toDate(),
+      dueDate: data['dueDate']?.toDate() ?? DateTime.now(),
       mpesaTransactionCode: data['mpesaTransactionCode'] ?? '',
       repaymentMethod: data['repaymentMethod'] ?? 'M-PESA',
       repaymentStartDate: data['repaymentStartDate']?.toDate() ?? DateTime.now(),
       latePaymentPenaltyRate: data['latePaymentPenaltyRate']?.toDouble() ?? 5.0,
-      createdAt: data['createdAt'].toDate(),
-      updatedAt: data['updatedAt'].toDate(),
+      createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
+      updatedAt: data['updatedAt']?.toDate() ?? DateTime.now(),
     );
   }
 
@@ -69,6 +81,10 @@ class Loan {
     return {
       'studentId': studentId,
       'providerId': providerId,
+      'providerName': providerName,
+      'loanType': loanType,
+      'institutionName': institutionName,
+      'mpesaPhone': mpesaPhone,
       'amount': amount,
       'status': status,
       'purpose': purpose,
@@ -91,6 +107,10 @@ class Loan {
     String? id,
     String? studentId,
     String? providerId,
+    String? providerName,
+    String? loanType,
+    String? institutionName,
+    String? mpesaPhone,
     double? amount,
     String? status,
     String? purpose,
@@ -111,6 +131,10 @@ class Loan {
       id: id ?? this.id,
       studentId: studentId ?? this.studentId,
       providerId: providerId ?? this.providerId,
+      providerName: providerName ?? this.providerName,
+      loanType: loanType ?? this.loanType,
+      institutionName: institutionName ?? this.institutionName,
+      mpesaPhone: mpesaPhone ?? this.mpesaPhone,
       amount: amount ?? this.amount,
       status: status ?? this.status,
       purpose: purpose ?? this.purpose,

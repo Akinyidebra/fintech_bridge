@@ -9,12 +9,12 @@ import 'package:fintech_bridge/utils/constants.dart';
 class LoanApplicationScreen extends StatefulWidget {
   final String loanType;
   // Make provider optional
-  final model.Provider? provider;
+  final model.Provider provider;
 
   const LoanApplicationScreen({
     super.key,
     required this.loanType,
-    this.provider, // Optional provider
+    required this.provider,
   });
 
   @override
@@ -27,28 +27,108 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
   final _purposeController = TextEditingController();
   final _termController = TextEditingController();
   String _selectedPurpose = 'Education';
-
-  // Add dummy provider data
-  final _dummyProvider = {
-    'id': 'dummy-provider-001',
-    'name': 'Test Provider',
-    'interestRate': 4.5,
-  };
-
-  final List<String> _loanPurposes = [
-    'Education',
-    'Housing',
-    'Books & Supplies',
-    'Living Expenses',
-    'Other'
-  ];
+List<model.Provider> _providers = [];
+  model.Provider? _selectedProvider;
 
   @override
   void initState() {
     super.initState();
     _termController.text = '12 months';
-    // Pre-fill amount with dummy data for testing
     _amountController.text = '5000';
+    _loanService = Provider.of<LoanService>(context, listen: false);
+    _loadProviders();
+  }
+
+  Future<void> _loadProviders() async {
+    try {
+      final providers = await _loanService.getApprovedProviders();
+      setState(() {
+        _providers = providers;
+        if (widget.provider != null) {
+          _selectedProvider = providers.firstWhere(
+            (p) => p.id == widget.provider!.id,
+            orElse: () => providers.first,
+          );
+        }
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading providers: ${e.toString()}')),
+      );
+    }
+  }
+
+  Widget _buildProviderCard(model.Provider provider) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(provider.businessName,
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(provider.businessType),
+            SizedBox(height: 8),
+            Text('Interest Rate: ${provider.interestRate}%'),
+            Text('Loan Types: ${provider.loanTypes.join(', ')}'),
+            if (provider.website != null)
+              Text('Website: ${provider.website}'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProviderDropdown() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Select Loan Provider', style: AppConstants.headlineSmall),
+        SizedBox(height: 16),
+        DropdownButtonFormField<model.Provider>(
+          value: _selectedProvider,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Select a provider',
+          ),
+          items: _providers.map((provider) {
+            return DropdownMenuItem<model.Provider>(
+              value: provider,
+              child: Text(provider.businessName),
+            );
+          }).toList(),
+          onChanged: (provider) {
+            setState(() {
+              _selectedProvider = provider;
+              _selectedLoanType = null;
+            });
+          },
+          validator: (value) =>
+              value == null ? 'Please select a provider' : null,
+        ),
+        SizedBox(height: 20),
+        if (_selectedProvider != null) ...[
+          _buildProviderCard(_selectedProvider!),
+          SizedBox(height: 20),
+          DropdownButtonFormField<String>(
+            value: _selectedLoanType,
+            decoration: InputDecoration(
+              labelText: 'Loan Type',
+              border: OutlineInputBorder(),
+            ),
+            items: _selectedProvider!.loanTypes.map((type) {
+              return DropdownMenuItem<String>(
+                value: type,
+                child: Text(type),
+              );
+            }).toList(),
+            onChanged: (type) => setState(() => _selectedLoanType = type),
+            validator: (value) =>
+                value == null ? 'Please select a loan type' : null,
+          ),
+        ],
+      ],
+    );
   }
 
   @override
@@ -200,36 +280,6 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                           ],
                         ),
                       ),
-                      // Display whether using dummy provider
-                      if (widget.provider == null)
-                        Container(
-                          margin: const EdgeInsets.only(top: 12),
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                color: Colors.amber,
-                                size: 16,
-                              ),
-                              SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  'Using test provider (DEMO MODE)',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -258,6 +308,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                _buildProviderDropdown(),
                       _buildTextField(
                         controller: _amountController,
                         label: 'Loan Amount',
@@ -677,7 +728,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
   }
 
   void _submitApplication(LoanService loanService) async {
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate() && _selectedProvider != null) {
       // Show loading dialog
       showDialog(
         context: context,
@@ -744,7 +795,10 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
 
         // Submit loan request
         final result = await loanService.createLoanRequest(
-          providerId: providerId,
+          'providerId': _selectedProvider!.id,
+        'loanType': _selectedLoanType,
+        'interestRate': _selectedProvider!.interestRate,
+        'businessName': _selectedProvider!.businessName,
           amount: amount,
           interestRate: interestRate,
           termMonths: termMonths,
