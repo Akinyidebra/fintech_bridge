@@ -4,18 +4,21 @@ import 'dart:convert';
 
 class NotificationService {
   // Africa's Talking API configuration
-  final String _apiKey; // Your Africa's Talking API key
-  final String _username; // Your Africa's Talking username
-  final String _baseUrl = 'https://api.africastalking.com/version1/messaging';
-  final bool _useSandbox; // Whether to use sandbox environment
+  final String _apiKey;
+  final String _username;
+  final bool _useSandbox;
+  
+  // Base URLs
+  static const String _productionUrl = 'https://api.africastalking.com/version1/messaging';
+  static const String _sandboxUrl = 'https://api.sandbox.africastalking.com/version1/messaging';
 
   NotificationService({
     required String apiKey,
     required String username,
     bool useSandbox = false,
   }) : _apiKey = apiKey,
-        _username = username,
-        _useSandbox = useSandbox;
+       _username = username,
+       _useSandbox = useSandbox;
 
   // Send SMS using Africa's Talking API
   Future<bool> sendSMS({
@@ -23,10 +26,8 @@ class NotificationService {
     required String message,
   }) async {
     try {
-      // Determine which URL to use based on environment
-      final url = _useSandbox
-          ? 'https://api.sandbox.africastalking.com/version1/messaging'
-          : _baseUrl;
+      // Select URL based on environment setting
+      final url = _useSandbox ? _sandboxUrl : _productionUrl;
 
       final response = await http.post(
         Uri.parse(url),
@@ -43,18 +44,28 @@ class NotificationService {
       );
 
       final responseData = json.decode(response.body);
+      final success = response.statusCode == 201 || response.statusCode == 200;
 
       // Log SMS send attempt to Firestore for tracking
       await _logSmsNotification(
         phone: phone,
         message: message,
-        success: response.statusCode == 201 || response.statusCode == 200,
+        success: success,
         responseData: responseData,
       );
 
-      return response.statusCode == 201 || response.statusCode == 200;
+      return success;
     } catch (e) {
       print('Error sending SMS: $e');
+      
+      // Log the error to Firestore
+      await _logSmsNotification(
+        phone: phone,
+        message: message,
+        success: false,
+        responseData: {'error': e.toString()},
+      );
+      
       return false;
     }
   }
@@ -66,13 +77,18 @@ class NotificationService {
     required bool success,
     required Map<String, dynamic> responseData,
   }) async {
-    await FirebaseFirestore.instance.collection('sms_notifications').add({
-      'phone': phone,
-      'message': message,
-      'success': success,
-      'response': responseData,
-      'sentAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await FirebaseFirestore.instance.collection('sms_notifications').add({
+        'phone': phone,
+        'message': message,
+        'success': success,
+        'response': responseData,
+        'sentAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error logging SMS notification: $e');
+      // Silent failure for logging - shouldn't affect main functionality
+    }
   }
 
   // Send loan reminder notification

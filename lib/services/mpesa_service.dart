@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'dart:async';
 
-// Custom implementation of M-Pesa API functionality without using the mpesadaraja package
+/// A service to interact with the M-Pesa API for mobile money transactions
+/// This implementation provides methods for various M-Pesa operations like
+/// STK Push, B2C transfers, C2B registration, and transaction status queries.
 class MpesaService {
   final String _consumerKey;
   final String _consumerSecret;
@@ -14,76 +17,142 @@ class MpesaService {
   // Base URLs
   late final String _baseUrl;
 
-  // Constructor with configuration
+  // Token refresh timer
+  Timer? _refreshTimer;
+
+  /// Creates a new MpesaService with required credentials
+  ///
+  /// [consumerKey]: The consumer key from Safaricom developer portal
+  /// [consumerSecret]: The consumer secret from Safaricom developer portal
+  /// [passKey]: The passkey used for password generation
+  /// [isProduction]: Whether to use production or sandbox environment
   MpesaService({
     required String consumerKey,
     required String consumerSecret,
     required String passKey,
     bool isProduction = false,
-  }) : _consumerKey = consumerKey,
+  })  : _consumerKey = consumerKey,
         _consumerSecret = consumerSecret,
         _passKey = passKey,
         _isProduction = isProduction {
     _baseUrl = isProduction
         ? 'https://api.safaricom.co.ke'
         : 'https://sandbox.safaricom.co.ke';
+
+    // Schedule initial token fetch
+    _fetchTokenAndScheduleRefresh();
   }
 
-  // Example of how to create the service in your app
-  static MpesaService initialize({required bool isProduction}) {
+  /// Factory method to create an instance with proper configuration
+  static MpesaService initialize({
+    required String consumerKey,
+    required String consumerSecret,
+    required String passKey,
+    bool isProduction = false,
+  }) {
     return MpesaService(
-      consumerKey: isProduction ? 'YOUR_PRODUCTION_CONSUMER_KEY' : 'YOUR_SANDBOX_CONSUMER_KEY',
-      consumerSecret: isProduction ? 'YOUR_PRODUCTION_CONSUMER_SECRET' : 'YOUR_SANDBOX_CONSUMER_SECRET',
-      passKey: isProduction ? 'YOUR_PRODUCTION_PASSKEY' : 'YOUR_SANDBOX_PASSKEY',
+      consumerKey: consumerKey,
+      consumerSecret: consumerSecret,
+      passKey: passKey,
       isProduction: isProduction,
     );
   }
 
-  // Get OAuth token for authentication
-  Future<String> _getAccessToken() async {
-    // Check if we have a valid token
-    if (_accessToken != null && _tokenExpiry != null && _tokenExpiry!.isAfter(DateTime.now())) {
+  /// Disposes resources used by this service
+  void dispose() {
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
+
+  /// Fetches the access token and schedules automatic refresh
+  Future<void> _fetchTokenAndScheduleRefresh() async {
+    try {
+      await _getAccessToken(forceRefresh: true);
+
+      // Schedule token refresh 5 minutes before expiry
+      _refreshTimer?.cancel();
+
+      if (_tokenExpiry != null) {
+        final refreshIn =
+            _tokenExpiry!.difference(DateTime.now()) - Duration(minutes: 5);
+        if (refreshIn.isNegative) {
+          // Token is about to expire, refresh immediately
+          await _getAccessToken(forceRefresh: true);
+        } else {
+          // Schedule refresh
+          _refreshTimer = Timer(refreshIn, _fetchTokenAndScheduleRefresh);
+        }
+      }
+    } catch (e) {
+      // If token fetch fails, try again after 30 seconds
+      _refreshTimer =
+          Timer(Duration(seconds: 30), _fetchTokenAndScheduleRefresh);
+    }
+  }
+
+  /// Get OAuth token for authentication
+  ///
+  /// [forceRefresh] forces a new token to be fetched even if current one is valid
+  Future<String> _getAccessToken({bool forceRefresh = false}) async {
+    // Check if we have a valid token and not forcing refresh
+    if (!forceRefresh &&
+        _accessToken != null &&
+        _tokenExpiry != null &&
+        _tokenExpiry!.isAfter(DateTime.now().add(Duration(minutes: 5)))) {
       return _accessToken!;
     }
 
     // Otherwise, get a new token
-    final String credentials = base64Encode(utf8.encode('$_consumerKey:$_consumerSecret'));
-    final http.Response response = await http.get(
-      Uri.parse('$_baseUrl/oauth/v1/generate?grant_type=client_credentials'),
-      headers: {
-        'Authorization': 'Basic $credentials',
-        'Content-Type': 'application/json',
-      },
-    );
+    final String credentials =
+        base64Encode(utf8.encode('$_consumerKey:$_consumerSecret'));
+    try {
+      final http.Response response = await http.get(
+        Uri.parse('$_baseUrl/oauth/v1/generate?grant_type=client_credentials'),
+        headers: {
+          'Authorization': 'Basic $credentials',
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = json.decode(response.body);
-      _accessToken = data['access_token'];
-      // Token typically expires in 1 hour, set expiry to 50 minutes to be safe
-      _tokenExpiry = DateTime.now().add(Duration(minutes: 50));
-      return _accessToken!;
-    } else {
-      throw Exception('Failed to get access token: ${response.body}');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        _accessToken = data['access_token'];
+
+        // Parse the expiry time if provided, otherwise default to 1 hour
+        int expiresIn = data['expires_in'] ?? 3600;
+        _tokenExpiry = DateTime.now().add(Duration(seconds: expiresIn));
+
+        return _accessToken!;
+      } else {
+        throw Exception('Failed to get access token: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception(
+          'Network error when getting access token: ${e.toString()}');
     }
   }
 
-  // Format phone number to required format (254XXXXXXXXX)
+  /// Format phone number to required format (254XXXXXXXXX)
   String _formatPhone(String phone) {
-    // Remove any country code if present
-    String formattedPhone = phone.replaceAll('+', '');
+    // Remove any non-numeric characters
+    String cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
 
     // Handle Kenyan phone numbers
-    if (formattedPhone.startsWith('0')) {
-      return '254${formattedPhone.substring(1)}';
-    } else if (formattedPhone.startsWith('254')) {
-      return formattedPhone;
+    if (cleanPhone.startsWith('0') && cleanPhone.length == 10) {
+      return '254${cleanPhone.substring(1)}';
+    } else if (cleanPhone.startsWith('254') && cleanPhone.length == 12) {
+      return cleanPhone;
+    } else if (cleanPhone.startsWith('7') && cleanPhone.length == 9) {
+      return '254$cleanPhone';
+    } else if (cleanPhone.startsWith('1') && cleanPhone.length == 9) {
+      return '254$cleanPhone';
     }
 
-    // Default case
-    return '254$formattedPhone';
+    // If we can't format, return the cleaned number
+    return cleanPhone;
   }
 
-  // Generate password for STK Push
+  /// Generate password for STK Push
   String _generatePassword(String shortCode, String timestamp) {
     String data = shortCode + _passKey + timestamp;
     var bytes = utf8.encode(data);
@@ -91,19 +160,24 @@ class MpesaService {
     return password;
   }
 
-  // Generate timestamp in the format YYYYMMDDHHmmss
+  /// Generate timestamp in the format YYYYMMDDHHmmss
   String _generateTimestamp() {
     final now = DateTime.now();
     final formatter = DateFormat('yyyyMMddHHmmss');
     return formatter.format(now);
   }
 
-  // Register C2B URLs (for receiving payments from customers)
+  /// Register C2B URLs (for receiving payments from customers)
+  ///
+  /// [shortCode]: The organization's shortcode
+  /// [confirmationUrl]: URL that receives confirmation notifications
+  /// [validationUrl]: URL that receives validation requests
+  /// [responseType]: Either 'Completed' or 'Cancelled'
   Future<Map<String, dynamic>> registerC2BUrls({
     required String shortCode,
     required String confirmationUrl,
     required String validationUrl,
-    required String responseType,
+    String responseType = 'Completed',
   }) async {
     try {
       final token = await _getAccessToken();
@@ -121,35 +195,24 @@ class MpesaService {
         }),
       );
 
-      final Map<String, dynamic> responseData = json.decode(response.body);
-
-      if (responseData.containsKey('ResponseCode') && responseData['ResponseCode'] == '0') {
-        return {
-          'success': true,
-          'data': responseData,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': 'URL registration failed: ${responseData['errorMessage'] ?? responseData['ResponseDescription'] ?? 'Unknown error'}',
-          'data': responseData,
-        };
-      }
+      return _processResponse(response, 'URL registration');
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'URL registration failed: ${e.toString()}',
-      };
+      return _handleError('URL registration', e);
     }
   }
 
-  // Disburse loan to student's M-Pesa using STK Push
+  /// Initiate an STK Push request for loan disbursement
+  ///
+  /// [phone]: Customer's phone number
+  /// [amount]: Amount to disburse
+  /// [loanId]: Reference ID for the loan
+  /// [businessShortCode]: Organization's shortcode (normally till or paybill number)
+  /// [callbackUrl]: URL to receive the transaction result
   Future<Map<String, dynamic>> disburseLoan({
     required String phone,
     required double amount,
     required String loanId,
     required String businessShortCode,
-    required String passKey,
     required String callbackUrl,
   }) async {
     try {
@@ -179,30 +242,23 @@ class MpesaService {
         }),
       );
 
-      final Map<String, dynamic> responseData = json.decode(response.body);
-
-      if (responseData.containsKey('ResponseCode') && responseData['ResponseCode'] == '0') {
-        return {
-          'success': true,
-          'data': responseData,
-          'transactionId': responseData['CheckoutRequestID'],
-        };
-      } else {
-        return {
-          'success': false,
-          'message': 'STK Push failed: ${responseData['errorMessage'] ?? responseData['ResponseDescription'] ?? 'Unknown error'}',
-          'data': responseData,
-        };
-      }
+      return _processResponse(response, 'Loan disbursement');
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Disbursement failed: ${e.toString()}',
-      };
+      return _handleError('Loan disbursement', e);
     }
   }
 
-  // B2C (Business to Customer) - Direct disbursement to mobile money
+  /// Direct B2C disbursement to mobile money
+  ///
+  /// [phone]: Customer's phone number
+  /// [amount]: Amount to disburse
+  /// [loanId]: Reference ID for the transaction
+  /// [initiatorName]: Name of the initiator
+  /// [securityCredential]: Encrypted security credential
+  /// [commandId]: Type of transaction (e.g., 'BusinessPayment', 'SalaryPayment', 'PromotionPayment')
+  /// [resultUrl]: URL to receive the transaction result
+  /// [timeoutUrl]: URL to be notified in case of a timeout
+  /// [partyA]: Organization's shortcode
   Future<Map<String, dynamic>> directDisbursement({
     required String phone,
     required double amount,
@@ -212,7 +268,7 @@ class MpesaService {
     required String commandId,
     required String resultUrl,
     required String timeoutUrl,
-    required String partyA, // Your organization's shortcode
+    required String partyA,
   }) async {
     try {
       final formattedPhone = _formatPhone(phone);
@@ -238,30 +294,20 @@ class MpesaService {
         }),
       );
 
-      final Map<String, dynamic> responseData = json.decode(response.body);
-
-      if (responseData.containsKey('ResponseCode') && responseData['ResponseCode'] == '0') {
-        return {
-          'success': true,
-          'data': responseData,
-          'transactionId': responseData['OriginatorConversationID'],
-        };
-      } else {
-        return {
-          'success': false,
-          'message': 'B2C transaction failed: ${responseData['errorMessage'] ?? responseData['ResponseDescription'] ?? 'Unknown error'}',
-          'data': responseData,
-        };
-      }
+      return _processResponse(response, 'Direct disbursement');
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Direct disbursement failed: ${e.toString()}',
-      };
+      return _handleError('Direct disbursement', e);
     }
   }
 
-  // Query transaction status
+  /// Query the status of a transaction
+  ///
+  /// [transactionId]: ID of the transaction to check
+  /// [businessShortCode]: Organization's shortcode
+  /// [initiatorName]: Name of the initiator
+  /// [securityCredential]: Encrypted security credential
+  /// [resultUrl]: URL to receive the query result
+  /// [timeoutUrl]: URL to be notified in case of a timeout
   Future<Map<String, dynamic>> checkTransactionStatus({
     required String transactionId,
     required String businessShortCode,
@@ -292,29 +338,19 @@ class MpesaService {
         }),
       );
 
-      final Map<String, dynamic> responseData = json.decode(response.body);
-
-      if (responseData.containsKey('ResponseCode') && responseData['ResponseCode'] == '0') {
-        return {
-          'success': true,
-          'data': responseData,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': 'Status check failed: ${responseData['errorMessage'] ?? responseData['ResponseDescription'] ?? 'Unknown error'}',
-          'data': responseData,
-        };
-      }
+      return _processResponse(response, 'Transaction status check');
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Status check failed: ${e.toString()}',
-      };
+      return _handleError('Transaction status check', e);
     }
   }
 
-  // C2B (Customer to Business) - Simulate customer payment to business
+  /// Simulate a C2B transaction (only available in sandbox environment)
+  ///
+  /// [shortCode]: Organization's shortcode
+  /// [commandId]: Type of transaction ('CustomerPayBillOnline' or 'CustomerBuyGoodsOnline')
+  /// [amount]: Amount to pay
+  /// [msisdn]: Customer's phone number
+  /// [billRefNumber]: Bill reference number
   Future<Map<String, dynamic>> simulateC2B({
     required String shortCode,
     required String commandId,
@@ -322,6 +358,13 @@ class MpesaService {
     required String msisdn,
     required String billRefNumber,
   }) async {
+    if (_isProduction) {
+      return {
+        'success': false,
+        'message': 'C2B simulation is only available in sandbox environment',
+      };
+    }
+
     try {
       final formattedPhone = _formatPhone(msisdn);
 
@@ -334,36 +377,23 @@ class MpesaService {
         },
         body: json.encode({
           'ShortCode': shortCode,
-          'CommandID': commandId, // "CustomerPayBillOnline" or "CustomerBuyGoodsOnline"
+          'CommandID': commandId,
           'Amount': amount.toInt(),
           'Msisdn': formattedPhone,
           'BillRefNumber': billRefNumber,
         }),
       );
 
-      final Map<String, dynamic> responseData = json.decode(response.body);
-
-      if (responseData.containsKey('ResponseCode') && responseData['ResponseCode'] == '0') {
-        return {
-          'success': true,
-          'data': responseData,
-        };
-      } else {
-        return {
-          'success': false,
-          'message': 'C2B simulation failed: ${responseData['errorMessage'] ?? responseData['ResponseDescription'] ?? 'Unknown error'}',
-          'data': responseData,
-        };
-      }
+      return _processResponse(response, 'C2B simulation');
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'C2B simulation failed: ${e.toString()}',
-      };
+      return _handleError('C2B simulation', e);
     }
   }
 
-  // STK Push Query - Check status of an STK Push transaction
+  /// Check the status of an STK Push transaction
+  ///
+  /// [businessShortCode]: Organization's shortcode
+  /// [checkoutRequestId]: ID of the STK Push request
   Future<Map<String, dynamic>> stkPushQuery({
     required String businessShortCode,
     required String checkoutRequestId,
@@ -387,25 +417,60 @@ class MpesaService {
         }),
       );
 
+      return _processResponse(response, 'STK Push query');
+    } catch (e) {
+      return _handleError('STK Push query', e);
+    }
+  }
+
+  /// Process API response and return a standardized format
+  Map<String, dynamic> _processResponse(
+      http.Response response, String operation) {
+    try {
       final Map<String, dynamic> responseData = json.decode(response.body);
 
-      if (responseData.containsKey('ResponseCode') && responseData['ResponseCode'] == '0') {
+      // Extract transaction ID based on response type
+      String? transactionId;
+      if (responseData.containsKey('CheckoutRequestID')) {
+        transactionId = responseData['CheckoutRequestID'];
+      } else if (responseData.containsKey('OriginatorConversationID')) {
+        transactionId = responseData['OriginatorConversationID'];
+      } else if (responseData.containsKey('ConversationID')) {
+        transactionId = responseData['ConversationID'];
+      }
+
+      if (response.statusCode == 200 &&
+          responseData.containsKey('ResponseCode') &&
+          responseData['ResponseCode'] == '0') {
         return {
           'success': true,
           'data': responseData,
+          if (transactionId != null) 'transactionId': transactionId,
         };
       } else {
+        final message = responseData['errorMessage'] ??
+            responseData['ResponseDescription'] ??
+            'Unknown error (HTTP ${response.statusCode})';
         return {
           'success': false,
-          'message': 'STK Push query failed: ${responseData['errorMessage'] ?? responseData['ResponseDescription'] ?? 'Unknown error'}',
+          'message': '$operation failed: $message',
           'data': responseData,
         };
       }
     } catch (e) {
       return {
         'success': false,
-        'message': 'STK Push query failed: ${e.toString()}',
+        'message': 'Failed to parse response: ${e.toString()}',
+        'rawResponse': response.body,
       };
     }
+  }
+
+  /// Handle errors in a standardized way
+  Map<String, dynamic> _handleError(String operation, dynamic error) {
+    return {
+      'success': false,
+      'message': '$operation failed: ${error.toString()}',
+    };
   }
 }
