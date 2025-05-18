@@ -33,7 +33,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     super.initState();
     _screens = [
       const DashboardContent(),
-      const LoanApplicationScreen(loanType: ''),
+      const LoanApplicationScreen(loanType: '', provider: '',),
       const MyLoansScreen(),
       const ProfileScreen(),
     ];

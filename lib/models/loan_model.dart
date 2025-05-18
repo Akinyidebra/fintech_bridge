@@ -67,6 +67,7 @@ class Loan {
       monthlyPayment: data['monthlyPayment']?.toDouble() ?? 0.0,
       remainingBalance: data['remainingBalance']?.toDouble() ?? 0.0,
       nextDueDate: data['nextDueDate']?.toDate() ?? DateTime.now(),
+      
       dueDate: data['dueDate']?.toDate() ?? DateTime.now(),
       mpesaTransactionCode: data['mpesaTransactionCode'] ?? '',
       repaymentMethod: data['repaymentMethod'] ?? 'M-PESA',
