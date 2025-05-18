@@ -713,4 +713,102 @@ class DatabaseService extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
+  Future<Map<String, dynamic>> getFeaturedLoanProviders() async {
+  _setLoading(true);
+  try {
+    // Query all loans
+    final loanDocs = await _firestore.collection('loans').get();
+    
+    // Map to track provider selection frequency
+    Map<String, int> providerFrequency = {};
+    
+    // Count how many times each provider has been selected
+    for (var doc in loanDocs.docs) {
+      final Map data = doc.data();
+      final String providerId = data['providerId'] ?? '';
+      
+      if (providerId.isNotEmpty) {
+        providerFrequency[providerId] = (providerFrequency[providerId] ?? 0) + 1;
+      }
+    }
+    
+    // If no loans exist yet
+    if (providerFrequency.isEmpty) {
+      // Return some default verified and approved providers sorted by interest rate
+      final defaultProviderDocs = await _firestore
+          .collection('providers')
+          .where('verified', isEqualTo: true)
+          .where('approved', isEqualTo: true)
+          .orderBy('interestRate', descending: false)
+          .limit(5)
+          .get();
+      
+      List<Provider> defaultProviders = [];
+      for (var doc in defaultProviderDocs.docs) {
+        defaultProviders.add(Provider.fromFirestore(doc));
+      }
+      
+      return {'success': true, 'data': defaultProviders};
+    }
+    
+    // Sort providers by frequency (most selected first)
+    List<MapEntry<String, int>> sortedProviders = providerFrequency.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    // Get the top 5 provider IDs
+    List<String> topProviderIds = sortedProviders
+        .take(5)
+        .map((entry) => entry.key)
+        .toList();
+    
+    // Fetch the actual provider data for these IDs
+    List<Provider> featuredProviders = [];
+    
+    for (String providerId in topProviderIds) {
+      DocumentSnapshot providerDoc = 
+          await _firestore.collection('providers').doc(providerId).get();
+      
+      if (providerDoc.exists) {
+        Provider provider = Provider.fromFirestore(providerDoc);
+        
+        // Only include verified and approved providers
+        if (provider.verified && provider.approved) {
+          featuredProviders.add(provider);
+        }
+      }
+    }
+    
+    // If we couldn't get enough featured providers, supplement with additional providers
+    if (featuredProviders.length < 5) {
+      // Get IDs of already added providers to avoid duplicates
+      Set<String> existingIds = featuredProviders.map((p) => p.id).toSet();
+      
+      // Query for additional providers
+      final additionalProviderDocs = await _firestore
+          .collection('providers')
+          .where('verified', isEqualTo: true)
+          .where('approved', isEqualTo: true)
+          .orderBy('interestRate', descending: false)
+          .limit(5 - featuredProviders.length)
+          .get();
+      
+      for (var doc in additionalProviderDocs.docs) {
+        if (!existingIds.contains(doc.id)) {
+          featuredProviders.add(Provider.fromFirestore(doc));
+          existingIds.add(doc.id);
+        }
+      }
+    }
+    
+    return {'success': true, 'data': featuredProviders};
+  } catch (e) {
+    if (e is FirebaseException && e.code == 'unavailable') {
+      return {'success': false, 'message': 'No internet connection'};
+    }
+    return {'success': false, 'message': 'Failed to retrieve featured loan providers'};
+  } finally {
+    _setLoading(false);
+  }
+}
 }
