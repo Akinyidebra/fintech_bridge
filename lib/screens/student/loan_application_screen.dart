@@ -1,4 +1,4 @@
-import 'package:fintech_bridge/models/provider_model.dart' as model;
+import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/loan_service.dart';
@@ -12,7 +12,7 @@ import 'dart:math';
 class LoanApplicationScreen extends StatefulWidget {
   final String loanType;
   // Make provider optional
-  final model.Provider? provider;
+  final provider_model.Provider? provider;
 
   const LoanApplicationScreen({
     super.key,
@@ -30,8 +30,8 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
   final _purposeController = TextEditingController();
   final _termController = TextEditingController();
   String _selectedPurpose = 'Education';
-  List<model.Provider> _providers = [];
-  model.Provider? _selectedProvider;
+  List<provider_model.Provider> _providers = [];
+  provider_model.Provider? _selectedProvider;
   String? _selectedLoanType;
   late LoanService _loanService;
 
@@ -60,7 +60,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
         if (widget.provider != null) {
           _selectedProvider = providers.firstWhere(
             (p) => p.id == widget.provider!.id,
-            orElse: () => providers.isNotEmpty ? providers.first : null,
+            orElse: () => providers.isNotEmpty ? providers.first : null!,
           );
         } else {
           _selectedProvider = providers.isNotEmpty ? providers.first : null;
@@ -241,7 +241,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
           monthlyPayment: monthlyPayment,
           purpose: '$_selectedPurpose: ${_purposeController.text}',
           dueDate: DateTime.now().add(const Duration(days: 90)),
-          repaymentMethod: _selectedProvider!.repaymentMethod,
+          repaymentMethod: 'M-PESA', // Default repayment method since it's not in the Provider model
           repaymentStartDate: DateTime.now(),
         );
 

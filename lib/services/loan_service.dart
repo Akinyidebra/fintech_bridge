@@ -49,6 +49,7 @@ class LoanService extends ChangeNotifier {
   }
 
   // Dispose all resources
+  @override
   void dispose() {
     _mpesaService.dispose();
     super.dispose();
