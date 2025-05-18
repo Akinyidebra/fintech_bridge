@@ -19,6 +19,21 @@ class LoanService extends ChangeNotifier {
 
   User? get currentUser => _auth.currentUser;
 
+  Future<List<model.Provider>> getApprovedProviders() async {
+    try {
+      final snapshot = await _firestore
+          .collection('providers')
+          .where('approved', isEqualTo: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => model.Provider.fromFirestore(doc))
+          .toList();
+    } catch (e) {
+      throw Exception('Error fetching providers: $e');
+    }
+  }
+
   Future<Map<String, dynamic>> createLoanRequest({
     required String providerId,
     required double amount,
@@ -33,12 +48,19 @@ class LoanService extends ChangeNotifier {
     _setLoading(true);
     try {
       if (currentUser == null) {
-        return {'success': false, 'message': 'Please sign in to request a loan'};
+        return {
+          'success': false,
+          'message': 'Please sign in to request a loan'
+        };
       }
 
-      final studentDoc = await _firestore.collection('students').doc(currentUser!.uid).get();
+      final studentDoc =
+          await _firestore.collection('students').doc(currentUser!.uid).get();
       if (!studentDoc.exists) {
-        return {'success': false, 'message': 'Only verified students can request loans'};
+        return {
+          'success': false,
+          'message': 'Only verified students can request loans'
+        };
       }
 
       final loan = Loan(
@@ -59,7 +81,11 @@ class LoanService extends ChangeNotifier {
         repaymentStartDate: repaymentStartDate,
         latePaymentPenaltyRate: 5.0, // Default penalty rate
         createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        updatedAt: DateTime.now(), 
+        providerName: providerName, 
+        loanType: loanType,
+        institutionName: institutionName, 
+        mpesaPhone: mpesaPhone,
       );
 
       final loanRef = await _firestore.collection('loans').add(loan.toMap());
@@ -69,7 +95,8 @@ class LoanService extends ChangeNotifier {
         id: '',
         userId: currentUser!.uid,
         title: 'Loan Request Submitted',
-        body: 'Your loan request for KES ${amount.toStringAsFixed(2)} has been submitted for review.',
+        body:
+            'Your loan request for KES ${amount.toStringAsFixed(2)} has been submitted for review.',
         type: 'LOAN_REQUEST',
         isRead: false,
         createdAt: DateTime.now(),
@@ -116,12 +143,14 @@ class LoanService extends ChangeNotifier {
         return {'success': false, 'message': 'Authentication required'};
       }
 
-      final studentDoc = await _firestore.collection('students').doc(currentUser!.uid).get();
+      final studentDoc =
+          await _firestore.collection('students').doc(currentUser!.uid).get();
       if (!studentDoc.exists) {
         return {'success': false, 'message': 'Student account not found'};
       }
 
-      final loanDocs = await _firestore.collection('loans')
+      final loanDocs = await _firestore
+          .collection('loans')
           .where('studentId', isEqualTo: currentUser!.uid)
           .get();
 
@@ -133,10 +162,7 @@ class LoanService extends ChangeNotifier {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to load your loans'
-      };
+      return {'success': false, 'message': 'Failed to load your loans'};
     } finally {
       _setLoading(false);
     }
@@ -149,12 +175,14 @@ class LoanService extends ChangeNotifier {
         return {'success': false, 'message': 'Authentication required'};
       }
 
-      final providerDoc = await _firestore.collection('providers').doc(currentUser!.uid).get();
+      final providerDoc =
+          await _firestore.collection('providers').doc(currentUser!.uid).get();
       if (!providerDoc.exists) {
         return {'success': false, 'message': 'Provider account not found'};
       }
 
-      final loanDocs = await _firestore.collection('loans')
+      final loanDocs = await _firestore
+          .collection('loans')
           .where('providerId', isEqualTo: currentUser!.uid)
           .get();
 
@@ -166,16 +194,14 @@ class LoanService extends ChangeNotifier {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to load provider loans'
-      };
+      return {'success': false, 'message': 'Failed to load provider loans'};
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<Map<String, dynamic>> updateLoanStatus(String loanId, String status, {String? mpesaTransactionCode}) async {
+  Future<Map<String, dynamic>> updateLoanStatus(String loanId, String status,
+      {String? mpesaTransactionCode}) async {
     _setLoading(true);
     try {
       if (currentUser == null) {
@@ -192,7 +218,9 @@ class LoanService extends ChangeNotifier {
       }
 
       final loan = Loan.fromFirestore(loanDoc);
-      final isAdmin = (await _firestore.collection('admins').doc(currentUser!.uid).get()).exists;
+      final isAdmin =
+          (await _firestore.collection('admins').doc(currentUser!.uid).get())
+              .exists;
 
       if (loan.providerId != currentUser!.uid && !isAdmin) {
         return {'success': false, 'message': 'Unauthorized action'};
@@ -233,7 +261,8 @@ class LoanService extends ChangeNotifier {
           id: '',
           userId: loan.studentId,
           title: 'Loan Approved',
-          body: 'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been approved! Funds will be disbursed shortly.',
+          body:
+              'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been approved! Funds will be disbursed shortly.',
           type: 'LOAN_APPROVAL',
           isRead: false,
           createdAt: DateTime.now(),
@@ -246,7 +275,8 @@ class LoanService extends ChangeNotifier {
           id: '',
           userId: loan.studentId,
           title: 'Loan Request Rejected',
-          body: 'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been rejected. Please contact support for more information.',
+          body:
+              'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been rejected. Please contact support for more information.',
           type: 'LOAN_REJECTION',
           isRead: false,
           createdAt: DateTime.now(),
@@ -265,7 +295,8 @@ class LoanService extends ChangeNotifier {
           id: '',
           userId: loan.studentId,
           title: 'Loan Fully Paid',
-          body: 'Congratulations! Your loan of KES ${loan.amount.toStringAsFixed(2)} has been fully paid.',
+          body:
+              'Congratulations! Your loan of KES ${loan.amount.toStringAsFixed(2)} has been fully paid.',
           type: 'LOAN_PAID',
           isRead: false,
           createdAt: DateTime.now(),
@@ -282,10 +313,7 @@ class LoanService extends ChangeNotifier {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to update loan status'
-      };
+      return {'success': false, 'message': 'Failed to update loan status'};
     } finally {
       _setLoading(false);
     }
@@ -352,7 +380,8 @@ class LoanService extends ChangeNotifier {
           id: '',
           userId: loan.studentId,
           title: 'Payment Received',
-          body: 'Your payment of KES ${amount.toStringAsFixed(2)} has been received. Remaining balance: KES ${newBalance.toStringAsFixed(2)}',
+          body:
+              'Your payment of KES ${amount.toStringAsFixed(2)} has been received. Remaining balance: KES ${newBalance.toStringAsFixed(2)}',
           type: 'PAYMENT_CONFIRMATION',
           isRead: false,
           createdAt: DateTime.now(),
@@ -360,19 +389,13 @@ class LoanService extends ChangeNotifier {
 
         await _firestore.collection('notifications').add(notification.toJson());
 
-        return {
-          'success': true,
-          'message': 'Payment recorded successfully'
-        };
+        return {'success': true, 'message': 'Payment recorded successfully'};
       }
     } catch (e) {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to record payment'
-      };
+      return {'success': false, 'message': 'Failed to record payment'};
     } finally {
       _setLoading(false);
     }
@@ -385,7 +408,8 @@ class LoanService extends ChangeNotifier {
         return {'success': false, 'message': 'Authentication required'};
       }
 
-      final adminDoc = await _firestore.collection('admins').doc(currentUser!.uid).get();
+      final adminDoc =
+          await _firestore.collection('admins').doc(currentUser!.uid).get();
       if (!adminDoc.exists) {
         return {'success': false, 'message': 'Admin access required'};
       }
@@ -399,10 +423,7 @@ class LoanService extends ChangeNotifier {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to load all loans'
-      };
+      return {'success': false, 'message': 'Failed to load all loans'};
     } finally {
       _setLoading(false);
     }
@@ -415,7 +436,8 @@ class LoanService extends ChangeNotifier {
         return {'success': false, 'message': 'Invalid status filter'};
       }
 
-      final loanDocs = await _firestore.collection('loans')
+      final loanDocs = await _firestore
+          .collection('loans')
           .where('status', isEqualTo: status)
           .get();
 
@@ -427,10 +449,7 @@ class LoanService extends ChangeNotifier {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to filter loans'
-      };
+      return {'success': false, 'message': 'Failed to filter loans'};
     } finally {
       _setLoading(false);
     }
@@ -445,7 +464,9 @@ class LoanService extends ChangeNotifier {
       }
 
       final loan = Loan.fromFirestore(loanDoc);
-      final isAdmin = (await _firestore.collection('admins').doc(currentUser!.uid).get()).exists;
+      final isAdmin =
+          (await _firestore.collection('admins').doc(currentUser!.uid).get())
+              .exists;
 
       if (loan.studentId != currentUser!.uid &&
           loan.providerId != currentUser!.uid &&
@@ -453,22 +474,22 @@ class LoanService extends ChangeNotifier {
         return {'success': false, 'message': 'Access denied'};
       }
 
-      final transactionDocs = await _firestore.collection('transactions')
+      final transactionDocs = await _firestore
+          .collection('transactions')
           .where('loanId', isEqualTo: loanId)
           .get();
 
       return {
         'success': true,
-        'data': transactionDocs.docs.map((doc) => tm.Transaction.fromFirestore(doc)).toList()
+        'data': transactionDocs.docs
+            .map((doc) => tm.Transaction.fromFirestore(doc))
+            .toList()
       };
     } catch (e) {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to load transactions'
-      };
+      return {'success': false, 'message': 'Failed to load transactions'};
     } finally {
       _setLoading(false);
     }
@@ -489,7 +510,9 @@ class LoanService extends ChangeNotifier {
       final loan = Loan.fromFirestore(loanDoc);
 
       // Only the provider or admin can send reminders
-      final isAdmin = (await _firestore.collection('admins').doc(currentUser!.uid).get()).exists;
+      final isAdmin =
+          (await _firestore.collection('admins').doc(currentUser!.uid).get())
+              .exists;
       if (loan.providerId != currentUser!.uid && !isAdmin) {
         return {'success': false, 'message': 'Unauthorized action'};
       }
@@ -499,7 +522,8 @@ class LoanService extends ChangeNotifier {
         id: '',
         userId: loan.studentId,
         title: 'Payment Reminder',
-        body: 'This is a reminder that your payment of KES ${loan.monthlyPayment.toStringAsFixed(2)} is due on ${loan.nextDueDate.day}/${loan.nextDueDate.month}/${loan.nextDueDate.year}.',
+        body:
+            'This is a reminder that your payment of KES ${loan.monthlyPayment.toStringAsFixed(2)} is due on ${loan.nextDueDate.day}/${loan.nextDueDate.month}/${loan.nextDueDate.year}.',
         type: 'PAYMENT_REMINDER',
         isRead: false,
         createdAt: DateTime.now(),
@@ -507,18 +531,12 @@ class LoanService extends ChangeNotifier {
 
       await _firestore.collection('notifications').add(notification.toJson());
 
-      return {
-        'success': true,
-        'message': 'Payment reminder sent'
-      };
+      return {'success': true, 'message': 'Payment reminder sent'};
     } catch (e) {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to send payment reminder'
-      };
+      return {'success': false, 'message': 'Failed to send payment reminder'};
     } finally {
       _setLoading(false);
     }

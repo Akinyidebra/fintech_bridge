@@ -31,6 +31,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   final TextEditingController _interestRateController = TextEditingController();
   final TextEditingController _websiteController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _institutionController = TextEditingController();
+  final TextEditingController _mpesaPhoneController = TextEditingController();
 
   // Focus nodes
   final FocusNode _fullNameFocusNode = FocusNode();
@@ -46,6 +48,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   final FocusNode _interestRateFocusNode = FocusNode();
   final FocusNode _websiteFocusNode = FocusNode();
   final FocusNode _descriptionFocusNode = FocusNode();
+  final FocusNode _institutionFocusNode = FocusNode();
+  final FocusNode _mpesaPhoneFocusNode = FocusNode();
 
   final _formKey = GlobalKey<FormState>();
   bool _passwordVisible = false;
@@ -98,6 +102,8 @@ class _RegisterScreenState extends State<RegisterScreen>
     _interestRateController.dispose();
     _websiteController.dispose();
     _descriptionController.dispose();
+    _institutionController.dispose();
+    _mpesaPhoneController.dispose();
 
     _fullNameFocusNode.dispose();
     _emailFocusNode.dispose();
@@ -112,6 +118,8 @@ class _RegisterScreenState extends State<RegisterScreen>
     _interestRateFocusNode.dispose();
     _websiteFocusNode.dispose();
     _descriptionFocusNode.dispose();
+    _institutionFocusNode.dispose();
+    _mpesaPhoneFocusNode.dispose();
 
     _animationController.dispose();
     super.dispose();
@@ -172,6 +180,8 @@ class _RegisterScreenState extends State<RegisterScreen>
             yearOfStudy: int.parse(_yearOfStudyController.text),
             profileImage: _profileImageBase64,
             emailValidator: _isUniversityEmail,
+            mpesaPhone: _mpesaPhoneController.text,
+            institutionName: _institutionController.text,
           );
         } else {
           List<String> loanTypes = _loanTypesController.text
@@ -652,6 +662,51 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   decoration: AppConstants.inputDecoration(
                                     labelText: 'Course',
                                     prefixIcon: Icons.school_outlined,
+                                  ),
+                                  validator: (value) => value?.isEmpty ?? true
+                                      ? 'Required'
+                                      : null,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _yearOfStudyController,
+                                  focusNode: _yearOfStudyFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Year of Study',
+                                    prefixIcon: Icons.calendar_today_outlined,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Required';
+                                    }
+                                    final year = int.tryParse(value);
+                                    if (year == null || year < 1 || year > 5) {
+                                      return 'Invalid year';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 20),
+                                // Add Institution Name field
+                                TextFormField(
+                                  controller: _institutionController,
+                                  focusNode: _institutionFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'Institution Name',
+                                    prefixIcon: Icons.apartment,
+                                  ),
+                                  validator: (value) => value?.isEmpty ?? true
+                                      ? 'Required'
+                                      : null,
+                                ),
+                                const SizedBox(height: 20),
+                                // Add M-Pesa Phone field
+                                TextFormField(
+                                  controller: _mpesaPhoneController,
+                                  focusNode: _mpesaPhoneFocusNode,
+                                  decoration: AppConstants.inputDecoration(
+                                    labelText: 'M-Pesa Phone Number',
+                                    prefixIcon: Icons.phone_android,
                                   ),
                                   validator: (value) => value?.isEmpty ?? true
                                       ? 'Required'

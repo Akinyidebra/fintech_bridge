@@ -13,7 +13,6 @@ class Student {
   final DateTime? verifiedAt;
   final List<String>? identificationImages;
   final String mpesaPhone;
-  final String universityRegistrationNumber;
   final String institutionName;
   final bool hasActiveLoan;
   final List<String> guarantorContacts;
@@ -33,7 +32,6 @@ class Student {
     this.verifiedAt,
     this.identificationImages,
     required this.mpesaPhone,
-    required this.universityRegistrationNumber,
     required this.institutionName,
     required this.hasActiveLoan,
     required this.guarantorContacts,
@@ -58,7 +56,6 @@ class Student {
           ? List<String>.from(data['identificationImages'])
           : null,
       mpesaPhone: data['mpesaPhone'],
-      universityRegistrationNumber: data['universityRegistrationNumber'],
       institutionName: data['institutionName'],
       hasActiveLoan: data['hasActiveLoan'] ?? false,
       guarantorContacts: data['guarantorContacts'] != null
@@ -82,7 +79,6 @@ class Student {
       'verifiedAt': verifiedAt,
       'identificationImages': identificationImages,
       'mpesaPhone': mpesaPhone,
-      'universityRegistrationNumber': universityRegistrationNumber,
       'institutionName': institutionName,
       'hasActiveLoan': hasActiveLoan,
       'guarantorContacts': guarantorContacts,
