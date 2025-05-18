@@ -37,6 +37,10 @@ class AuthService extends ChangeNotifier {
     required int yearOfStudy,
     String? profileImage,
     List<String>? identificationImages,
+    required String mpesaPhone,
+    required String universityRegistrationNumber,
+    required String institutionName,
+    List<String>? guarantorContacts,
     required bool Function(String) emailValidator,
   }) async {
     _setLoading(true);
@@ -46,7 +50,10 @@ class AuthService extends ChangeNotifier {
           email.isEmpty ||
           password.isEmpty ||
           studentId.isEmpty ||
-          phone.isEmpty) {
+          phone.isEmpty ||
+          mpesaPhone.isEmpty ||
+          universityRegistrationNumber.isEmpty ||
+          institutionName.isEmpty) {
         return {'success': false, 'message': 'All fields are required'};
       }
 
@@ -93,6 +100,11 @@ class AuthService extends ChangeNotifier {
         verified: false,
         verifiedAt: null,
         identificationImages: identificationImages,
+        mpesaPhone: mpesaPhone,
+        universityRegistrationNumber: universityRegistrationNumber,
+        institutionName: institutionName,
+        hasActiveLoan: false,
+        guarantorContacts: guarantorContacts ?? [],
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -318,6 +330,10 @@ class AuthService extends ChangeNotifier {
     required int yearOfStudy,
     String? profileImage,
     List<String>? identificationImages,
+    required String mpesaPhone,
+    required String universityRegistrationNumber,
+    required String institutionName,
+    List<String>? guarantorContacts,
   }) async {
     _setLoading(true);
     try {
@@ -327,7 +343,7 @@ class AuthService extends ChangeNotifier {
 
       // Verify user is a student
       DocumentSnapshot studentDoc =
-          await _firestore.collection('students').doc(currentUser!.uid).get();
+      await _firestore.collection('students').doc(currentUser!.uid).get();
       if (!studentDoc.exists) {
         return {'success': false, 'message': 'User is not a student'};
       }
@@ -347,7 +363,12 @@ class AuthService extends ChangeNotifier {
         verified: student.verified,
         verifiedAt: student.verifiedAt,
         identificationImages:
-            identificationImages ?? student.identificationImages,
+        identificationImages ?? student.identificationImages,
+        mpesaPhone: mpesaPhone,
+        universityRegistrationNumber: universityRegistrationNumber,
+        institutionName: institutionName,
+        hasActiveLoan: student.hasActiveLoan,
+        guarantorContacts: guarantorContacts ?? student.guarantorContacts,
         createdAt: student.createdAt,
         updatedAt: DateTime.now(),
       );
@@ -398,7 +419,7 @@ class AuthService extends ChangeNotifier {
 
       // Verify user is a provider
       DocumentSnapshot providerDoc =
-          await _firestore.collection('providers').doc(currentUser!.uid).get();
+      await _firestore.collection('providers').doc(currentUser!.uid).get();
       if (!providerDoc.exists) {
         return {'success': false, 'message': 'User is not a provider'};
       }
@@ -420,7 +441,7 @@ class AuthService extends ChangeNotifier {
         verified: provider.verified,
         verifiedAt: provider.verifiedAt,
         identificationImages:
-            identificationImages ?? provider.identificationImages,
+        identificationImages ?? provider.identificationImages,
         approved: provider.approved,
         createdAt: provider.createdAt,
         updatedAt: DateTime.now(),
@@ -454,9 +475,9 @@ class AuthService extends ChangeNotifier {
 
   // Login with email/password
   Future<Map<String, dynamic>> loginWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
+      String email,
+      String password,
+      ) async {
     _setLoading(true);
     try {
       if (email.isEmpty || password.isEmpty) {
@@ -480,7 +501,7 @@ class AuthService extends ChangeNotifier {
       // Determine user type and get appropriate data
       // First check if admin
       DocumentSnapshot adminDoc =
-          await _firestore.collection('admins').doc(credential.user!.uid).get();
+      await _firestore.collection('admins').doc(credential.user!.uid).get();
       if (adminDoc.exists) {
         Admin admin = Admin.fromFirestore(adminDoc);
         return {
@@ -636,7 +657,7 @@ class AuthService extends ChangeNotifier {
     try {
       // Try to get admin data
       DocumentSnapshot adminDoc =
-          await _firestore.collection('admins').doc(currentUser!.uid).get();
+      await _firestore.collection('admins').doc(currentUser!.uid).get();
       if (adminDoc.exists) {
         Admin admin = Admin.fromFirestore(adminDoc);
         return {'success': true, 'user': admin, 'role': 'admin'};
@@ -644,7 +665,7 @@ class AuthService extends ChangeNotifier {
 
       // Try to get student data
       DocumentSnapshot studentDoc =
-          await _firestore.collection('students').doc(currentUser!.uid).get();
+      await _firestore.collection('students').doc(currentUser!.uid).get();
       if (studentDoc.exists) {
         Student student = Student.fromFirestore(studentDoc);
         return {'success': true, 'user': student, 'role': 'student'};
@@ -652,7 +673,7 @@ class AuthService extends ChangeNotifier {
 
       // Try to get provider data
       DocumentSnapshot providerDoc =
-          await _firestore.collection('providers').doc(currentUser!.uid).get();
+      await _firestore.collection('providers').doc(currentUser!.uid).get();
       if (providerDoc.exists) {
         Provider provider = Provider.fromFirestore(providerDoc);
         return {'success': true, 'user': provider, 'role': 'provider'};

@@ -11,7 +11,12 @@ class Student {
   final String? profileImage;
   final bool verified;
   final DateTime? verifiedAt;
-  final List<String>? identificationImages; // For ID front/back and selfie
+  final List<String>? identificationImages;
+  final String mpesaPhone;
+  final String universityRegistrationNumber;
+  final String institutionName;
+  final bool hasActiveLoan;
+  final List<String> guarantorContacts;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -27,6 +32,11 @@ class Student {
     this.verified = false,
     this.verifiedAt,
     this.identificationImages,
+    required this.mpesaPhone,
+    required this.universityRegistrationNumber,
+    required this.institutionName,
+    required this.hasActiveLoan,
+    required this.guarantorContacts,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -44,9 +54,16 @@ class Student {
       profileImage: data['profileImage'],
       verified: data['verified'] ?? false,
       verifiedAt: data['verifiedAt'] != null ? data['verifiedAt'].toDate() : null,
-      identificationImages: data['identificationImages'] != null 
-          ? List<String>.from(data['identificationImages']) 
+      identificationImages: data['identificationImages'] != null
+          ? List<String>.from(data['identificationImages'])
           : null,
+      mpesaPhone: data['mpesaPhone'],
+      universityRegistrationNumber: data['universityRegistrationNumber'],
+      institutionName: data['institutionName'],
+      hasActiveLoan: data['hasActiveLoan'] ?? false,
+      guarantorContacts: data['guarantorContacts'] != null
+          ? List<String>.from(data['guarantorContacts'])
+          : [],
       createdAt: data['createdAt'].toDate(),
       updatedAt: data['updatedAt'].toDate(),
     );
@@ -64,6 +81,11 @@ class Student {
       'verified': verified,
       'verifiedAt': verifiedAt,
       'identificationImages': identificationImages,
+      'mpesaPhone': mpesaPhone,
+      'universityRegistrationNumber': universityRegistrationNumber,
+      'institutionName': institutionName,
+      'hasActiveLoan': hasActiveLoan,
+      'guarantorContacts': guarantorContacts,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };

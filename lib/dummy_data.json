@@ -1,0 +1,89 @@
+{
+  "providers": {
+    "provider1": {
+      "id": "provider1",
+      "businessName": "EduFund Kenya",
+      "businessEmail": "edufund@test.com",
+      "phone": "254712345678",
+      "businessType": "Education Loan Specialist",
+      "loanTypes": ["Tuition", "Emergency", "Book Allowance"],
+      "interestRate": 7.5,
+      "verified": true,
+      "approved": true,
+      "identificationImages": ["https://dummyimage.com/id_front.jpg"],
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    "provider2": {
+      "id": "provider2",
+      "businessName": "QuickCash Loans",
+      "businessEmail": "quickcash@test.com",
+      "phone": "254723456789",
+      "businessType": "Short-Term Loans",
+      "loanTypes": ["Emergency", "Project Funding"],
+      "interestRate": 9.0,
+      "verified": true,
+      "approved": true,
+      "identificationImages": ["https://dummyimage.com/id_front.jpg"],
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    "provider3": {
+      "id": "provider3",
+      "businessName": "Campus Advance",
+      "businessEmail": "campus@test.com",
+      "phone": "254734567890",
+      "businessType": "Student-Focused Lender",
+      "loanTypes": ["Tuition", "Accommodation"],
+      "interestRate": 6.5,
+      "verified": true,
+      "approved": true,
+      "identificationImages": ["https://dummyimage.com/id_front.jpg"],
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  "admins": {
+    "admin1": {
+      "id": "admin1",
+      "fullName": "Admin User",
+      "adminEmail": "admin@helbapp.com",
+      "role": "super-admin",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  "students": {
+    "student1": {
+      "id": "student1",
+      "fullName": "John Mwangi",
+      "universityEmail": "john.mwangi@uonbi.ac.ke",
+      "studentId": "SC211-1234/2021",
+      "phone": "254700000001",
+      "course": "Computer Science",
+      "yearOfStudy": 3,
+      "verified": true,
+      "mpesaPhone": "254700000001",
+      "institutionName": "University of Nairobi",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  },
+  "loans": {
+    "loan1": {
+      "id": "loan1",
+      "studentId": "student1",
+      "providerId": "provider1",
+      "amount": 15000,
+      "status": "APPROVED",
+      "purpose": "Tuition Fees",
+      "interestRate": 7.5,
+      "termMonths": 6,
+      "monthlyPayment": 2625,
+      "remainingBalance": 15000,
+      "mpesaTransactionCode": "MLW123456",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    }
+  }
+}

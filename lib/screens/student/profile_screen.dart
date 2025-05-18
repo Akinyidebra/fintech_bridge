@@ -55,54 +55,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Helper method to convert map data to Student object
+  // Updated helper method to convert map data to Student object
   Student _convertToStudent(Map<String, dynamic> data) {
     // If data is coming from Firestore document snapshot
-    if (data['id'] != null) {
-      return Student(
-        id: data['id'],
-        fullName: data['fullName'] ?? 'No Name',
-        universityEmail: data['universityEmail'] ?? 'No Email',
-        studentId: data['studentId'] ?? 'No ID',
-        phone: data['phone'] ?? 'No Phone',
-        course: data['course'] ?? 'No Course',
-        yearOfStudy: data['yearOfStudy'] ?? 1,
-        profileImage: data['profileImage'],
-        verified: data['verified'] ?? false,
-        verifiedAt: data['verifiedAt'] != null
-            ? data['verifiedAt'] is DateTime
-                ? data['verifiedAt']
-                : (data['verifiedAt'] as Timestamp).toDate()
-            : null,
-        identificationImages: data['identificationImages'] != null
-            ? List<String>.from(data['identificationImages'])
-            : null,
-        createdAt: data['createdAt'] != null
-            ? data['createdAt'] is DateTime
-                ? data['createdAt']
-                : (data['createdAt'] as Timestamp).toDate()
-            : DateTime.now(),
-        updatedAt: data['updatedAt'] != null
-            ? data['updatedAt'] is DateTime
-                ? data['updatedAt']
-                : (data['updatedAt'] as Timestamp).toDate()
-            : DateTime.now(),
-      );
-    } else {
-      // Default values for missing data
-      return Student(
-        id: 'unknown',
-        fullName: 'No Name',
-        universityEmail: 'No Email',
-        studentId: 'No ID',
-        phone: 'No Phone',
-        course: 'No Course',
-        yearOfStudy: 1,
-        verified: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-    }
+    return Student(
+      id: data['id'] ?? 'unknown',
+      fullName: data['fullName'] ?? 'No Name',
+      universityEmail: data['universityEmail'] ?? 'No Email',
+      studentId: data['studentId'] ?? 'No ID',
+      phone: data['phone'] ?? 'No Phone',
+      course: data['course'] ?? 'No Course',
+      yearOfStudy: data['yearOfStudy'] ?? 1,
+      profileImage: data['profileImage'],
+      verified: data['verified'] ?? false,
+      verifiedAt: data['verifiedAt'] != null
+          ? data['verifiedAt'] is DateTime
+          ? data['verifiedAt']
+          : (data['verifiedAt'] as Timestamp).toDate()
+          : null,
+      identificationImages: data['identificationImages'] != null
+          ? List<String>.from(data['identificationImages'])
+          : null,
+      mpesaPhone: data['mpesaPhone'] ?? data['phone'] ?? 'No Phone',
+      universityRegistrationNumber: data['universityRegistrationNumber'] ?? 'Not provided',
+      institutionName: data['institutionName'] ?? 'Not provided',
+      hasActiveLoan: data['hasActiveLoan'] ?? false,
+      guarantorContacts: data['guarantorContacts'] != null
+          ? List<String>.from(data['guarantorContacts'])
+          : [],
+      createdAt: data['createdAt'] != null
+          ? data['createdAt'] is DateTime
+          ? data['createdAt']
+          : (data['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
+      updatedAt: data['updatedAt'] != null
+          ? data['updatedAt'] is DateTime
+          ? data['updatedAt']
+          : (data['updatedAt'] as Timestamp).toDate()
+          : DateTime.now(),
+    );
   }
 
   Widget _buildProfileContent(Student student, AuthService authService) {
@@ -115,6 +106,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildPersonalInfoSection(student),
           const SizedBox(height: 20),
           _buildAcademicInfoSection(student),
+          const SizedBox(height: 20),
+          _buildFinancialInfoSection(student),
           const SizedBox(height: 24),
           _buildActionButtons(context, authService),
           const SizedBox(height: 24),
@@ -187,7 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CircleAvatar(
                     radius: 14,
                     backgroundImage:
-                        NetworkImage('https://i.pravatar.cc/150?img=5'),
+                    NetworkImage('https://i.pravatar.cc/150?img=5'),
                   ),
                 ),
               ),
@@ -233,10 +226,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: CircleAvatar(
                   radius: 40,
                   backgroundImage: student.profileImage != null &&
-                          student.profileImage!.isNotEmpty
+                      student.profileImage!.isNotEmpty
                       ? NetworkImage(student.profileImage!)
                       : const AssetImage('assets/images/default_avatar.png')
-                          as ImageProvider,
+                  as ImageProvider,
                 ),
               ),
               const SizedBox(width: 16),
@@ -288,6 +281,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 14,
                         fontFamily: 'Poppins',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      student.institutionName,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                        fontFamily: 'Poppins',
+                        fontStyle: FontStyle.italic,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -362,12 +367,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ? Icons.verified_rounded
                                 : Icons.pending_rounded,
                             color:
-                                student.verified ? Colors.white : Colors.amber,
+                            student.verified ? Colors.white : Colors.amber,
                             size: 16,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             student.verified ? 'Verified' : 'Pending',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  height: 40,
+                  width: 1,
+                  color: Colors.white.withOpacity(0.3),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Text(
+                        'Loans',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            student.hasActiveLoan
+                                ? Icons.check_circle_rounded
+                                : Icons.unpublished_rounded,
+                            color: student.hasActiveLoan
+                                ? Colors.greenAccent
+                                : Colors.white70,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            student.hasActiveLoan ? 'Active' : 'None',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -423,7 +472,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 16),
           _buildInfoRow(
             Icons.email_rounded,
-            'Email',
+            'University Email',
             student.universityEmail,
             AppConstants.primaryColor.withOpacity(0.1),
             AppConstants.primaryColor,
@@ -438,17 +487,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Divider(height: 24),
           _buildInfoRow(
+            Icons.phone_android_rounded,
+            'M-Pesa Phone',
+            student.mpesaPhone,
+            AppConstants.secondaryColor.withOpacity(0.1),
+            AppConstants.secondaryColor,
+          ),
+          const Divider(height: 24),
+          _buildInfoRow(
             Icons.verified_user_rounded,
             'Verification Status',
             student.verified ? 'Verified' : 'Pending Verification',
             (student.verified
-                    ? AppConstants.successColor
-                    : AppConstants.warningColor)
+                ? AppConstants.successColor
+                : AppConstants.warningColor)
                 .withOpacity(0.1),
             student.verified
                 ? AppConstants.successColor
                 : AppConstants.warningColor,
           ),
+          if (student.verifiedAt != null) ...[
+            const Divider(height: 24),
+            _buildInfoRow(
+              Icons.calendar_today_rounded,
+              'Verified Date',
+              '${student.verifiedAt?.day}/${student.verifiedAt?.month}/${student.verifiedAt?.year}',
+              AppConstants.successColor.withOpacity(0.1),
+              AppConstants.successColor,
+            ),
+          ],
         ],
       ),
     );
@@ -504,20 +571,143 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const Divider(height: 24),
           _buildInfoRow(
-            Icons.credit_score_rounded,
-            'Student Loans',
-            '2 Active Loans',
+            Icons.badge_rounded,
+            'University Reg. Number',
+            student.universityRegistrationNumber,
             AppConstants.primaryColor.withOpacity(0.1),
             AppConstants.primaryColor,
+          ),
+          const Divider(height: 24),
+          _buildInfoRow(
+            Icons.account_balance_rounded,
+            'Institution',
+            student.institutionName,
+            AppConstants.secondaryColor.withOpacity(0.1),
+            AppConstants.secondaryColor,
           ),
         ],
       ),
     );
   }
 
+  Widget _buildFinancialInfoSection(Student student) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            spreadRadius: 0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.account_balance_wallet_rounded,
+                color: AppConstants.accentColor,
+                size: 22,
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Financial Information',
+                style: AppConstants.headlineSmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildInfoRow(
+            Icons.credit_score_rounded,
+            'Loan Status',
+            student.hasActiveLoan ? 'Active Loan' : 'No Active Loans',
+            student.hasActiveLoan
+                ? AppConstants.successColor.withOpacity(0.1)
+                : AppConstants.primaryColor.withOpacity(0.1),
+            student.hasActiveLoan
+                ? AppConstants.successColor
+                : AppConstants.primaryColor,
+          ),
+          const Divider(height: 24),
+          _buildInfoRow(
+            Icons.people_alt_rounded,
+            'Guarantors',
+            student.guarantorContacts.isNotEmpty
+                ? '${student.guarantorContacts.length} Guarantor(s)'
+                : 'No Guarantors',
+            AppConstants.accentColor.withOpacity(0.1),
+            AppConstants.accentColor,
+          ),
+          if (student.guarantorContacts.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildGuarantorsList(student.guarantorContacts),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuarantorsList(List<String> guarantors) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppConstants.backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...guarantors.map((contact) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.person_rounded,
+                  size: 18,
+                  color: AppConstants.accentColor,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  contact,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppConstants.textColor,
+                    fontFamily: 'Poppins',
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(color: AppConstants.primaryColor),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(color: AppConstants.primaryColor),
+          const SizedBox(height: 16),
+          Text(
+            'Loading your profile...',
+            style: TextStyle(
+              color: AppConstants.textColor.withOpacity(0.7),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -526,13 +716,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 60, color: Colors.red),
+          const Icon(Icons.error_outline, size: 60, color: AppConstants.errorColor),
           const SizedBox(height: 16),
-          Text(message, style: AppConstants.bodyMedium),
+          Text(
+            message,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppConstants.textColor,
+              fontFamily: 'Poppins',
+            ),
+          ),
           const SizedBox(height: 24),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => setState(() {}),
-            child: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppConstants.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.refresh_rounded, size: 20),
+            label: const Text(
+              'Retry',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
         ],
       ),
@@ -544,14 +758,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.person_off_rounded, size: 60, color: Colors.grey),
+          const Icon(
+            Icons.person_off_rounded,
+            size: 60,
+            color: Colors.grey,
+          ),
           const SizedBox(height: 16),
-          const Text('Profile information not found',
-              style: AppConstants.bodyMedium),
+          const Text(
+            'Profile information not found',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppConstants.textColor,
+              fontFamily: 'Poppins',
+            ),
+          ),
           const SizedBox(height: 24),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => _navigateToEditProfile(),
-            child: const Text('Complete Profile'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppConstants.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.edit_rounded, size: 20),
+            label: const Text(
+              'Complete Profile',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
         ],
       ),
@@ -559,12 +800,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoRow(
-    IconData icon,
-    String label,
-    String? value,
-    Color bgColor,
-    Color iconColor,
-  ) {
+      IconData icon,
+      String label,
+      String? value,
+      Color bgColor,
+      Color iconColor,
+      ) {
     final valueText = value ?? 'Not provided';
 
     return Row(
@@ -586,7 +827,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: AppConstants.bodyMediumSecondary),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppConstants.textColor.withOpacity(0.6),
+                  fontFamily: 'Poppins',
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 valueText,
@@ -741,89 +990,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _navigateToEditProfile() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(
-            title: const Text(
-              'Edit Profile',
+    Navigator.of(context).pushNamed('/edit-profile');
+  }
+
+  void _handleLogout(BuildContext context, AuthService authService) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Confirm Logout',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to log out of your account?',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+          ),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              'Cancel',
               style: TextStyle(
+                color: AppConstants.textColor,
                 fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
               ),
             ),
-            backgroundColor: Colors.white,
-            elevation: 0,
-            iconTheme: const IconThemeData(color: AppConstants.primaryColor),
           ),
-          body: const Center(child: Text('Edit Profile Screen')),
-        ),
+          ElevatedButton(
+            onPressed: () async {
+              await authService.signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppConstants.errorColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  void _handleSaveProfile(Map<String, dynamic> updatedData) async {
-    final databaseService =
-        Provider.of<DatabaseService>(context, listen: false);
-    final authService = Provider.of<AuthService>(context, listen: false);
-
-    // Ensure user is authenticated
-    if (authService.currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Authentication error. Please login again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final result = await databaseService.updateStudentProfile(
-      authService.currentUser!.uid,
-      updatedData,
-    );
-
-    if (result['success']) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profile updated successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      setState(() {});
-    } else {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Update failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _handleLogout(BuildContext context, AuthService authService) async {
-    final result = await authService.signOut();
-    if (result['success']) {
-      if (!mounted) return;
-
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
-    } else {
-      // Show error message if logout fails
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Logout failed'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 }
