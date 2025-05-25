@@ -176,19 +176,6 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
           providerId: _selectedProvider!.id,
         );
 
-        // Check if eligibilityCheck is null or doesn't contain expected keys
-        if (eligibilityCheck == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Unable to check loan eligibility. Please try again.'),
-                backgroundColor: AppConstants.accentColor,
-              ),
-            );
-          }
-          return;
-        }
-
         final bool isEligible = eligibilityCheck['eligible'] ?? false;
         final String message = eligibilityCheck['message'] ?? 'Eligibility check failed';
 
