@@ -115,12 +115,33 @@ class LoanService extends ChangeNotifier {
         };
       }
 
+      // Check minimum loan amount
+      const double minAmount = 100.0; // 100 KES minimum
+      if (amount < minAmount) {
+        return {
+          'success': false,
+          'message':
+              'Minimum loan amount is KES ${minAmount.toStringAsFixed(2)}'
+        };
+      }
+
+      final nextDueDate = DateTime.now()
+          .add(const Duration(days: 30)); // First payment due in 30 days
+
       final studentDoc =
           await _firestore.collection('students').doc(currentUser!.uid).get();
       if (!studentDoc.exists) {
         return {
           'success': false,
           'message': 'Only verified students can request loans'
+        };
+      }
+
+      if (studentDoc['hasActiveLoan'] == true) {
+        return {
+          'success': false,
+          'message':
+              'You already have an active loan. Please repay your current loan before applying for a new one.'
         };
       }
 
@@ -136,7 +157,7 @@ class LoanService extends ChangeNotifier {
         termMonths: termMonths,
         monthlyPayment: monthlyPayment,
         remainingBalance: amount,
-        nextDueDate: repaymentStartDate,
+        nextDueDate: nextDueDate,
         mpesaTransactionCode: '',
         repaymentMethod: repaymentMethod,
         repaymentStartDate: repaymentStartDate,
@@ -1106,7 +1127,8 @@ class LoanService extends ChangeNotifier {
       if (studentData['hasActiveLoan'] == true) {
         return {
           'eligible': false,
-          'message': 'You already have an active loan'
+          'message':
+              'You already have an active loan. Please complete repayment before applying for a new loan.'
         };
       }
 
@@ -1127,9 +1149,8 @@ class LoanService extends ChangeNotifier {
 
       final providerData = providerDoc.data() as Map<String, dynamic>;
 
-      // Check if requested amount is within provider's limits
-      final minAmount = providerData['minLoanAmount'] ?? 0.0;
-      final maxAmount = providerData['maxLoanAmount'] ?? 0.0;
+      // Check minimum loan amount (100 KES as per your requirement)
+      const double minAmount = 100.0; // Minimum 100 KES
 
       if (requestedAmount < minAmount) {
         return {
@@ -1139,6 +1160,11 @@ class LoanService extends ChangeNotifier {
         };
       }
 
+      // Optional: Set a reasonable maximum based on your business logic
+      // You can remove this check if you don't want any maximum limit
+      const double maxAmount =
+          1000000.0; // 1 Million KES as reasonable upper limit
+
       if (requestedAmount > maxAmount) {
         return {
           'eligible': false,
@@ -1147,10 +1173,11 @@ class LoanService extends ChangeNotifier {
         };
       }
 
-      // For demonstration, simple credit score check
-      // In a real application, you would use a more sophisticated creditworthiness algorithm
-      final creditScore = studentData['creditScore'] ?? 0;
-      final minRequiredScore = providerData['minCreditScore'] ?? 600;
+      // Basic credit score check (optional - you can remove this if not needed)
+      // For demonstration purposes, assuming a default credit score
+      final creditScore =
+          studentData['creditScore'] ?? 650; // Default score if not set
+      const int minRequiredScore = 500; // Lower minimum requirement
 
       if (creditScore < minRequiredScore) {
         return {
@@ -1159,26 +1186,13 @@ class LoanService extends ChangeNotifier {
         };
       }
 
-      // Check if student's education institution is approved by the provider
-      final studentInstitution = studentData['institutionName'] ?? '';
-      final approvedInstitutions =
-          List<String>.from(providerData['approvedInstitutions'] ?? []);
-
-      if (approvedInstitutions.isNotEmpty &&
-          !approvedInstitutions.contains(studentInstitution)) {
-        return {
-          'eligible': false,
-          'message':
-              'Your educational institution is not supported by this provider'
-        };
-      }
-
       // Student is eligible for the loan
       return {
         'eligible': true,
         'message': 'You are eligible for this loan',
-        'maxAmount': maxAmount,
-        'interestRate': providerData['interestRate'] ?? 0.0,
+        'maxAmount': maxAmount, // Or remove this if no max limit
+        'interestRate':
+            providerData['interestRate'] ?? 10.0, // Default 10% if not set
       };
     } catch (e) {
       return {

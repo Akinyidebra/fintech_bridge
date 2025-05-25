@@ -62,19 +62,21 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
         if (widget.provider != null) {
           _selectedProvider = providers.firstWhere(
             (p) => p.id == widget.provider!.id,
-            orElse: () => providers.isNotEmpty ? providers.first : null!,
+            orElse: () => providers.isNotEmpty ? providers.first : throw Exception('No providers found'),
           );
         } else {
           _selectedProvider = providers.isNotEmpty ? providers.first : null;
         }
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading providers: ${e.toString()}'),
-          backgroundColor: AppConstants.accentColor,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading providers: ${e.toString()}'),
+            backgroundColor: AppConstants.accentColor,
+          ),
+        );
+      }
     }
   }
 
@@ -85,9 +87,9 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
       isScrollControlled: true,
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.white,
-          borderRadius: const BorderRadius.only(
+          borderRadius: BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -104,7 +106,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
+            const Text(
               'Select Loan Term',
               style: AppConstants.headlineSmall,
             ),
@@ -164,54 +166,103 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
     if (_formKey.currentState!.validate() &&
         _selectedProvider != null &&
         _selectedLoanType != null) {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(
-                    color: AppConstants.primaryColor,
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Processing your application...',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w500,
-                      color: AppConstants.textColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-
+      // Parse loan amount - handle comma in the input
+      final amountText = _amountController.text.replaceAll(',', '');
+      final amount = double.tryParse(amountText) ?? 0.0;
+      
       try {
-        // Parse loan amount - handle comma in the input
-        final amountText = _amountController.text.replaceAll(',', '');
-        final amount = double.tryParse(amountText) ?? 0.0;
+        final eligibilityCheck = await loanService.checkLoanEligibility(
+          requestedAmount: amount,
+          providerId: _selectedProvider!.id,
+        );
 
-        if (amount <= 0) {
-          // Close loading dialog and show error
-          Navigator.pop(context);
+        // Check if eligibilityCheck is null or doesn't contain expected keys
+        if (eligibilityCheck == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Unable to check loan eligibility. Please try again.'),
+                backgroundColor: AppConstants.accentColor,
+              ),
+            );
+          }
+          return;
+        }
+
+        final bool isEligible = eligibilityCheck['eligible'] ?? false;
+        final String message = eligibilityCheck['message'] ?? 'Eligibility check failed';
+
+        if (!isEligible) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(message),
+                backgroundColor: AppConstants.accentColor,
+              ),
+            );
+          }
+          return;
+        }
+      } catch (e) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please enter a valid loan amount'),
+            SnackBar(
+              content: Text('Error checking eligibility: ${e.toString()}'),
               backgroundColor: AppConstants.accentColor,
             ),
           );
+        }
+        return;
+      }
+
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Center(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(
+                      color: AppConstants.primaryColor,
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Processing your application...',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w500,
+                        color: AppConstants.textColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      }
+
+      try {
+        if (amount <= 0) {
+          // Close loading dialog and show error
+          if (mounted) {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Please enter a valid loan amount'),
+                backgroundColor: AppConstants.accentColor,
+              ),
+            );
+          }
           return;
         }
 
@@ -235,56 +286,66 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
           providerId: _selectedProvider!.id,
           providerName: _selectedProvider!.businessName,
           loanType: _selectedLoanType!,
-          institutionName: student.institutionName,
-          mpesaPhone: student.mpesaPhone,
+          institutionName: student['institutionName'] ?? 'Unknown Institution',
+          mpesaPhone: student['mpesaPhone'] ?? '',
           amount: amount,
           interestRate: _selectedProvider!.interestRate,
           termMonths: termMonths,
           monthlyPayment: monthlyPayment,
           purpose: '$_selectedPurpose: ${_purposeController.text}',
           dueDate: DateTime.now().add(const Duration(days: 90)),
-          repaymentMethod: 'M-PESA', // Default repayment method since it's not in the Provider model
+          repaymentMethod:
+              'M-PESA', // Default repayment method since it's not in the Provider model
           repaymentStartDate: DateTime.now(),
         );
 
         // Close loading dialog
-        Navigator.pop(context);
-
-        if (result['success']) {
-          // Show success and go back
+        if (mounted) {
           Navigator.pop(context);
+
+          final bool success = result['success'] ?? false;
+          final String resultMessage = result['message'] ?? 'Unknown error occurred';
+
+          if (success) {
+            // Show success and go back
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(resultMessage),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            // Show error
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(resultMessage),
+                backgroundColor: AppConstants.accentColor,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        // Handle errors
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(result['message']),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          // Show error
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message']),
+              content: Text('Error: ${e.toString()}'),
               backgroundColor: AppConstants.accentColor,
             ),
           );
         }
-      } catch (e) {
-        // Handle errors
-        Navigator.pop(context); // Close loading dialog
+      }
+    } else {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
+          const SnackBar(
+            content: Text('Please fill in all required fields'),
             backgroundColor: AppConstants.accentColor,
           ),
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all required fields'),
-          backgroundColor: AppConstants.accentColor,
-        ),
-      );
     }
   }
 
@@ -293,6 +354,10 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
     required double interestRate,
     required int termMonths,
   }) {
+    if (interestRate == 0) {
+      return amount / termMonths;
+    }
+    
     final monthlyRate = interestRate / 100 / 12;
     final numerator = monthlyRate * pow(1 + monthlyRate, termMonths);
     final denominator = pow(1 + monthlyRate, termMonths) - 1;
