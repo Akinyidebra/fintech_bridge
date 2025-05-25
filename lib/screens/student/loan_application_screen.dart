@@ -62,7 +62,9 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
         if (widget.provider != null) {
           _selectedProvider = providers.firstWhere(
             (p) => p.id == widget.provider!.id,
-            orElse: () => providers.isNotEmpty ? providers.first : throw Exception('No providers found'),
+            orElse: () => providers.isNotEmpty
+                ? providers.first
+                : throw Exception('No providers found'),
           );
         } else {
           _selectedProvider = providers.isNotEmpty ? providers.first : null;
@@ -169,7 +171,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
       // Parse loan amount - handle comma in the input
       final amountText = _amountController.text.replaceAll(',', '');
       final amount = double.tryParse(amountText) ?? 0.0;
-      
+
       try {
         final eligibilityCheck = await loanService.checkLoanEligibility(
           requestedAmount: amount,
@@ -177,7 +179,8 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
         );
 
         final bool isEligible = eligibilityCheck['eligible'] ?? false;
-        final String message = eligibilityCheck['message'] ?? 'Eligibility check failed';
+        final String message =
+            eligibilityCheck['message'] ?? 'Eligibility check failed';
 
         if (!isEligible) {
           if (mounted) {
@@ -291,11 +294,14 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
           Navigator.pop(context);
 
           final bool success = result['success'] ?? false;
-          final String resultMessage = result['message'] ?? 'Unknown error occurred';
+          final String resultMessage =
+              result['message'] ?? 'Unknown error occurred';
 
+          // Modify the success handling in _submitApplication:
           if (success) {
             // Show success and go back
-            Navigator.pop(context);
+            Navigator.of(context, rootNavigator: true).pop(); // Close dialog
+            Navigator.pop(context); // Close screen
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(resultMessage),
@@ -304,6 +310,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
             );
           } else {
             // Show error
+            Navigator.of(context, rootNavigator: true).pop(); // Close dialog
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(resultMessage),
@@ -344,7 +351,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
     if (interestRate == 0) {
       return amount / termMonths;
     }
-    
+
     final monthlyRate = interestRate / 100 / 12;
     final numerator = monthlyRate * pow(1 + monthlyRate, termMonths);
     final denominator = pow(1 + monthlyRate, termMonths) - 1;

@@ -186,6 +186,21 @@ class LoanService extends ChangeNotifier {
 
       await _firestore.collection('notifications').add(notification.toJson());
 
+      // Create APPLICATION transaction
+      final applicationTransaction = tm.Transaction(
+        id: '',
+        loanId: loanRef.id,
+        amount: amount,
+        type: 'APPLICATION',
+        createdAt: DateTime.now(),
+        status: 'PENDING',
+        description:
+            'Loan application submitted for KES ${amount.toStringAsFixed(2)}',
+      );
+      await _firestore
+          .collection('transactions')
+          .add(applicationTransaction.toMap());
+
       // Send push notification
       try {
         final studentData = await getCurrentStudent();
@@ -346,27 +361,7 @@ class LoanService extends ChangeNotifier {
       await _firestore.collection('loans').doc(loanId).update(updateData);
 
       if (status == 'APPROVED') {
-        // Disburse via M-Pesa
-        final mpesaResult = await _mpesaService.disburseLoan(
-          phone: loan.mpesaPhone,
-          amount: loan.amount,
-          loanId: loan.id,
-          businessShortCode: '174379', // From provider data
-          callbackUrl: 'https://yourapp.com/mpesa-callback',
-        );
-
-        if (!mpesaResult['success']) {
-          // If M-Pesa fails, revert the status
-          await _firestore.collection('loans').doc(loanId).update({
-            'status': 'PENDING',
-            'updatedAt': DateTime.now(),
-          });
-          return {
-            'success': false,
-            'message': 'Failed to disburse loan: ${mpesaResult['message']}'
-          };
-        }
-
+        // Simulate M-Pesa success
         final transaction = tm.Transaction(
           id: '',
           loanId: loanId,
@@ -374,8 +369,7 @@ class LoanService extends ChangeNotifier {
           type: 'DISBURSEMENT',
           createdAt: DateTime.now(),
           status: 'COMPLETED',
-          description:
-              'Loan disbursement via M-Pesa. Transaction ID: ${mpesaResult['transactionId'] ?? 'N/A'}',
+          description: 'Loan disbursement simulated',
         );
         await _firestore.collection('transactions').add(transaction.toMap());
 
@@ -384,39 +378,17 @@ class LoanService extends ChangeNotifier {
           'hasActiveLoan': true,
           'updatedAt': DateTime.now(),
         });
-
-        // Create notification for the student
-        final notification = AppNotification(
-          id: '',
-          userId: loan.studentId,
-          title: 'Loan Approved',
-          body:
-              'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been approved! Funds will be disbursed shortly.',
-          type: 'LOAN_APPROVAL',
-          isRead: false,
-          createdAt: DateTime.now(),
-        );
-
-        await _firestore.collection('notifications').add(notification.toJson());
-
-        // Send push notification
-        try {
-          final studentDoc =
-              await _firestore.collection('students').doc(loan.studentId).get();
-          final studentData = studentDoc.data();
-          if (studentData != null && studentData['deviceToken'] != null) {
-            await _notificationService.sendPushNotification(
-              phone: studentData['deviceToken'],
-              title: notification.title,
-              body: notification.body,
-              data: {'type': notification.type, 'loanId': loanId},
-            );
-          }
-        } catch (e) {
-          // Log notification error but continue with success response
-          print('Push notification failed: $e');
-        }
       } else if (status == 'REJECTED') {
+        final transaction = tm.Transaction(
+          id: '',
+          loanId: loanId,
+          amount: 0,
+          type: 'REJECTION',
+          createdAt: DateTime.now(),
+          status: 'COMPLETED',
+          description: 'Loan application rejected',
+        );
+        await _firestore.collection('transactions').add(transaction.toMap());
         // Create notification for rejection
         final notification = AppNotification(
           id: '',
@@ -449,6 +421,16 @@ class LoanService extends ChangeNotifier {
           print('Push notification failed: $e');
         }
       } else if (status == 'PAID') {
+        final transaction = tm.Transaction(
+          id: '',
+          loanId: loanId,
+          amount: loan.remainingBalance,
+          type: 'PAYMENT',
+          createdAt: DateTime.now(),
+          status: 'COMPLETED',
+          description: 'Loan fully paid',
+        );
+        await _firestore.collection('transactions').add(transaction.toMap());
         // Update student's hasActiveLoan status
         await _firestore.collection('students').doc(loan.studentId).update({
           'hasActiveLoan': false,

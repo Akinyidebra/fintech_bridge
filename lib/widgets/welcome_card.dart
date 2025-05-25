@@ -16,7 +16,7 @@ class WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(symbol: 'Ksh. ', decimalDigits: 2);
     
     return FutureBuilder<Map<String, dynamic>>(
       future: userProfileFuture,
