@@ -115,12 +115,33 @@ class LoanService extends ChangeNotifier {
         };
       }
 
+      // Check minimum loan amount
+      const double minAmount = 100.0; // 100 KES minimum
+      if (amount < minAmount) {
+        return {
+          'success': false,
+          'message':
+              'Minimum loan amount is KES ${minAmount.toStringAsFixed(2)}'
+        };
+      }
+
+      final nextDueDate = DateTime.now()
+          .add(const Duration(days: 30)); // First payment due in 30 days
+
       final studentDoc =
           await _firestore.collection('students').doc(currentUser!.uid).get();
       if (!studentDoc.exists) {
         return {
           'success': false,
           'message': 'Only verified students can request loans'
+        };
+      }
+
+      if (studentDoc['hasActiveLoan'] == true) {
+        return {
+          'success': false,
+          'message':
+              'You already have an active loan. Please repay your current loan before applying for a new one.'
         };
       }
 
@@ -136,7 +157,7 @@ class LoanService extends ChangeNotifier {
         termMonths: termMonths,
         monthlyPayment: monthlyPayment,
         remainingBalance: amount,
-        nextDueDate: repaymentStartDate,
+        nextDueDate: nextDueDate,
         mpesaTransactionCode: '',
         repaymentMethod: repaymentMethod,
         repaymentStartDate: repaymentStartDate,
@@ -164,6 +185,21 @@ class LoanService extends ChangeNotifier {
       );
 
       await _firestore.collection('notifications').add(notification.toJson());
+
+      // Create APPLICATION transaction
+      final applicationTransaction = tm.Transaction(
+        id: '',
+        loanId: loanRef.id,
+        amount: amount,
+        type: 'APPLICATION',
+        createdAt: DateTime.now(),
+        status: 'PENDING',
+        description:
+            'Loan application submitted for KES ${amount.toStringAsFixed(2)}',
+      );
+      await _firestore
+          .collection('transactions')
+          .add(applicationTransaction.toMap());
 
       // Send push notification
       try {
@@ -325,27 +361,7 @@ class LoanService extends ChangeNotifier {
       await _firestore.collection('loans').doc(loanId).update(updateData);
 
       if (status == 'APPROVED') {
-        // Disburse via M-Pesa
-        final mpesaResult = await _mpesaService.disburseLoan(
-          phone: loan.mpesaPhone,
-          amount: loan.amount,
-          loanId: loan.id,
-          businessShortCode: '174379', // From provider data
-          callbackUrl: 'https://yourapp.com/mpesa-callback',
-        );
-
-        if (!mpesaResult['success']) {
-          // If M-Pesa fails, revert the status
-          await _firestore.collection('loans').doc(loanId).update({
-            'status': 'PENDING',
-            'updatedAt': DateTime.now(),
-          });
-          return {
-            'success': false,
-            'message': 'Failed to disburse loan: ${mpesaResult['message']}'
-          };
-        }
-
+        // Simulate M-Pesa success
         final transaction = tm.Transaction(
           id: '',
           loanId: loanId,
@@ -353,8 +369,7 @@ class LoanService extends ChangeNotifier {
           type: 'DISBURSEMENT',
           createdAt: DateTime.now(),
           status: 'COMPLETED',
-          description:
-              'Loan disbursement via M-Pesa. Transaction ID: ${mpesaResult['transactionId'] ?? 'N/A'}',
+          description: 'Loan disbursement simulated',
         );
         await _firestore.collection('transactions').add(transaction.toMap());
 
@@ -363,39 +378,17 @@ class LoanService extends ChangeNotifier {
           'hasActiveLoan': true,
           'updatedAt': DateTime.now(),
         });
-
-        // Create notification for the student
-        final notification = AppNotification(
-          id: '',
-          userId: loan.studentId,
-          title: 'Loan Approved',
-          body:
-              'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been approved! Funds will be disbursed shortly.',
-          type: 'LOAN_APPROVAL',
-          isRead: false,
-          createdAt: DateTime.now(),
-        );
-
-        await _firestore.collection('notifications').add(notification.toJson());
-
-        // Send push notification
-        try {
-          final studentDoc =
-              await _firestore.collection('students').doc(loan.studentId).get();
-          final studentData = studentDoc.data();
-          if (studentData != null && studentData['deviceToken'] != null) {
-            await _notificationService.sendPushNotification(
-              phone: studentData['deviceToken'],
-              title: notification.title,
-              body: notification.body,
-              data: {'type': notification.type, 'loanId': loanId},
-            );
-          }
-        } catch (e) {
-          // Log notification error but continue with success response
-          print('Push notification failed: $e');
-        }
       } else if (status == 'REJECTED') {
+        final transaction = tm.Transaction(
+          id: '',
+          loanId: loanId,
+          amount: 0,
+          type: 'REJECTION',
+          createdAt: DateTime.now(),
+          status: 'COMPLETED',
+          description: 'Loan application rejected',
+        );
+        await _firestore.collection('transactions').add(transaction.toMap());
         // Create notification for rejection
         final notification = AppNotification(
           id: '',
@@ -428,6 +421,16 @@ class LoanService extends ChangeNotifier {
           print('Push notification failed: $e');
         }
       } else if (status == 'PAID') {
+        final transaction = tm.Transaction(
+          id: '',
+          loanId: loanId,
+          amount: loan.remainingBalance,
+          type: 'PAYMENT',
+          createdAt: DateTime.now(),
+          status: 'COMPLETED',
+          description: 'Loan fully paid',
+        );
+        await _firestore.collection('transactions').add(transaction.toMap());
         // Update student's hasActiveLoan status
         await _firestore.collection('students').doc(loan.studentId).update({
           'hasActiveLoan': false,
@@ -1106,7 +1109,8 @@ class LoanService extends ChangeNotifier {
       if (studentData['hasActiveLoan'] == true) {
         return {
           'eligible': false,
-          'message': 'You already have an active loan'
+          'message':
+              'You already have an active loan. Please complete repayment before applying for a new loan.'
         };
       }
 
@@ -1127,9 +1131,8 @@ class LoanService extends ChangeNotifier {
 
       final providerData = providerDoc.data() as Map<String, dynamic>;
 
-      // Check if requested amount is within provider's limits
-      final minAmount = providerData['minLoanAmount'] ?? 0.0;
-      final maxAmount = providerData['maxLoanAmount'] ?? 0.0;
+      // Check minimum loan amount (100 KES as per your requirement)
+      const double minAmount = 100.0; // Minimum 100 KES
 
       if (requestedAmount < minAmount) {
         return {
@@ -1139,6 +1142,11 @@ class LoanService extends ChangeNotifier {
         };
       }
 
+      // Optional: Set a reasonable maximum based on your business logic
+      // You can remove this check if you don't want any maximum limit
+      const double maxAmount =
+          1000000.0; // 1 Million KES as reasonable upper limit
+
       if (requestedAmount > maxAmount) {
         return {
           'eligible': false,
@@ -1147,10 +1155,11 @@ class LoanService extends ChangeNotifier {
         };
       }
 
-      // For demonstration, simple credit score check
-      // In a real application, you would use a more sophisticated creditworthiness algorithm
-      final creditScore = studentData['creditScore'] ?? 0;
-      final minRequiredScore = providerData['minCreditScore'] ?? 600;
+      // Basic credit score check (optional - you can remove this if not needed)
+      // For demonstration purposes, assuming a default credit score
+      final creditScore =
+          studentData['creditScore'] ?? 650; // Default score if not set
+      const int minRequiredScore = 500; // Lower minimum requirement
 
       if (creditScore < minRequiredScore) {
         return {
@@ -1159,26 +1168,13 @@ class LoanService extends ChangeNotifier {
         };
       }
 
-      // Check if student's education institution is approved by the provider
-      final studentInstitution = studentData['institutionName'] ?? '';
-      final approvedInstitutions =
-          List<String>.from(providerData['approvedInstitutions'] ?? []);
-
-      if (approvedInstitutions.isNotEmpty &&
-          !approvedInstitutions.contains(studentInstitution)) {
-        return {
-          'eligible': false,
-          'message':
-              'Your educational institution is not supported by this provider'
-        };
-      }
-
       // Student is eligible for the loan
       return {
         'eligible': true,
         'message': 'You are eligible for this loan',
-        'maxAmount': maxAmount,
-        'interestRate': providerData['interestRate'] ?? 0.0,
+        'maxAmount': maxAmount, // Or remove this if no max limit
+        'interestRate':
+            providerData['interestRate'] ?? 10.0, // Default 10% if not set
       };
     } catch (e) {
       return {

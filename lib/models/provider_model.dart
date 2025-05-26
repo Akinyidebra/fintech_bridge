@@ -51,7 +51,7 @@ class Provider {
       interestRate: data['interestRate'].toDouble(),
       profileImage: data['profileImage'],
       verified: data['verified'] ?? false,
-      verifiedAt: data['verifiedAt'] != null ? data['verifiedAt'].toDate() : null,
+      verifiedAt: data['verifiedAt']?.toDate(),
       identificationImages: data['identificationImages'] != null 
           ? List<String>.from(data['identificationImages']) 
           : null,

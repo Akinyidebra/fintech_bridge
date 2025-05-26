@@ -1,4 +1,5 @@
 import 'package:fintech_bridge/models/student_model.dart';
+import 'package:fintech_bridge/screens/student/transaction_screen.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -15,7 +16,7 @@ class WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(symbol: 'Ksh. ', decimalDigits: 2);
     
     return FutureBuilder<Map<String, dynamic>>(
       future: userProfileFuture,
@@ -106,37 +107,55 @@ class WelcomeCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Total Outstanding Balance',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                  const SizedBox(height: 4),
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        currencyFormat.format(balance),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 28,
-                          fontFamily: 'Poppins',
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Total Outstanding Balance',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    currencyFormat.format(balance),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 28,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                if (balanceSnapshot.connectionState == ConnectionState.waiting)
+                                  const SizedBox(
+                                    height: 12,
+                                    width: 12,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      if (balanceSnapshot.connectionState == ConnectionState.waiting)
-                        const SizedBox(
-                          height: 12,
-                          width: 12,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        ),
+                      const SizedBox(width: 16),
+                      _buildTransactionButton(context),
                     ],
                   ),
                 ],
@@ -145,6 +164,50 @@ class WelcomeCard extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  Widget _buildTransactionButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TransactionsScreen(),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.receipt_long_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            SizedBox(height: 4),
+            Text(
+              'History',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

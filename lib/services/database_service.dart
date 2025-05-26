@@ -717,12 +717,15 @@ class DatabaseService extends ChangeNotifier {
   Future<Map<String, dynamic>> getFeaturedLoanProviders() async {
   _setLoading(true);
   try {
+    print('DEBUG: Starting getFeaturedLoanProviders...');
+    
     // Query all loans
     final loanDocs = await _firestore.collection('loans').get();
-    
+    print('DEBUG: Found ${loanDocs.docs.length} loans');
+
     // Map to track provider selection frequency
     Map<String, int> providerFrequency = {};
-    
+
     // Count how many times each provider has been selected
     for (var doc in loanDocs.docs) {
       final Map data = doc.data();
@@ -730,83 +733,163 @@ class DatabaseService extends ChangeNotifier {
       
       if (providerId.isNotEmpty) {
         providerFrequency[providerId] = (providerFrequency[providerId] ?? 0) + 1;
+        print('DEBUG: Provider $providerId has ${providerFrequency[providerId]} loans');
       }
     }
-    
-    // If no loans exist yet
-    if (providerFrequency.isEmpty) {
-      // Return some default verified and approved providers sorted by interest rate
-      final defaultProviderDocs = await _firestore
-          .collection('providers')
-          .where('verified', isEqualTo: true)
-          .where('approved', isEqualTo: true)
-          .orderBy('interestRate', descending: false)
-          .limit(5)
-          .get();
-      
-      List<Provider> defaultProviders = [];
-      for (var doc in defaultProviderDocs.docs) {
-        defaultProviders.add(Provider.fromFirestore(doc));
-      }
-      
-      return {'success': true, 'data': defaultProviders};
-    }
-    
-    // Sort providers by frequency (most selected first)
-    List<MapEntry<String, int>> sortedProviders = providerFrequency.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    
-    // Get the top 5 provider IDs
-    List<String> topProviderIds = sortedProviders
-        .take(5)
-        .map((entry) => entry.key)
-        .toList();
-    
-    // Fetch the actual provider data for these IDs
+
+    print('DEBUG: Provider frequency map: $providerFrequency');
+
     List<Provider> featuredProviders = [];
-    
-    for (String providerId in topProviderIds) {
-      DocumentSnapshot providerDoc = 
-          await _firestore.collection('providers').doc(providerId).get();
+
+    // If loans exist, get providers based on frequency
+    if (providerFrequency.isNotEmpty) {
+      print('DEBUG: Processing providers by frequency...');
       
-      if (providerDoc.exists) {
-        Provider provider = Provider.fromFirestore(providerDoc);
-        
-        // Only include verified and approved providers
-        if (provider.verified && provider.approved) {
-          featuredProviders.add(provider);
+      // Sort providers by frequency (most selected first)
+      List<MapEntry<String, int>> sortedProviders = providerFrequency.entries
+          .toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      // Get the top 5 provider IDs
+      List<String> topProviderIds =
+          sortedProviders.take(5).map((entry) => entry.key).toList();
+      
+      print('DEBUG: Top provider IDs: $topProviderIds');
+
+      // Fetch the actual provider data for these IDs
+      for (String providerId in topProviderIds) {
+        try {
+          DocumentSnapshot providerDoc =
+              await _firestore.collection('providers').doc(providerId).get();
+
+          if (providerDoc.exists) {
+            Provider provider = Provider.fromFirestore(providerDoc);
+            print('DEBUG: Provider ${provider.businessName} - verified: ${provider.verified}, approved: ${provider.approved}');
+            
+            // More lenient filtering - include if at least one condition is met
+            if (provider.verified || provider.approved) {
+              featuredProviders.add(provider);
+              print('DEBUG: Added provider: ${provider.businessName}');
+            } else {
+              print('DEBUG: Skipped provider ${provider.businessName} - not verified or approved');
+            }
+          } else {
+            print('DEBUG: Provider document $providerId does not exist');
+          }
+        } catch (e) {
+          print('DEBUG: Error fetching provider $providerId: $e');
         }
       }
     }
-    
-    // If we couldn't get enough featured providers, supplement with additional providers
-    if (featuredProviders.length < 5) {
+
+    print('DEBUG: Featured providers from frequency: ${featuredProviders.length}');
+
+    // If we need more providers or have none, get additional ones
+    if (featuredProviders.length < 3) { // Reduced threshold from 5 to 3
+      print('DEBUG: Getting additional providers...');
+      
       // Get IDs of already added providers to avoid duplicates
       Set<String> existingIds = featuredProviders.map((p) => p.id).toSet();
-      
-      // Query for additional providers
-      final additionalProviderDocs = await _firestore
-          .collection('providers')
-          .where('verified', isEqualTo: true)
-          .where('approved', isEqualTo: true)
-          .orderBy('interestRate', descending: false)
-          .limit(5 - featuredProviders.length)
-          .get();
-      
-      for (var doc in additionalProviderDocs.docs) {
-        if (!existingIds.contains(doc.id)) {
-          featuredProviders.add(Provider.fromFirestore(doc));
-          existingIds.add(doc.id);
+
+      try {
+        // First try: Get verified AND approved providers
+        QuerySnapshot additionalDocs;
+        try {
+          additionalDocs = await _firestore
+              .collection('providers')
+              .where('verified', isEqualTo: true)
+              .where('approved', isEqualTo: true)
+              .orderBy('interestRate', descending: false)
+              .limit(5 - featuredProviders.length)
+              .get();
+          print('DEBUG: Found ${additionalDocs.docs.length} verified AND approved providers');
+        } catch (e) {
+          print('DEBUG: Compound query failed, trying simpler approach: $e');
+          
+          // Fallback: Get all providers and filter in code
+          additionalDocs = await _firestore
+              .collection('providers')
+              .orderBy('interestRate', descending: false)
+              .get();
+          print('DEBUG: Got ${additionalDocs.docs.length} total providers for manual filtering');
         }
+
+        // Process additional providers
+        for (var doc in additionalDocs.docs) {
+          if (featuredProviders.length >= 5) break; // Stop if we have enough
+          
+          if (!existingIds.contains(doc.id)) {
+            try {
+              Provider provider = Provider.fromFirestore(doc);
+              print('DEBUG: Checking additional provider ${provider.businessName} - verified: ${provider.verified}, approved: ${provider.approved}');
+              
+              // More lenient filtering for additional providers
+              if (provider.verified || provider.approved) {
+                featuredProviders.add(provider);
+                existingIds.add(doc.id);
+                print('DEBUG: Added additional provider: ${provider.businessName}');
+              }
+            } catch (e) {
+              print('DEBUG: Error processing provider document ${doc.id}: $e');
+            }
+          }
+        }
+
+        // If still no providers, get ANY providers as last resort
+        if (featuredProviders.isEmpty) {
+          print('DEBUG: No verified/approved providers found, getting any available providers...');
+          
+          final anyProviderDocs = await _firestore
+              .collection('providers')
+              .limit(3)
+              .get();
+          
+          for (var doc in anyProviderDocs.docs) {
+            try {
+              Provider provider = Provider.fromFirestore(doc);
+              featuredProviders.add(provider);
+              print('DEBUG: Added fallback provider: ${provider.businessName}');
+            } catch (e) {
+              print('DEBUG: Error processing fallback provider ${doc.id}: $e');
+            }
+          }
+        }
+
+      } catch (e) {
+        print('DEBUG: Error getting additional providers: $e');
+      }
+    }
+
+    print('DEBUG: Final featured providers count: ${featuredProviders.length}');
+    for (var provider in featuredProviders) {
+      print('DEBUG: - ${provider.businessName} (${provider.interestRate}%)');
+    }
+
+    if (featuredProviders.isEmpty) {
+      return {
+        'success': false, 
+        'message': 'No loan providers found in database'
+      };
+    }
+
+    return {'success': true, 'data': featuredProviders};
+    
+  } catch (e) {
+    print('DEBUG: Main error in getFeaturedLoanProviders: $e');
+    
+    if (e is FirebaseException) {
+      print('DEBUG: Firebase error code: ${e.code}, message: ${e.message}');
+      if (e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      } else if (e.code == 'failed-precondition') {
+        return {'success': false, 'message': 'Database index required'};
       }
     }
     
-    return {'success': true, 'data': featuredProviders};
-  } catch (e) {
-    if (e is FirebaseException && e.code == 'unavailable') {
-      return {'success': false, 'message': 'No internet connection'};
-    }
-    return {'success': false, 'message': 'Failed to retrieve featured loan providers'};
+    return {
+      'success': false,
+      'message': 'Failed to retrieve featured loan providers: $e'
+    };
   } finally {
     _setLoading(false);
   }

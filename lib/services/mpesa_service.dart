@@ -206,20 +206,8 @@ class MpesaService {
     required String transactionCode,
     required double amount,
   }) async {
-    try {
-      // In a real implementation, this would query M-Pesa's API
-      // For demonstration, we'll assume transaction is valid if code starts with 'MPE'
-      await Future.delayed(Duration(seconds: 1)); // Simulate API call
-
-      return {
-        'success': transactionCode.startsWith('MPE'),
-        'message': transactionCode.startsWith('MPE')
-            ? 'Transaction verified'
-            : 'Invalid transaction code',
-      };
-    } catch (e) {
-      return _handleError('Transaction verification', e);
-    }
+    // Simulate successful verification for all transactions
+    return {'success': true, 'message': 'Transaction verified (simulated)'};
   }
 
   /// Initiate STK Push for repayments
