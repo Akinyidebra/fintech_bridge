@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:fintech_bridge/screens/loading_screen.dart';
+import 'package:fintech_bridge/screens/student/student_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/services/loan_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
@@ -55,7 +56,8 @@ class LoanApplicationLogic {
       );
 
       final bool isEligible = eligibilityCheck['eligible'] ?? false;
-      final String message = eligibilityCheck['message'] ?? 'Eligibility check failed';
+      final String message =
+          eligibilityCheck['message'] ?? 'Eligibility check failed';
 
       if (!isEligible) {
         if (context.mounted) {
@@ -66,12 +68,14 @@ class LoanApplicationLogic {
 
       // Show loading overlay ONLY after eligibility check passes
       if (context.mounted) {
-        LoadingOverlay.show(context, message: 'Processing your loan application...');
+        LoadingOverlay.show(context,
+            message: 'Processing your loan application...');
         loadingShown = true;
       }
 
       // Parse term months
-      final termMonths = int.parse(termController.text.replaceAll(' months', ''));
+      final termMonths =
+          int.parse(termController.text.replaceAll(' months', ''));
 
       // Calculate monthly payment
       final monthlyPayment = _calculateMonthlyPayment(
@@ -111,31 +115,36 @@ class LoanApplicationLogic {
       // Process result only if context is still valid
       if (context.mounted) {
         final bool success = result['success'] ?? false;
-        final String resultMessage = result['message'] ?? 'Unknown error occurred';
+        final String resultMessage =
+            result['message'] ?? 'Unknown error occurred';
 
         if (success) {
           // Show success message
           _showSnackBar(context, resultMessage, Colors.green);
-          
+
           // Wait a bit longer for snackbar to be visible before navigation
           await Future.delayed(const Duration(milliseconds: 800));
-          
-          // Navigate back only if context is still mounted
-          if (context.mounted && Navigator.canPop(context)) {
-            Navigator.pop(context);
+
+          // Navigate to StudentDashboard instead of popping back
+          if (context.mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const StudentDashboard(),
+              ),
+            );
           }
         } else {
           _showSnackBar(context, resultMessage, AppConstants.accentColor);
         }
       }
-
     } catch (e) {
       // Critical: Always hide loading in catch block
       if (loadingShown) {
         LoadingOverlay.hide();
         loadingShown = false;
       }
-      
+
       // Handle errors with context check
       if (context.mounted) {
         _showSnackBar(
@@ -144,7 +153,7 @@ class LoanApplicationLogic {
           AppConstants.accentColor,
         );
       }
-      
+
       // Log the error for debugging
       debugPrint('Loan application error: ${e.toString()}');
     } finally {
@@ -170,7 +179,8 @@ class LoanApplicationLogic {
     return amount * (numerator / denominator);
   }
 
-  static void _showSnackBar(BuildContext context, String message, Color backgroundColor) {
+  static void _showSnackBar(
+      BuildContext context, String message, Color backgroundColor) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
