@@ -188,28 +188,25 @@ class _DashboardContentState extends State<DashboardContent> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _refreshData,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              WelcomeCard(
-                userProfileFuture: Future.value(_userProfile),
-                totalBalanceFuture: Future.value(_totalBalance ?? 0.0),
-              ),
-              const SizedBox(height: 24),
-              _buildFinancialOverview(),
-              const SizedBox(height: 24),
-              _buildRecommendedLoans(),
-              const SizedBox(height: 24),
-              _buildRecentActivity(),
-              const SizedBox(height: 20),
-            ],
-          ),
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            WelcomeCard(
+              userProfileFuture: Future.value(_userProfile),
+              totalBalanceFuture: Future.value(_totalBalance ?? 0.0),
+            ),
+            const SizedBox(height: 24),
+            _buildFinancialOverview(),
+            const SizedBox(height: 24),
+            _buildRecommendedLoans(),
+            const SizedBox(height: 24),
+            _buildRecentActivity(),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
@@ -356,7 +353,7 @@ class _DashboardContentState extends State<DashboardContent> {
               icon: _getTransactionIcon(transaction.type),
               iconColor: _getTransactionColor(transaction.type),
               title: transaction.description,
-              date: DateFormat('MMM dd, yyyy').format(transaction.createdAt),
+              date: DateFormat('MMM dd, yyyy hh:mm:ss a').format(transaction.createdAt),
               amount: _currencyFormat.format(transaction.amount),
               loanId: transaction.loanId,
               onTap: () {

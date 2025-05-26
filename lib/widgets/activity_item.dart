@@ -13,7 +13,7 @@ class ActivityItemWidget extends StatelessWidget {
   final VoidCallback? onTap;
 
   const ActivityItemWidget({
-    Key? key,
+    super.key,
     required this.icon,
     required this.iconColor,
     required this.title,
@@ -23,7 +23,7 @@ class ActivityItemWidget extends StatelessWidget {
     this.backgroundColor,
     this.loanId,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
