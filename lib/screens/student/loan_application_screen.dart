@@ -14,6 +14,7 @@ import 'package:fintech_bridge/widgets/loan_form_container.dart';
 import 'package:fintech_bridge/widgets/term_selector_modal.dart';
 import 'package:fintech_bridge/widgets/loan_application_logic.dart';
 import 'package:fintech_bridge/widgets/provider_loader_mixin.dart';
+import 'package:fintech_bridge/screens/loading_screen.dart';
 
 class LoanApplicationScreen extends StatefulWidget {
   final String loanType;
@@ -39,17 +40,79 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
   String? _selectedLoanType;
   late LoanService _loanService;
 
+  // Centralized loading and error states
+  bool _isLoading = true;
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
     _initializeFields();
     _loanService = Provider.of<LoanService>(context, listen: false);
-    loadProviders(_loanService, initialProvider: widget.provider);
+    _loadAllData();
   }
 
   void _initializeFields() {
-    _termController.text = '12 months';
-    _amountController.text = '5000';
+    _termController.text = '6 months';
+    _amountController.text = '100';
+  }
+
+  Future<void> _loadAllData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Load providers using the mixin but integrate with centralized loading
+      await _loadProvidersWithCentralizedState();
+
+      // Add any other data loading here if needed in the future
+      // For example: await _loadUserPreferences();
+      // await _loadLoanHistory();
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load application data: ${e.toString()}';
+        });
+      }
+      print('Loan application loading error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadProvidersWithCentralizedState() async {
+    try {
+      final loadedProviders = await _loanService.getApprovedProviders();
+
+      if (!mounted) return;
+
+      setState(() {
+        providers = loadedProviders;
+
+        if (widget.provider != null) {
+          selectedProvider = providers.firstWhere(
+            (p) => p.id == widget.provider!.id,
+            orElse: () => providers.isNotEmpty
+                ? providers.first
+                : throw Exception('No providers found'),
+          );
+        } else {
+          selectedProvider = providers.isNotEmpty ? providers.first : null;
+        }
+      });
+    } catch (e) {
+      throw Exception('Error loading providers: ${e.toString()}');
+    }
+  }
+
+  Future<void> _refreshData() async {
+    await _loadAllData();
   }
 
   @override
@@ -88,10 +151,73 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Show loading screen while data is being fetched
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AppConstants.backgroundColor,
+        body: LoadingScreen(
+          message: 'Preparing loan application...',
+          isFullScreen: true,
+        ),
+      );
+    }
+
+    // Show error state with retry option
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: AppConstants.backgroundColor,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: AppConstants.errorColor,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Something went wrong',
+                  style: AppConstants.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  style: AppConstants.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _refreshData,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppConstants.primaryColor,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Try Again'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text(
+                    'Go Back',
+                    style: TextStyle(color: AppConstants.primaryColor),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Show the main content when data is loaded
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Form(
@@ -100,7 +226,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Loan Header Card
-                LoanHeaderCard(loanType: widget.loanType),
+                LoanHeaderCard(),
                 const SizedBox(height: 24),
 
                 const Text(
@@ -116,30 +242,23 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Provider Selector Component
-                      if (isLoadingProviders)
-                        const Center(
-                          child: CircularProgressIndicator(
-                            color: AppConstants.primaryColor,
-                          ),
-                        )
-                      else
-                        LoanProviderSelector(
-                          providers: providers,
-                          selectedProvider: selectedProvider,
-                          selectedLoanType: _selectedLoanType,
-                          onProviderChanged: (provider) {
-                            updateSelectedProvider(provider);
-                            setState(() {
-                              _selectedLoanType = null;
-                            });
-                          },
-                          onLoanTypeChanged: (type) {
-                            setState(() {
-                              _selectedLoanType = type;
-                            });
-                          },
-                        ),
+                      // Provider Selector Component - No individual loading spinner needed
+                      LoanProviderSelector(
+                        providers: providers,
+                        selectedProvider: selectedProvider,
+                        selectedLoanType: _selectedLoanType,
+                        onProviderChanged: (provider) {
+                          updateSelectedProvider(provider);
+                          setState(() {
+                            _selectedLoanType = null;
+                          });
+                        },
+                        onLoanTypeChanged: (type) {
+                          setState(() {
+                            _selectedLoanType = type;
+                          });
+                        },
+                      ),
 
                       const SizedBox(height: 20),
 

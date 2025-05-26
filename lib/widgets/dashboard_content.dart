@@ -353,7 +353,8 @@ class _DashboardContentState extends State<DashboardContent> {
               icon: _getTransactionIcon(transaction.type),
               iconColor: _getTransactionColor(transaction.type),
               title: transaction.description,
-              date: DateFormat('MMM dd, yyyy hh:mm:ss a').format(transaction.createdAt),
+              date: DateFormat('MMM dd, yyyy hh:mm:ss a')
+                  .format(transaction.createdAt),
               amount: _currencyFormat.format(transaction.amount),
               loanId: transaction.loanId,
               onTap: () {

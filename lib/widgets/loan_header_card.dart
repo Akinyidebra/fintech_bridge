@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
 class LoanHeaderCard extends StatelessWidget {
-  final String loanType;
-  
   const LoanHeaderCard({
     super.key,
-    required this.loanType,
   });
 
   @override
@@ -32,18 +29,18 @@ class LoanHeaderCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.account_balance_rounded,
                 color: Colors.white,
                 size: 24,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Flexible(
                 child: Text(
-                  'Apply for $loanType',
-                  style: const TextStyle(
+                  'Apply for Loan',
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -72,7 +69,7 @@ class LoanHeaderCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
-                    _getLoanTypeDescription(loanType),
+                    'Variable Rate from 3.2% APR, Flexible repayment options',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 13,
@@ -86,14 +83,5 @@ class LoanHeaderCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _getLoanTypeDescription(String loanType) {
-    switch (loanType.toLowerCase()) {
-      case 'student plus loan':
-        return 'Fixed Rate 4.5% APR, No origination fees';
-      default:
-        return 'Variable Rate from 3.2% APR, Flexible repayment options';
-    }
   }
 }
