@@ -1,8 +1,8 @@
-import 'package:fintech_bridge/screens/student/loan_application_screen.dart';
 import 'package:fintech_bridge/screens/student/my_loans_screen.dart';
 import 'package:fintech_bridge/screens/student/profile_screen.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/dashboard_content.dart';
+import 'package:fintech_bridge/widgets/loan_application_content.dart';
 import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
 import 'package:fintech_bridge/widgets/app_header.dart';
 import 'package:fintech_bridge/services/database_service.dart';
@@ -45,7 +45,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     super.initState();
     _screens = [
       const DashboardContent(),
-      const LoanApplicationScreen(loanType: ''),
+      const LoanApplicationContent(loanType: ''),
       const MyLoansScreen(),
       const ProfileScreen(),
     ];

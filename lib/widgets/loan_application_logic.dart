@@ -1,8 +1,9 @@
 import 'dart:math';
+import 'package:fintech_bridge/screens/loading_screen.dart';
+import 'package:fintech_bridge/screens/student/student_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/services/loan_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
-import 'package:fintech_bridge/widgets/loading_dialog.dart';
 import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 
 class LoanApplicationLogic {
@@ -17,6 +18,7 @@ class LoanApplicationLogic {
     required String? selectedLoanType,
     required LoanService loanService,
   }) async {
+    // Early validation - don't show loading if validation fails
     if (!formKey.currentState!.validate() ||
         selectedProvider == null ||
         selectedLoanType == null) {
@@ -41,28 +43,39 @@ class LoanApplicationLogic {
       return;
     }
 
+    // Store the initial context mounted state
+    if (!context.mounted) return;
+
+    bool loadingShown = false;
+
     try {
-      // Check eligibility
+      // Check eligibility first
       final eligibilityCheck = await loanService.checkLoanEligibility(
         requestedAmount: amount,
         providerId: selectedProvider.id,
       );
 
       final bool isEligible = eligibilityCheck['eligible'] ?? false;
-      final String message = eligibilityCheck['message'] ?? 'Eligibility check failed';
+      final String message =
+          eligibilityCheck['message'] ?? 'Eligibility check failed';
 
       if (!isEligible) {
-        _showSnackBar(context, message, AppConstants.accentColor);
+        if (context.mounted) {
+          _showSnackBar(context, message, AppConstants.accentColor);
+        }
         return;
       }
 
-      // Show loading dialog
+      // Show loading overlay ONLY after eligibility check passes
       if (context.mounted) {
-        LoadingDialog.show(context);
+        LoadingOverlay.show(context,
+            message: 'Processing your loan application...');
+        loadingShown = true;
       }
 
       // Parse term months
-      final termMonths = int.parse(termController.text.replaceAll(' months', ''));
+      final termMonths =
+          int.parse(termController.text.replaceAll(' months', ''));
 
       // Calculate monthly payment
       final monthlyPayment = _calculateMonthlyPayment(
@@ -91,30 +104,62 @@ class LoanApplicationLogic {
         repaymentStartDate: DateTime.now(),
       );
 
-      // Hide loading dialog
-      if (context.mounted) {
-        LoadingDialog.hide(context);
+      // Always hide loading first, regardless of result
+      if (loadingShown) {
+        LoadingOverlay.hide();
+        loadingShown = false;
+        // Give a small delay to ensure overlay is removed
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
 
+      // Process result only if context is still valid
+      if (context.mounted) {
         final bool success = result['success'] ?? false;
-        final String resultMessage = result['message'] ?? 'Unknown error occurred';
+        final String resultMessage =
+            result['message'] ?? 'Unknown error occurred';
 
         if (success) {
-          // Navigate back and show success
-          Navigator.pop(context);
+          // Show success message
           _showSnackBar(context, resultMessage, Colors.green);
+
+          // Wait a bit longer for snackbar to be visible before navigation
+          await Future.delayed(const Duration(milliseconds: 800));
+
+          // Navigate to StudentDashboard instead of popping back
+          if (context.mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const StudentDashboard(),
+              ),
+            );
+          }
         } else {
           _showSnackBar(context, resultMessage, AppConstants.accentColor);
         }
       }
     } catch (e) {
-      // Handle errors
+      // Critical: Always hide loading in catch block
+      if (loadingShown) {
+        LoadingOverlay.hide();
+        loadingShown = false;
+      }
+
+      // Handle errors with context check
       if (context.mounted) {
-        LoadingDialog.hide(context);
         _showSnackBar(
           context,
-          'Error: ${e.toString()}',
+          'Application failed. Please try again.',
           AppConstants.accentColor,
         );
+      }
+
+      // Log the error for debugging
+      debugPrint('Loan application error: ${e.toString()}');
+    } finally {
+      // Final safety net - ensure loading is hidden
+      if (loadingShown) {
+        LoadingOverlay.hide();
       }
     }
   }
@@ -134,12 +179,25 @@ class LoanApplicationLogic {
     return amount * (numerator / denominator);
   }
 
-  static void _showSnackBar(BuildContext context, String message, Color backgroundColor) {
+  static void _showSnackBar(
+      BuildContext context, String message, Color backgroundColor) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(message),
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           backgroundColor: backgroundColor,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
         ),
       );
     }

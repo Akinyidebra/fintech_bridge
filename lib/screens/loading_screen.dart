@@ -39,8 +39,8 @@ class LoadingScreen extends StatelessWidget {
               color: AppConstants.primaryLightColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(15),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(5.0),
+            child: const Padding(
+              padding: EdgeInsets.all(5.0),
               child: SpinKitDoubleBounce(
                 color: AppConstants.primaryColor,
                 size: 70.0,
@@ -81,26 +81,70 @@ class LoadingScreen extends StatelessWidget {
   }
 }
 
-// Use this class to show the loading overlay
+// Improved LoadingOverlay with better state management
 class LoadingOverlay {
   static OverlayEntry? _overlayEntry;
+  static bool _isShowing = false;
 
   static void show(BuildContext context, {String? message}) {
-    if (_overlayEntry != null) {
-      hide();
+    // Prevent multiple overlays
+    if (_isShowing) {
+      debugPrint('LoadingOverlay: Already showing, ignoring duplicate show request');
+      return;
     }
 
-    _overlayEntry = OverlayEntry(
-      builder: (context) => LoadingScreen(
-        message: message ?? 'Processing your request...',
-      ),
-    );
+    // Ensure we have a valid context
+    if (!context.mounted) {
+      debugPrint('LoadingOverlay: Context not mounted, cannot show overlay');
+      return;
+    }
 
-    Overlay.of(context).insert(_overlayEntry!);
+    try {
+      _overlayEntry = OverlayEntry(
+        builder: (context) => LoadingScreen(
+          message: message ?? 'Processing your request...',
+        ),
+      );
+
+      Overlay.of(context).insert(_overlayEntry!);
+      _isShowing = true;
+      debugPrint('LoadingOverlay: Overlay shown successfully');
+    } catch (e) {
+      debugPrint('LoadingOverlay: Error showing overlay: $e');
+      _overlayEntry = null;
+      _isShowing = false;
+    }
   }
 
   static void hide() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
+    if (!_isShowing || _overlayEntry == null) {
+      debugPrint('LoadingOverlay: No overlay to hide');
+      return;
+    }
+
+    try {
+      _overlayEntry?.remove();
+      debugPrint('LoadingOverlay: Overlay hidden successfully');
+    } catch (e) {
+      debugPrint('LoadingOverlay: Error hiding overlay: $e');
+    } finally {
+      _overlayEntry = null;
+      _isShowing = false;
+    }
   }
+
+  // Add this method to force cleanup if needed
+  static void forceHide() {
+    try {
+      _overlayEntry?.remove();
+    } catch (e) {
+      debugPrint('LoadingOverlay: Error in force hide: $e');
+    } finally {
+      _overlayEntry = null;
+      _isShowing = false;
+    }
+  }
+
+  // Check if overlay is currently showing
+  static bool get isShowing => _isShowing;
 }
