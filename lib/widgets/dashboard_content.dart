@@ -8,7 +8,6 @@ import 'package:fintech_bridge/services/loan_service.dart';
 import 'package:fintech_bridge/services/payment_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/activity_item.dart';
-import 'package:fintech_bridge/widgets/app_header.dart';
 import 'package:fintech_bridge/widgets/empty_section.dart';
 import 'package:fintech_bridge/widgets/loan_card_widget.dart';
 import 'package:fintech_bridge/widgets/summary_card.dart';
@@ -151,80 +150,67 @@ class _DashboardContentState extends State<DashboardContent> {
     }
 
     if (_errorMessage != null) {
-      return Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: AppConstants.errorColor,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Something went wrong',
-                    style: AppConstants.headlineSmall,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _errorMessage!,
-                    style: AppConstants.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _refreshData,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConstants.primaryColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Try Again'),
-                  ),
-                ],
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: AppConstants.errorColor,
               ),
-            ),
+              const SizedBox(height: 16),
+              const Text(
+                'Something went wrong',
+                style: AppConstants.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage!,
+                style: AppConstants.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _refreshData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppConstants.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Try Again'),
+              ),
+            ],
           ),
         ),
       );
     }
 
-    return SafeArea(
-      child: Column(
-        children: [
-          AppHeader(userProfileFuture: Future.value(_userProfile)),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _refreshData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      WelcomeCard(
-                        userProfileFuture: Future.value(_userProfile),
-                        totalBalanceFuture: Future.value(_totalBalance ?? 0.0),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildFinancialOverview(),
-                      const SizedBox(height: 24),
-                      _buildRecommendedLoans(),
-                      const SizedBox(height: 24),
-                      _buildRecentActivity(),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
+    return RefreshIndicator(
+      onRefresh: _refreshData,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              WelcomeCard(
+                userProfileFuture: Future.value(_userProfile),
+                totalBalanceFuture: Future.value(_totalBalance ?? 0.0),
               ),
-            ),
+              const SizedBox(height: 24),
+              _buildFinancialOverview(),
+              const SizedBox(height: 24),
+              _buildRecommendedLoans(),
+              const SizedBox(height: 24),
+              _buildRecentActivity(),
+              const SizedBox(height: 20),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

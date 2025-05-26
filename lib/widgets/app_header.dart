@@ -4,41 +4,60 @@ import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
 
 class AppHeader extends StatelessWidget {
-  final Future<Map<String, dynamic>> userProfileFuture;
+  final Future<Map<String, dynamic>>? userProfileFuture;
+  final String? title;
+  final bool showLogo;
+  final bool showProfile;
+  final List<Widget>? actions;
+  final VoidCallback? onProfileTap;
+  final Widget? leading;
+  final bool showBackButton;
 
   const AppHeader({
-    Key? key,
-    required this.userProfileFuture,
-  }) : super(key: key);
+    super.key,
+    this.userProfileFuture,
+    this.title,
+    this.showLogo = true,
+    this.showProfile = true,
+    this.actions,
+    this.onProfileTap,
+    this.leading,
+    this.showBackButton = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>(
-      future: userProfileFuture,
-      builder: (context, snapshot) {
-        String profileImage = '';
-        if (snapshot.hasData && snapshot.data!['success']) {
-          final student = snapshot.data!['data'] as Student;
-          profileImage = student.profileImage ?? '';
-        }
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Leading/Logo section
+          Expanded(
+            child: Row(
+              children: [
+                if (showBackButton)
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      color: AppConstants.primaryColor,
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                if (leading != null) leading!,
+                if (showLogo && leading == null && !showBackButton) ...[
                   SizedBox(
                     height: 32,
                     child: Image.asset(
@@ -68,12 +87,63 @@ class AppHeader extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-              _buildProfileAvatar(profileImage),
+                if (title != null && !showLogo) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title!,
+                      style: AppConstants.titleLarge.copyWith(
+                        color: AppConstants.primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          
+          // Actions section
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (actions != null) ...actions!,
+              if (showProfile) _buildProfileSection(),
             ],
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileSection() {
+    if (userProfileFuture == null) {
+      return _buildDefaultProfile();
+    }
+
+    return FutureBuilder<Map<String, dynamic>>(
+      future: userProfileFuture,
+      builder: (context, snapshot) {
+        String profileImage = '';
+        if (snapshot.hasData && snapshot.data!['success']) {
+          final student = snapshot.data!['data'] as Student;
+          profileImage = student.profileImage ?? '';
+        }
+
+        return GestureDetector(
+          onTap: onProfileTap,
+          child: _buildProfileAvatar(profileImage),
         );
       },
+    );
+  }
+
+  Widget _buildDefaultProfile() {
+    return GestureDetector(
+      onTap: onProfileTap,
+      child: _buildProfileAvatar(''),
     );
   }
 
