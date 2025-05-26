@@ -1,7 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:fintech_bridge/models/provider_model.dart' as model;
-import 'package:fintech_bridge/services/mpesa_service.dart';
-import 'package:fintech_bridge/services/notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/models/loan_model.dart';
@@ -11,47 +9,20 @@ import 'package:fintech_bridge/models/notification_model.dart';
 class LoanService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final MpesaService _mpesaService;
-  final NotificationService _notificationService;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // Constructor with dependency injection
-  LoanService(
-      {required MpesaService mpesaService,
-      required NotificationService notificationService})
-      : _mpesaService = mpesaService,
-        _notificationService = notificationService;
+  // Simple constructor - no dependencies
+  LoanService();
 
-  // Factory method to create an initialized instance
+  // Factory method simplified
   factory LoanService.initialize() {
-    // Initialize MpesaService
-    final mpesaService = MpesaService.initialize(
-      consumerKey: 'gKJtz1baDAmDzqG84feLzLw3uWWWfYgJI8GH5PN79Ben8mDU',
-      consumerSecret:
-          'HF4Z29wIGs4cnFOmkGWtYddpQNtH8pcR74ICnMqcIboYIct9PAMDRNtCXZOkq7Pj',
-      passKey:
-          'Co9cjuHbCPsj7Oos3vcG8izCnzBib4ALfqK3OOUZJEal2EHon987MGMCFd/IQ4wzkJI3caLWw60fz/KlqVK5E4AED0Bvqts4qBhqPr5TkLDDPu8/No28h11J6lXdYlmCCguhTlpKzq0qrl9NKREsGWRowGlsyQNiWXhDdW3GmPa30mW3e0r16asD93bWKzP2kBbhUAn2fWWuwOMCGVGemlJjTugbTyT/eIpAK131L/ruebjYBmCAu6zwiEMhleywctX/khKDnSfaRhUQ1GyiEVWcqtBV1wW/5XiVel9pNf/SKt4GI61uMbIDhQyHjaQNxgvK7OxnZcfApU9qvZHKVA==',
-      isProduction: false,
-    );
-
-    // Initialize NotificationService
-    final notificationService = NotificationService(
-      apiKey:
-          'atsk_8a2a76f117fdaa91a739c1537be52fd7a500145f8b980029bf664c430e779f6ff0150334',
-      username: 'sandbox',
-      useSandbox: true,
-    );
-
-    return LoanService(
-        mpesaService: mpesaService, notificationService: notificationService);
+    return LoanService();
   }
 
-  // Dispose all resources
   @override
   void dispose() {
-    _mpesaService.dispose();
     super.dispose();
   }
 
@@ -72,6 +43,7 @@ class LoanService extends ChangeNotifier {
       }
       return studentDoc.data();
     } catch (e) {
+      debugPrint('Error getting student: $e');
       throw Exception('Failed to get student information: $e');
     }
   }
@@ -87,6 +59,7 @@ class LoanService extends ChangeNotifier {
           .map((doc) => model.Provider.fromFirestore(doc))
           .toList();
     } catch (e) {
+      debugPrint('Error fetching providers: $e');
       throw Exception('Error fetching providers: $e');
     }
   }
@@ -107,8 +80,12 @@ class LoanService extends ChangeNotifier {
     required String mpesaPhone,
   }) async {
     _setLoading(true);
+
     try {
+      debugPrint('Starting loan request creation...');
+
       if (currentUser == null) {
+        debugPrint('User not authenticated');
         return {
           'success': false,
           'message': 'Please sign in to request a loan'
@@ -116,8 +93,9 @@ class LoanService extends ChangeNotifier {
       }
 
       // Check minimum loan amount
-      const double minAmount = 100.0; // 100 KES minimum
+      const double minAmount = 100.0;
       if (amount < minAmount) {
+        debugPrint('Amount below minimum: $amount');
         return {
           'success': false,
           'message':
@@ -125,25 +103,30 @@ class LoanService extends ChangeNotifier {
         };
       }
 
-      final nextDueDate = DateTime.now()
-          .add(const Duration(days: 30)); // First payment due in 30 days
-
+      debugPrint('Checking student profile...');
       final studentDoc =
           await _firestore.collection('students').doc(currentUser!.uid).get();
+
       if (!studentDoc.exists) {
+        debugPrint('Student profile not found');
         return {
           'success': false,
           'message': 'Only verified students can request loans'
         };
       }
 
-      if (studentDoc['hasActiveLoan'] == true) {
+      final studentData = studentDoc.data() as Map<String, dynamic>;
+      if (studentData['hasActiveLoan'] == true) {
+        debugPrint('Student has active loan');
         return {
           'success': false,
           'message':
               'You already have an active loan. Please repay your current loan before applying for a new one.'
         };
       }
+
+      debugPrint('Creating loan object...');
+      final nextDueDate = DateTime.now().add(const Duration(days: 30));
 
       final loan = Loan(
         id: '',
@@ -161,7 +144,7 @@ class LoanService extends ChangeNotifier {
         mpesaTransactionCode: '',
         repaymentMethod: repaymentMethod,
         repaymentStartDate: repaymentStartDate,
-        latePaymentPenaltyRate: 5.0, // Default penalty rate
+        latePaymentPenaltyRate: 5.0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         providerName: providerName,
@@ -170,9 +153,12 @@ class LoanService extends ChangeNotifier {
         mpesaPhone: mpesaPhone,
       );
 
+      debugPrint('Saving loan to Firestore...');
       final loanRef = await _firestore.collection('loans').add(loan.toMap());
+      debugPrint('Loan created with ID: ${loanRef.id}');
 
-      // Create notification for the student
+      // Create notification - SIMPLIFIED (no external service)
+      debugPrint('Creating notification...');
       final notification = AppNotification(
         id: '',
         userId: currentUser!.uid,
@@ -185,8 +171,10 @@ class LoanService extends ChangeNotifier {
       );
 
       await _firestore.collection('notifications').add(notification.toJson());
+      debugPrint('Notification created');
 
       // Create APPLICATION transaction
+      debugPrint('Creating application transaction...');
       final applicationTransaction = tm.Transaction(
         id: '',
         loanId: loanRef.id,
@@ -197,40 +185,34 @@ class LoanService extends ChangeNotifier {
         description:
             'Loan application submitted for KES ${amount.toStringAsFixed(2)}',
       );
+
       await _firestore
           .collection('transactions')
           .add(applicationTransaction.toMap());
+      debugPrint('Transaction created');
 
-      // Send push notification
-      try {
-        final studentData = await getCurrentStudent();
-        if (studentData != null && studentData['deviceToken'] != null) {
-          await _notificationService.sendPushNotification(
-            phone: studentData['deviceToken'],
-            title: notification.title,
-            body: notification.body,
-            data: {'type': notification.type, 'loanId': loanRef.id},
-          );
-        }
-      } catch (e) {
-        // Log notification error but continue with success response
-        print('Push notification failed: $e');
-      }
-
+      debugPrint('Loan request completed successfully');
       return {
         'success': true,
         'message': 'Loan request submitted for review',
         'loan': loan.copyWith(id: loanRef.id)
       };
     } catch (e) {
-      if (e is FirebaseException && e.code == 'unavailable') {
-        return {'success': false, 'message': 'No internet connection'};
+      debugPrint('Error in createLoanRequest: $e');
+
+      if (e is FirebaseException) {
+        debugPrint('Firebase error code: ${e.code}');
+        if (e.code == 'unavailable') {
+          return {'success': false, 'message': 'No internet connection'};
+        }
       }
+
       return {
         'success': false,
-        'message': 'Failed to submit loan request: ${e.toString()}'
+        'message': 'Failed to submit loan request. Please try again.'
       };
     } finally {
+      debugPrint('Setting loading to false');
       _setLoading(false);
     }
   }
@@ -243,10 +225,8 @@ class LoanService extends ChangeNotifier {
           ? {'success': true, 'data': Loan.fromFirestore(doc)}
           : {'success': false, 'message': 'Loan not found'};
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Failed to load loan details: ${e.toString()}'
-      };
+      debugPrint('Error getting loan by ID: $e');
+      return {'success': false, 'message': 'Failed to load loan details'};
     } finally {
       _setLoading(false);
     }
@@ -268,6 +248,7 @@ class LoanService extends ChangeNotifier {
       final loanDocs = await _firestore
           .collection('loans')
           .where('studentId', isEqualTo: currentUser!.uid)
+          .orderBy('createdAt', descending: true)
           .get();
 
       return {
@@ -275,13 +256,11 @@ class LoanService extends ChangeNotifier {
         'data': loanDocs.docs.map((doc) => Loan.fromFirestore(doc)).toList()
       };
     } catch (e) {
+      debugPrint('Error getting student loans: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to load your loans: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Failed to load your loans'};
     } finally {
       _setLoading(false);
     }
@@ -303,6 +282,7 @@ class LoanService extends ChangeNotifier {
       final loanDocs = await _firestore
           .collection('loans')
           .where('providerId', isEqualTo: currentUser!.uid)
+          .orderBy('createdAt', descending: true)
           .get();
 
       return {
@@ -310,13 +290,11 @@ class LoanService extends ChangeNotifier {
         'data': loanDocs.docs.map((doc) => Loan.fromFirestore(doc)).toList()
       };
     } catch (e) {
+      debugPrint('Error getting provider loans: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to load provider loans: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Failed to load provider loans'};
     } finally {
       _setLoading(false);
     }
@@ -325,7 +303,10 @@ class LoanService extends ChangeNotifier {
   Future<Map<String, dynamic>> updateLoanStatus(String loanId, String status,
       {String? mpesaTransactionCode}) async {
     _setLoading(true);
+
     try {
+      debugPrint('Updating loan status to: $status');
+
       if (currentUser == null) {
         return {'success': false, 'message': 'Authentication required'};
       }
@@ -348,20 +329,25 @@ class LoanService extends ChangeNotifier {
         return {'success': false, 'message': 'Unauthorized action'};
       }
 
+      // Use batch write for atomic operations
+      final batch = _firestore.batch();
+      final loanRef = _firestore.collection('loans').doc(loanId);
+
       Map<String, dynamic> updateData = {
         'status': status,
         'updatedAt': DateTime.now(),
       };
 
-      // Add M-Pesa transaction code if provided
-      if (mpesaTransactionCode != null && status == 'APPROVED') {
-        updateData['mpesaTransactionCode'] = mpesaTransactionCode;
+      // Add simulated M-Pesa transaction code
+      if (status == 'APPROVED') {
+        updateData['mpesaTransactionCode'] = mpesaTransactionCode ??
+            'SIM${DateTime.now().millisecondsSinceEpoch}';
       }
 
-      await _firestore.collection('loans').doc(loanId).update(updateData);
+      batch.update(loanRef, updateData);
 
       if (status == 'APPROVED') {
-        // Simulate M-Pesa success
+        // Simulate disbursement - CREATE SIMULATED TRANSACTION
         final transaction = tm.Transaction(
           id: '',
           loanId: loanId,
@@ -369,15 +355,35 @@ class LoanService extends ChangeNotifier {
           type: 'DISBURSEMENT',
           createdAt: DateTime.now(),
           status: 'COMPLETED',
-          description: 'Loan disbursement simulated',
+          description:
+              '💰 Loan disbursement completed (SIMULATED - No real money transferred)',
         );
-        await _firestore.collection('transactions').add(transaction.toMap());
 
-        // Update student's hasActiveLoan status
-        await _firestore.collection('students').doc(loan.studentId).update({
+        final transactionRef = _firestore.collection('transactions').doc();
+        batch.set(transactionRef, transaction.toMap());
+
+        // Update student status
+        final studentRef =
+            _firestore.collection('students').doc(loan.studentId);
+        batch.update(studentRef, {
           'hasActiveLoan': true,
           'updatedAt': DateTime.now(),
         });
+
+        // Create notification
+        final notification = AppNotification(
+          id: '',
+          userId: loan.studentId,
+          title: '🎉 Loan Approved!',
+          body:
+              'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been approved and disbursed (SIMULATED).',
+          type: 'LOAN_APPROVAL',
+          isRead: false,
+          createdAt: DateTime.now(),
+        );
+
+        final notificationRef = _firestore.collection('notifications').doc();
+        batch.set(notificationRef, notification.toJson());
       } else if (status == 'REJECTED') {
         final transaction = tm.Transaction(
           id: '',
@@ -386,40 +392,25 @@ class LoanService extends ChangeNotifier {
           type: 'REJECTION',
           createdAt: DateTime.now(),
           status: 'COMPLETED',
-          description: 'Loan application rejected',
+          description: '❌ Loan application rejected',
         );
-        await _firestore.collection('transactions').add(transaction.toMap());
-        // Create notification for rejection
+
+        final transactionRef = _firestore.collection('transactions').doc();
+        batch.set(transactionRef, transaction.toMap());
+
         final notification = AppNotification(
           id: '',
           userId: loan.studentId,
           title: 'Loan Request Rejected',
           body:
-              'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been rejected. Please contact support for more information.',
+              'Your loan request for KES ${loan.amount.toStringAsFixed(2)} has been rejected.',
           type: 'LOAN_REJECTION',
           isRead: false,
           createdAt: DateTime.now(),
         );
 
-        await _firestore.collection('notifications').add(notification.toJson());
-
-        // Send push notification
-        try {
-          final studentDoc =
-              await _firestore.collection('students').doc(loan.studentId).get();
-          final studentData = studentDoc.data();
-          if (studentData != null && studentData['deviceToken'] != null) {
-            await _notificationService.sendPushNotification(
-              phone: studentData['deviceToken'],
-              title: notification.title,
-              body: notification.body,
-              data: {'type': notification.type, 'loanId': loanId},
-            );
-          }
-        } catch (e) {
-          // Log notification error but continue with success response
-          print('Push notification failed: $e');
-        }
+        final notificationRef = _firestore.collection('notifications').doc();
+        batch.set(notificationRef, notification.toJson());
       } else if (status == 'PAID') {
         final transaction = tm.Transaction(
           id: '',
@@ -428,20 +419,24 @@ class LoanService extends ChangeNotifier {
           type: 'PAYMENT',
           createdAt: DateTime.now(),
           status: 'COMPLETED',
-          description: 'Loan fully paid',
+          description: '✅ Loan fully paid (SIMULATED)',
         );
-        await _firestore.collection('transactions').add(transaction.toMap());
-        // Update student's hasActiveLoan status
-        await _firestore.collection('students').doc(loan.studentId).update({
+
+        final transactionRef = _firestore.collection('transactions').doc();
+        batch.set(transactionRef, transaction.toMap());
+
+        // Update student status
+        final studentRef =
+            _firestore.collection('students').doc(loan.studentId);
+        batch.update(studentRef, {
           'hasActiveLoan': false,
           'updatedAt': DateTime.now(),
         });
 
-        // Create notification for the student
         final notification = AppNotification(
           id: '',
           userId: loan.studentId,
-          title: 'Loan Fully Paid',
+          title: '🎊 Loan Fully Paid!',
           body:
               'Congratulations! Your loan of KES ${loan.amount.toStringAsFixed(2)} has been fully paid.',
           type: 'LOAN_PAID',
@@ -449,39 +444,24 @@ class LoanService extends ChangeNotifier {
           createdAt: DateTime.now(),
         );
 
-        await _firestore.collection('notifications').add(notification.toJson());
-
-        // Send push notification
-        try {
-          final studentDoc =
-              await _firestore.collection('students').doc(loan.studentId).get();
-          final studentData = studentDoc.data();
-          if (studentData != null && studentData['deviceToken'] != null) {
-            await _notificationService.sendPushNotification(
-              phone: studentData['deviceToken'],
-              title: notification.title,
-              body: notification.body,
-              data: {'type': notification.type, 'loanId': loanId},
-            );
-          }
-        } catch (e) {
-          // Log notification error but continue with success response
-          print('Push notification failed: $e');
-        }
+        final notificationRef = _firestore.collection('notifications').doc();
+        batch.set(notificationRef, notification.toJson());
       }
+
+      // Commit all operations atomically
+      await batch.commit();
+      debugPrint('Loan status updated successfully');
 
       return {
         'success': true,
         'message': 'Loan status updated to ${status.toLowerCase()}'
       };
     } catch (e) {
+      debugPrint('Error updating loan status: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to update loan status: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Failed to update loan status'};
     } finally {
       _setLoading(false);
     }
@@ -493,7 +473,10 @@ class LoanService extends ChangeNotifier {
     required String mpesaTransactionCode,
   }) async {
     _setLoading(true);
+
     try {
+      debugPrint('Recording payment of $amount for loan $loanId');
+
       if (currentUser == null) {
         return {'success': false, 'message': 'Authentication required'};
       }
@@ -505,26 +488,23 @@ class LoanService extends ChangeNotifier {
 
       final loan = Loan.fromFirestore(loanDoc);
 
-      // Verify the student is making the payment
       if (loan.studentId != currentUser!.uid) {
         return {'success': false, 'message': 'Unauthorized action'};
       }
 
-      // Verify M-Pesa transaction
-      final mpesaVerification = await _mpesaService.verifyTransaction(
-        transactionCode: mpesaTransactionCode,
-        amount: amount,
-      );
-
-      if (!mpesaVerification['success']) {
-        return {
-          'success': false,
-          'message':
-              'M-Pesa transaction verification failed: ${mpesaVerification['message']}'
-        };
+      if (amount <= 0) {
+        return {'success': false, 'message': 'Invalid payment amount'};
       }
 
-      // Create a payment transaction
+      // Simulate M-Pesa verification (always successful for testing)
+      final simulatedTransactionCode = mpesaTransactionCode.isNotEmpty
+          ? mpesaTransactionCode
+          : 'SIM${DateTime.now().millisecondsSinceEpoch}';
+
+      // Use batch write for atomic operations
+      final batch = _firestore.batch();
+
+      // Create payment transaction
       final transaction = tm.Transaction(
         id: '',
         loanId: loanId,
@@ -533,72 +513,93 @@ class LoanService extends ChangeNotifier {
         createdAt: DateTime.now(),
         status: 'COMPLETED',
         description:
-            'Loan repayment via M-Pesa. Transaction ID: $mpesaTransactionCode',
+            '💳 Loan repayment (SIMULATED). Transaction ID: $simulatedTransactionCode',
       );
 
-      await _firestore.collection('transactions').add(transaction.toMap());
+      final transactionRef = _firestore.collection('transactions').doc();
+      batch.set(transactionRef, transaction.toMap());
 
       // Update loan remaining balance
       double newBalance = loan.remainingBalance - amount;
+      final loanRef = _firestore.collection('loans').doc(loanId);
+
       if (newBalance <= 0) {
         // Loan is fully paid
-        await updateLoanStatus(loanId, 'PAID');
+        batch.update(loanRef, {
+          'remainingBalance': 0,
+          'status': 'PAID',
+          'updatedAt': DateTime.now(),
+        });
+
+        // Update student status
+        final studentRef =
+            _firestore.collection('students').doc(loan.studentId);
+        batch.update(studentRef, {
+          'hasActiveLoan': false,
+          'updatedAt': DateTime.now(),
+        });
+
+        final notification = AppNotification(
+          id: '',
+          userId: loan.studentId,
+          title: '🎉 Loan Fully Paid!',
+          body: 'Congratulations! You have successfully paid off your loan.',
+          type: 'LOAN_PAID',
+          isRead: false,
+          createdAt: DateTime.now(),
+        );
+
+        final notificationRef = _firestore.collection('notifications').doc();
+        batch.set(notificationRef, notification.toJson());
+
+        await batch.commit();
+        debugPrint('Loan fully paid');
 
         return {
           'success': true,
-          'message': 'Payment recorded successfully. Loan fully paid!'
+          'message': 'Payment recorded successfully. Loan fully paid! 🎉'
         };
       } else {
-        // Calculate next due date (30 days from now)
+        // Partial payment
         DateTime nextDueDate = DateTime.now().add(const Duration(days: 30));
 
-        await _firestore.collection('loans').doc(loanId).update({
+        batch.update(loanRef, {
           'remainingBalance': newBalance,
           'nextDueDate': nextDueDate,
           'updatedAt': DateTime.now(),
         });
 
-        // Create payment notification
         final notification = AppNotification(
           id: '',
           userId: loan.studentId,
-          title: 'Payment Received',
+          title: '💰 Payment Received',
           body:
-              'Your payment of KES ${amount.toStringAsFixed(2)} has been received. Remaining balance: KES ${newBalance.toStringAsFixed(2)}',
+              'Your payment of KES ${amount.toStringAsFixed(2)} has been received (SIMULATED). Remaining balance: KES ${newBalance.toStringAsFixed(2)}',
           type: 'PAYMENT_CONFIRMATION',
           isRead: false,
           createdAt: DateTime.now(),
         );
 
-        await _firestore.collection('notifications').add(notification.toJson());
+        final notificationRef = _firestore.collection('notifications').doc();
+        batch.set(notificationRef, notification.toJson());
 
-        // Send push notification
-        try {
-          final studentDoc =
-              await _firestore.collection('students').doc(loan.studentId).get();
-          final studentData = studentDoc.data();
-          if (studentData != null && studentData['deviceToken'] != null) {
-            await _notificationService.sendPushNotification(
-              phone: studentData['deviceToken'],
-              title: notification.title,
-              body: notification.body,
-              data: {'type': notification.type, 'loanId': loanId},
-            );
-          }
-        } catch (e) {
-          // Log notification error but continue with success response
-          print('Push notification failed: $e');
-        }
+        await batch.commit();
+        debugPrint('Partial payment recorded');
 
-        return {'success': true, 'message': 'Payment recorded successfully'};
+        return {
+          'success': true,
+          'message':
+              'Payment recorded successfully! Remaining: KES ${newBalance.toStringAsFixed(2)}'
+        };
       }
     } catch (e) {
+      debugPrint('Error recording payment: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
       return {
         'success': false,
-        'message': 'Failed to record payment: ${e.toString()}'
+        'message': 'Failed to record payment. Please try again.'
       };
     } finally {
       _setLoading(false);
@@ -618,19 +619,21 @@ class LoanService extends ChangeNotifier {
         return {'success': false, 'message': 'Admin access required'};
       }
 
-      final loanDocs = await _firestore.collection('loans').get();
+      final loanDocs = await _firestore
+          .collection('loans')
+          .orderBy('createdAt', descending: true)
+          .get();
+
       return {
         'success': true,
         'data': loanDocs.docs.map((doc) => Loan.fromFirestore(doc)).toList()
       };
     } catch (e) {
+      debugPrint('Error getting all loans: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to load all loans: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Failed to load all loans'};
     } finally {
       _setLoading(false);
     }
@@ -646,6 +649,7 @@ class LoanService extends ChangeNotifier {
       final loanDocs = await _firestore
           .collection('loans')
           .where('status', isEqualTo: status)
+          .orderBy('createdAt', descending: true)
           .get();
 
       return {
@@ -653,13 +657,11 @@ class LoanService extends ChangeNotifier {
         'data': loanDocs.docs.map((doc) => Loan.fromFirestore(doc)).toList()
       };
     } catch (e) {
+      debugPrint('Error filtering loans: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to filter loans: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Failed to filter loans'};
     } finally {
       _setLoading(false);
     }
@@ -687,6 +689,7 @@ class LoanService extends ChangeNotifier {
       final transactionDocs = await _firestore
           .collection('transactions')
           .where('loanId', isEqualTo: loanId)
+          .orderBy('createdAt', descending: true)
           .get();
 
       return {
@@ -696,13 +699,11 @@ class LoanService extends ChangeNotifier {
             .toList()
       };
     } catch (e) {
+      debugPrint('Error getting loan transactions: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to load transactions: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Failed to load transactions'};
     } finally {
       _setLoading(false);
     }
@@ -734,7 +735,7 @@ class LoanService extends ChangeNotifier {
       final notification = AppNotification(
         id: '',
         userId: loan.studentId,
-        title: 'Payment Reminder',
+        title: '⏰ Payment Reminder',
         body:
             'This is a reminder that your payment of KES ${loan.monthlyPayment.toStringAsFixed(2)} is due on ${loan.nextDueDate.day}/${loan.nextDueDate.month}/${loan.nextDueDate.year}.',
         type: 'PAYMENT_REMINDER',
@@ -743,40 +744,21 @@ class LoanService extends ChangeNotifier {
       );
 
       await _firestore.collection('notifications').add(notification.toJson());
+      debugPrint('Payment reminder sent');
 
-      // Send push notification
-      try {
-        final studentDoc =
-            await _firestore.collection('students').doc(loan.studentId).get();
-        final studentData = studentDoc.data();
-        if (studentData != null && studentData['deviceToken'] != null) {
-          await _notificationService.sendPushNotification(
-            phone: studentData['deviceToken'],
-            title: notification.title,
-            body: notification.body,
-            data: {'type': notification.type, 'loanId': loanId},
-          );
-        }
-      } catch (e) {
-        // Log notification error but continue with success response
-        print('Push notification failed: $e');
-      }
-
-      return {'success': true, 'message': 'Payment reminder sent'};
+      return {'success': true, 'message': 'Payment reminder sent successfully'};
     } catch (e) {
+      debugPrint('Error sending payment reminder: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to send payment reminder: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Failed to send payment reminder'};
     } finally {
       _setLoading(false);
     }
   }
 
-  // Method to initiate M-Pesa payment
+  // Method to initiate M-Pesa payment (SIMULATED)
   Future<Map<String, dynamic>> initiateRepayment({
     required String loanId,
     required double amount,
@@ -784,6 +766,8 @@ class LoanService extends ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
+      debugPrint('Initiating repayment: $amount for loan: $loanId');
+
       if (currentUser == null) {
         return {'success': false, 'message': 'Authentication required'};
       }
@@ -795,27 +779,13 @@ class LoanService extends ChangeNotifier {
 
       final loan = Loan.fromFirestore(loanDoc);
 
-      // Verify the student is making the payment
       if (loan.studentId != currentUser!.uid) {
         return {'success': false, 'message': 'Unauthorized action'};
       }
 
-      // Initiate STK Push
-      final result = await _mpesaService.initiateSTKPush(
-        phone: phoneNumber,
-        amount: amount,
-        accountReference: 'Loan Repayment: $loanId',
-        transactionDesc: 'Loan Repayment',
-        businessShortCode: '174379', // From provider data
-        callbackUrl: 'https://yourapp.com/mpesa-callback',
-      );
-
-      if (!result['success']) {
-        return {
-          'success': false,
-          'message': 'Failed to initiate M-Pesa payment: ${result['message']}'
-        };
-      }
+      // Simulate STK Push (always successful for testing)
+      final simulatedCheckoutId =
+          'ws_CO_${DateTime.now().millisecondsSinceEpoch}';
 
       // Create pending transaction record
       final pendingTransaction = tm.Transaction(
@@ -826,263 +796,40 @@ class LoanService extends ChangeNotifier {
         createdAt: DateTime.now(),
         status: 'PENDING',
         description:
-            'M-Pesa payment initiated. CheckoutRequestID: ${result['checkoutRequestId']}',
+            '📱 Payment initiated (SIMULATED). CheckoutRequestID: $simulatedCheckoutId',
       );
 
       await _firestore
           .collection('transactions')
           .add(pendingTransaction.toMap());
 
-      // Create a notification about payment initiation
       final notification = AppNotification(
         id: '',
         userId: loan.studentId,
-        title: 'Payment Initiated',
+        title: '📱 Payment Initiated',
         body:
-            'Your M-Pesa payment of KES ${amount.toStringAsFixed(2)} has been initiated. Please check your phone and enter your PIN.',
+            'Your payment of KES ${amount.toStringAsFixed(2)} has been initiated (SIMULATED MODE).',
         type: 'PAYMENT_INITIATED',
         isRead: false,
         createdAt: DateTime.now(),
       );
 
       await _firestore.collection('notifications').add(notification.toJson());
+      debugPrint('Payment initiation completed');
 
       return {
         'success': true,
-        'message':
-            'M-Pesa payment initiated. Please check your phone and enter your PIN.',
-        'checkoutRequestId': result['checkoutRequestId'],
+        'message': 'Payment initiated successfully (SIMULATED MODE)',
+        'checkoutRequestId': simulatedCheckoutId,
       };
     } catch (e) {
+      debugPrint('Error initiating repayment: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {
-        'success': false,
-        'message': 'Failed to initiate payment: ${e.toString()}'
-      };
+      return {'success': false, 'message': 'Failed to initiate payment'};
     } finally {
       _setLoading(false);
-    }
-  }
-
-  // Add a method to handle M-Pesa callback
-  Future<Map<String, dynamic>> processMpesaCallback({
-    required Map<String, dynamic> callbackData,
-  }) async {
-    try {
-      // Extract data from callback
-      final resultCode = callbackData['Body']['stkCallback']['ResultCode'];
-      final resultDesc = callbackData['Body']['stkCallback']['ResultDesc'];
-      final checkoutRequestId =
-          callbackData['Body']['stkCallback']['CheckoutRequestID'];
-
-      // If transaction was successful
-      if (resultCode == 0) {
-        // Get transaction items
-        final callbackItems =
-            callbackData['Body']['stkCallback']['CallbackMetadata']['Item'];
-
-        // Extract transaction details
-        String mpesaReceiptNumber = '';
-        double amount = 0.0;
-        String phoneNumber = '';
-        DateTime transactionDate = DateTime.now();
-
-        for (final item in callbackItems) {
-          if (item['Name'] == 'MpesaReceiptNumber') {
-            mpesaReceiptNumber = item['Value'];
-          } else if (item['Name'] == 'Amount') {
-            amount = double.parse(item['Value'].toString());
-          } else if (item['Name'] == 'PhoneNumber') {
-            phoneNumber = item['Value'].toString();
-          } else if (item['Name'] == 'TransactionDate') {
-            // Parse transaction date from string format to DateTime
-            final String dateString = item['Value'].toString();
-            // Format: YYYYMMDDHHmmss
-            final year = int.parse(dateString.substring(0, 4));
-            final month = int.parse(dateString.substring(4, 6));
-            final day = int.parse(dateString.substring(6, 8));
-            final hour = int.parse(dateString.substring(8, 10));
-            final minute = int.parse(dateString.substring(10, 12));
-            final second = int.parse(dateString.substring(12, 14));
-
-            transactionDate = DateTime(year, month, day, hour, minute, second);
-          }
-        }
-
-        // Find the pending transaction with this checkoutRequestId
-        final pendingTxQuery = await _firestore
-            .collection('transactions')
-            .where('description',
-                isGreaterThanOrEqualTo:
-                    'M-Pesa payment initiated. CheckoutRequestID: $checkoutRequestId')
-            .where('description',
-                isLessThan:
-                    'M-Pesa payment initiated. CheckoutRequestID: $checkoutRequestId' +
-                        'z')
-            .where('status', isEqualTo: 'PENDING')
-            .get();
-
-        if (pendingTxQuery.docs.isEmpty) {
-          return {
-            'success': false,
-            'message': 'No pending transaction found for this payment'
-          };
-        }
-
-        final pendingTxDoc = pendingTxQuery.docs.first;
-        final pendingTx = tm.Transaction.fromFirestore(pendingTxDoc);
-
-        // Update the transaction to completed
-        await _firestore
-            .collection('transactions')
-            .doc(pendingTxDoc.id)
-            .update({
-          'status': 'COMPLETED',
-          'description':
-              'Loan repayment via M-Pesa. Receipt: $mpesaReceiptNumber | Phone: $phoneNumber | Date: ${transactionDate.toIso8601String()}',
-        });
-
-        // Update the loan's remaining balance
-        final loanDoc =
-            await _firestore.collection('loans').doc(pendingTx.loanId).get();
-        if (!loanDoc.exists) {
-          return {'success': false, 'message': 'Loan not found'};
-        }
-
-        final loan = Loan.fromFirestore(loanDoc);
-        double newBalance = loan.remainingBalance - amount;
-
-        if (newBalance <= 0) {
-          // Loan is fully paid
-          await updateLoanStatus(pendingTx.loanId, 'PAID');
-        } else {
-          // Calculate next due date (30 days from now)
-          DateTime nextDueDate = DateTime.now().add(const Duration(days: 30));
-
-          await _firestore.collection('loans').doc(pendingTx.loanId).update({
-            'remainingBalance': newBalance,
-            'nextDueDate': nextDueDate,
-            'updatedAt': DateTime.now(),
-          });
-
-          // Create payment confirmation notification
-          final notification = AppNotification(
-            id: '',
-            userId: loan.studentId,
-            title: 'Payment Confirmed',
-            body:
-                'Your payment of KES ${amount.toStringAsFixed(2)} has been confirmed. Remaining balance: KES ${newBalance.toStringAsFixed(2)}',
-            type: 'PAYMENT_CONFIRMATION',
-            isRead: false,
-            createdAt: DateTime.now(),
-          );
-
-          await _firestore
-              .collection('notifications')
-              .add(notification.toJson());
-
-          // Send push notification
-          try {
-            final studentDoc = await _firestore
-                .collection('students')
-                .doc(loan.studentId)
-                .get();
-            final studentData = studentDoc.data();
-            if (studentData != null && studentData['deviceToken'] != null) {
-              await _notificationService.sendPushNotification(
-                phone: studentData['deviceToken'],
-                title: notification.title,
-                body: notification.body,
-                data: {'type': notification.type, 'loanId': pendingTx.loanId},
-              );
-            }
-          } catch (e) {
-            // Log notification error but continue with success response
-            print('Push notification failed: $e');
-          }
-        }
-
-        return {'success': true, 'message': 'Payment processed successfully'};
-      } else {
-        // Transaction failed
-        // Find the pending transaction and mark it as failed
-        final pendingTxQuery = await _firestore
-            .collection('transactions')
-            .where('description',
-                isGreaterThanOrEqualTo:
-                    'M-Pesa payment initiated. CheckoutRequestID: $checkoutRequestId')
-            .where('description',
-                isLessThan:
-                    'M-Pesa payment initiated. CheckoutRequestID: $checkoutRequestId' +
-                        'z')
-            .where('status', isEqualTo: 'PENDING')
-            .get();
-
-        if (pendingTxQuery.docs.isNotEmpty) {
-          final pendingTxDoc = pendingTxQuery.docs.first;
-          final pendingTx = tm.Transaction.fromFirestore(pendingTxDoc);
-
-          // Update transaction to failed
-          await _firestore
-              .collection('transactions')
-              .doc(pendingTxDoc.id)
-              .update({
-            'status': 'FAILED',
-            'description': 'M-Pesa payment failed: $resultDesc',
-          });
-
-          // Get loan and student information
-          final loanDoc =
-              await _firestore.collection('loans').doc(pendingTx.loanId).get();
-          if (loanDoc.exists) {
-            final loan = Loan.fromFirestore(loanDoc);
-
-            // Create payment failure notification
-            final notification = AppNotification(
-              id: '',
-              userId: loan.studentId,
-              title: 'Payment Failed',
-              body: 'Your M-Pesa payment could not be processed: $resultDesc',
-              type: 'PAYMENT_FAILURE',
-              isRead: false,
-              createdAt: DateTime.now(),
-            );
-
-            await _firestore
-                .collection('notifications')
-                .add(notification.toJson());
-
-            // Send push notification
-            try {
-              final studentDoc = await _firestore
-                  .collection('students')
-                  .doc(loan.studentId)
-                  .get();
-              final studentData = studentDoc.data();
-              if (studentData != null && studentData['deviceToken'] != null) {
-                await _notificationService.sendPushNotification(
-                  phone: studentData['deviceToken'],
-                  title: notification.title,
-                  body: notification.body,
-                  data: {'type': notification.type, 'loanId': pendingTx.loanId},
-                );
-              }
-            } catch (e) {
-              // Log notification error but continue with error response
-              print('Push notification failed: $e');
-            }
-          }
-        }
-
-        return {'success': false, 'message': 'Payment failed: $resultDesc'};
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error processing callback: ${e.toString()}'
-      };
     }
   }
 
@@ -1184,7 +931,7 @@ class LoanService extends ChangeNotifier {
     }
   }
 
-  // Method to get loan statistics for a student
+// Method to get loan statistics for a student
   Future<Map<String, dynamic>> getStudentLoanStatistics() async {
     try {
       if (currentUser == null) {
