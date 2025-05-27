@@ -1,5 +1,4 @@
 import 'package:fintech_bridge/models/student_model.dart';
-import 'package:fintech_bridge/screens/student/transaction_screen.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -16,8 +15,9 @@ class WelcomeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: 'Ksh. ', decimalDigits: 2);
-    
+    final currencyFormat =
+        NumberFormat.currency(symbol: 'KES. ', decimalDigits: 2);
+
     return FutureBuilder<Map<String, dynamic>>(
       future: userProfileFuture,
       builder: (context, userSnapshot) {
@@ -25,12 +25,13 @@ class WelcomeCard extends StatelessWidget {
           return _buildLoadingCard();
         }
 
-        if (!userSnapshot.hasData || !(userSnapshot.data?['success'] ?? false)) {
+        if (!userSnapshot.hasData ||
+            !(userSnapshot.data?['success'] ?? false)) {
           return _buildErrorCard();
         }
 
         final student = userSnapshot.data!['data'] as Student;
-        
+
         return FutureBuilder<double>(
           future: totalBalanceFuture,
           builder: (context, balanceSnapshot) {
@@ -38,7 +39,7 @@ class WelcomeCard extends StatelessWidget {
             if (balanceSnapshot.hasData) {
               balance = balanceSnapshot.data!;
             }
-            
+
             return Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -140,7 +141,8 @@ class WelcomeCard extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                if (balanceSnapshot.connectionState == ConnectionState.waiting)
+                                if (balanceSnapshot.connectionState ==
+                                    ConnectionState.waiting)
                                   const SizedBox(
                                     height: 12,
                                     width: 12,
@@ -154,8 +156,6 @@ class WelcomeCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      _buildTransactionButton(context),
                     ],
                   ),
                 ],
@@ -164,50 +164,6 @@ class WelcomeCard extends StatelessWidget {
           },
         );
       },
-    );
-  }
-
-  Widget _buildTransactionButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const TransactionsScreen(),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.receipt_long_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-            SizedBox(height: 4),
-            Text(
-              'History',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -269,14 +225,15 @@ class WelcomeCard extends StatelessWidget {
 
   String _getInitials(String fullName) {
     if (fullName.isEmpty) return '';
-    
+
     final nameParts = fullName.trim().split(' ');
     if (nameParts.isEmpty) return '';
-    
+
     if (nameParts.length == 1) {
       return nameParts[0][0].toUpperCase();
     }
-    
-    return '${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}'.toUpperCase();
+
+    return '${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}'
+        .toUpperCase();
   }
 }

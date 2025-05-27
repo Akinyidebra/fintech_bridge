@@ -16,7 +16,7 @@ class LoanItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currencyFormatter =
-        NumberFormat.currency(symbol: 'Ksh. ', decimalDigits: 0);
+        NumberFormat.currency(symbol: 'KES. ', decimalDigits: 0);
     final formattedAmount = currencyFormatter.format(loan.amount);
 
     return GestureDetector(

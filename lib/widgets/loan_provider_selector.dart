@@ -23,7 +23,7 @@ class LoanProviderSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Select Loan Provider', style: AppConstants.headlineSmall),
+        const Text('Select Loan Provider', style: AppConstants.headlineSmall),
         const SizedBox(height: 16),
         DropdownButtonFormField<model.Provider>(
           value: selectedProvider,
