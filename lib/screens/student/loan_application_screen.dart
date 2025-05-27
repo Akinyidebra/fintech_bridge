@@ -1,9 +1,9 @@
 // ignore_for_file: null_check_always_fails
 
 import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
-import 'package:fintech_bridge/screens/student/my_loans_screen.dart';
 import 'package:fintech_bridge/screens/student/profile_screen.dart';
 import 'package:fintech_bridge/widgets/dashboard_content.dart';
+import 'package:fintech_bridge/widgets/my_loans_content.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/database_service.dart';
@@ -58,7 +58,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
     _screens = [
       const DashboardContent(),
       const LoanApplicationContent(loanType: ''),
-      const MyLoansScreen(),
+      const MyLoansContent(),
       const ProfileScreen(),
     ];
   }
