@@ -20,6 +20,9 @@ class PaymentService extends ChangeNotifier {
 
   Future<Map<String, dynamic>> makeRepayment({
     required String loanId,
+    required double amount,
+    required String paymentMethod,
+    String? note,
   }) async {
     _setLoading(true);
     try {
@@ -51,62 +54,91 @@ class PaymentService extends ChangeNotifier {
         };
       }
 
+      // Validate payment amount
+      if (amount <= 0) {
+        return {
+          'success': false,
+          'message': 'Invalid payment amount'
+        };
+      }
+
+      if (amount > loan.remainingBalance) {
+        return {
+          'success': false,
+          'message': 'Payment amount cannot exceed remaining balance'
+        };
+      }
+
+      final now = DateTime.now();
+
       // Create repayment transaction
       final transaction = tm.Transaction(
         id: '',
         loanId: loanId,
-        amount: loan.monthlyPayment,
+        amount: amount,
         type: 'REPAYMENT',
-        createdAt: DateTime.now(),
+        createdAt: now,
         status: 'COMPLETED',
-        description: 'Loan repayment',
+        description: note?.isNotEmpty == true 
+            ? 'Loan repayment - $note' 
+            : 'Loan repayment via $paymentMethod',
       );
 
-      // Update loan status
-      await _firestore.collection('loans').doc(loanId).update({
-        'remainingBalance': loan.remainingBalance - loan.monthlyPayment,
-        'nextDueDate': loan.nextDueDate.add(const Duration(days: 30)),
-        'updatedAt': DateTime.now(),
-      });
+      // Calculate new remaining balance
+      final newRemainingBalance = loan.remainingBalance - amount;
+      final isFullyPaid = newRemainingBalance <= 0;
 
-      final transactionRef =
-          await _firestore.collection('transactions').add(transaction.toMap());
+      // Use batch write for atomic operations
+      final batch = _firestore.batch();
 
-      final transactionDocs = await _firestore
-          .collection('transactions')
-          .where('loanId', isEqualTo: loanId)
-          .where('type', isEqualTo: 'REPAYMENT')
-          .get();
+      // Add transaction
+      final transactionRef = _firestore.collection('transactions').doc();
+      batch.set(transactionRef, transaction.toMap());
 
-      double totalRepaid = transactionDocs.docs.fold(0,
-          (total, doc) => total + (tm.Transaction.fromFirestore(doc).amount));
+      // Update loan
+      final loanUpdateData = <String, dynamic>{
+        'remainingBalance': newRemainingBalance.clamp(0, double.infinity),
+        'updatedAt': now,
+      };
 
-      final updateData = <String, dynamic>{};
-      if (totalRepaid >= loan.amount) {
-        updateData['status'] = 'PAID';
-        updateData['updatedAt'] = DateTime.now();
+      // If loan is fully paid, update status and student record
+      if (isFullyPaid) {
+        loanUpdateData['status'] = 'PAID';
+        
+        // Update student's active loan status
+        final studentRef = _firestore.collection('students').doc(loan.studentId);
+        batch.update(studentRef, {
+          'hasActiveLoan': false,
+          'updatedAt': now,
+        });
+      } else {
+        // Update next due date (advance by 30 days for monthly payments)
+        loanUpdateData['nextDueDate'] = loan.nextDueDate.add(const Duration(days: 30));
       }
 
-      if (updateData.isNotEmpty) {
-        await _firestore.collection('loans').doc(loanId).update(updateData);
-      }
+      final loanRef = _firestore.collection('loans').doc(loanId);
+      batch.update(loanRef, loanUpdateData);
+
+      // Commit all changes atomically
+      await batch.commit();
 
       return {
         'success': true,
-        'message': totalRepaid >= loan.amount
-            ? 'Loan fully repaid! Thank you!'
+        'message': isFullyPaid
+            ? 'Congratulations! Your loan has been fully paid!'
             : 'Payment processed successfully',
         'transaction': transaction.copyWith(id: transactionRef.id),
-        'loanPaid': totalRepaid >= loan.amount,
-        'remainingAmount': (loan.amount - totalRepaid).clamp(0, double.infinity)
+        'loanPaid': isFullyPaid,
+        'remainingAmount': newRemainingBalance.clamp(0, double.infinity),
       };
     } catch (e) {
+      debugPrint('Error in makeRepayment: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
       return {
         'success': false,
-        'message': 'Payment processing failed. Please check your connection.'
+        'message': 'Payment processing failed. Please check your connection and try again.'
       };
     } finally {
       _setLoading(false);
@@ -143,14 +175,19 @@ class PaymentService extends ChangeNotifier {
         final transactionDocs = await _firestore
             .collection('transactions')
             .where('loanId', isEqualTo: loanDoc.id)
+            .orderBy('createdAt', descending: true)
             .get();
 
         allTransactions.addAll(transactionDocs.docs
             .map((doc) => tm.Transaction.fromFirestore(doc)));
       }
 
+      // Sort all transactions by date (most recent first)
+      allTransactions.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
       return {'success': true, 'data': allTransactions};
     } catch (e) {
+      debugPrint('Error in getStudentTransactions: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
@@ -213,6 +250,7 @@ class PaymentService extends ChangeNotifier {
         }
       };
     } catch (e) {
+      debugPrint('Error in getRemainingBalance: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
@@ -266,6 +304,7 @@ class PaymentService extends ChangeNotifier {
 
       return {'success': true, 'data': transaction};
     } catch (e) {
+      debugPrint('Error in getTransactionById: $e');
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
@@ -278,5 +317,55 @@ class PaymentService extends ChangeNotifier {
     }
   }
 
-  getLoanTransactions(String id) {}
+  Future<Map<String, dynamic>> getLoanTransactions(String loanId) async {
+    _setLoading(true);
+    try {
+      if (currentUser == null) {
+        return {
+          'success': false,
+          'message': 'Authentication required. Please sign in.'
+        };
+      }
+
+      final loanDoc = await _firestore.collection('loans').doc(loanId).get();
+      if (!loanDoc.exists) {
+        return {'success': false, 'message': 'Loan not found'};
+      }
+
+      final loan = Loan.fromFirestore(loanDoc);
+      final adminDoc =
+          await _firestore.collection('admins').doc(currentUser!.uid).get();
+
+      final isAuthorized = loan.studentId == currentUser!.uid ||
+          loan.providerId == currentUser!.uid ||
+          adminDoc.exists;
+
+      if (!isAuthorized) {
+        return {'success': false, 'message': 'Unauthorized to view this loan'};
+      }
+
+      final transactionDocs = await _firestore
+          .collection('transactions')
+          .where('loanId', isEqualTo: loanId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final transactions = transactionDocs.docs
+          .map((doc) => tm.Transaction.fromFirestore(doc))
+          .toList();
+
+      return {'success': true, 'data': transactions};
+    } catch (e) {
+      debugPrint('Error in getLoanTransactions: $e');
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to retrieve loan transactions'
+      };
+    } finally {
+      _setLoading(false);
+    }
+  }
 }

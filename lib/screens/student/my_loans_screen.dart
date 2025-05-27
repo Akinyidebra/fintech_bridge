@@ -1,6 +1,6 @@
-import 'package:fintech_bridge/screens/student/profile_screen.dart';
 import 'package:fintech_bridge/widgets/dashboard_content.dart';
 import 'package:fintech_bridge/widgets/loan_application_content.dart';
+import 'package:fintech_bridge/widgets/profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/database_service.dart';
@@ -10,11 +10,8 @@ import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
 import 'package:fintech_bridge/widgets/my_loans_content.dart';
 
 class MyLoansScreen extends StatefulWidget {
-  final bool showNavigation;
-
   const MyLoansScreen({
     super.key,
-    this.showNavigation = true,
   });
 
   @override
@@ -52,7 +49,7 @@ class _MyLoansScreenState extends State<MyLoansScreen> {
       const DashboardContent(),
       const LoanApplicationContent(loanType: ''),
       const MyLoansContent(),
-      const ProfileScreen(),
+      const ProfileContent(),
     ];
   }
 

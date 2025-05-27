@@ -37,7 +37,7 @@ class _DashboardContentState extends State<DashboardContent> {
 
   // Currency formatter - consistent with welcome card
   final NumberFormat _currencyFormat =
-      NumberFormat.currency(symbol: 'Ksh. ', decimalDigits: 2);
+      NumberFormat.currency(symbol: 'KES. ', decimalDigits: 2);
 
   @override
   void initState() {
