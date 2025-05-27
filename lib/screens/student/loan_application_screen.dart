@@ -1,9 +1,9 @@
 // ignore_for_file: null_check_always_fails
 
 import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
-import 'package:fintech_bridge/screens/student/profile_screen.dart';
 import 'package:fintech_bridge/widgets/dashboard_content.dart';
 import 'package:fintech_bridge/widgets/my_loans_content.dart';
+import 'package:fintech_bridge/widgets/profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/database_service.dart';
@@ -15,13 +15,11 @@ import 'package:fintech_bridge/widgets/loan_application_content.dart';
 class LoanApplicationScreen extends StatefulWidget {
   final String loanType;
   final provider_model.Provider? provider;
-  final bool showNavigation;
 
   const LoanApplicationScreen({
     super.key,
     required this.loanType,
     this.provider,
-    this.showNavigation = false,
   });
 
   @override
@@ -59,7 +57,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
       const DashboardContent(),
       const LoanApplicationContent(loanType: ''),
       const MyLoansContent(),
-      const ProfileScreen(),
+      const ProfileContent(),
     ];
   }
 
