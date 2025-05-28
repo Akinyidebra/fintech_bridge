@@ -1,9 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
 class ProfileIdentificationSection extends StatelessWidget {
-  final List<String> identificationImages;
+  final Map<String, dynamic>? identificationImages; // Changed to Map to match Firestore
 
   const ProfileIdentificationSection({
     super.key,
@@ -12,7 +11,8 @@ class ProfileIdentificationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (identificationImages.isEmpty) {
+    // Check if the map is empty or null
+    if (identificationImages == null || identificationImages!.isEmpty) {
       return _buildEmptyState();
     }
 
@@ -41,6 +41,22 @@ class ProfileIdentificationSection extends StatelessWidget {
     );
   }
 
+  List<MapEntry<String, String>> _getValidImages() {
+    if (identificationImages == null) return [];
+    
+    return identificationImages!.entries
+        .where((entry) => 
+            entry.value != null && 
+            entry.value.toString().isNotEmpty && 
+            _isValidUrl(entry.value.toString()))
+        .map((entry) => MapEntry(entry.key, entry.value.toString()))
+        .toList();
+  }
+
+  bool _isValidUrl(String data) {
+    return data.startsWith('http://') || data.startsWith('https://');
+  }
+
   Widget _buildSectionHeader() {
     return const Row(
       children: [
@@ -59,6 +75,8 @@ class ProfileIdentificationSection extends StatelessWidget {
   }
 
   Widget _buildIdentificationGrid(BuildContext context) {
+    final validImages = _getValidImages();
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -68,22 +86,23 @@ class ProfileIdentificationSection extends StatelessWidget {
         mainAxisSpacing: 12,
         childAspectRatio: 1.6,
       ),
-      itemCount: identificationImages.length,
+      itemCount: validImages.length,
       itemBuilder: (context, index) {
+        final imageEntry = validImages[index];
         return _buildIdentificationCard(
           context,
-          identificationImages[index],
-          _getDocumentLabel(index),
-          index,
+          imageEntry.value,
+          _getDocumentLabel(imageEntry.key),
+          imageEntry.key,
         );
       },
     );
   }
 
   Widget _buildIdentificationCard(
-      BuildContext context, String imageData, String label, int index) {
+      BuildContext context, String imageUrl, String label, String key) {
     return GestureDetector(
-      onTap: () => _showImageDialog(context, imageData, label),
+      onTap: () => _showImageDialog(context, imageUrl, label),
       child: Container(
         decoration: BoxDecoration(
           color: AppConstants.backgroundColor,
@@ -113,7 +132,27 @@ class ProfileIdentificationSection extends StatelessWidget {
                   ),
                   child: Stack(
                     children: [
-                      _buildImage(imageData),
+                      Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child;
+                          }
+                          return const Center(
+                            child: CircularProgressIndicator(
+                              color: AppConstants.primaryColor,
+                              strokeWidth: 2,
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          print('Error loading image: $error'); // Debug info
+                          return _buildErrorWidget();
+                        },
+                      ),
                       Positioned(
                         top: 8,
                         right: 8,
@@ -143,7 +182,7 @@ class ProfileIdentificationSection extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        _getDocumentIcon(index),
+                        _getDocumentIcon(key),
                         size: 16,
                         color: AppConstants.primaryColor,
                       ),
@@ -180,35 +219,6 @@ class ProfileIdentificationSection extends StatelessWidget {
     );
   }
 
-  Widget _buildImage(String imageData) {
-    final imageProvider = _getImageProvider(imageData);
-
-    if (imageProvider != null) {
-      return Image(
-        image: imageProvider,
-        fit: BoxFit.cover,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildErrorWidget();
-        },
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          if (wasSynchronouslyLoaded || frame != null) {
-            return child;
-          }
-          return const Center(
-            child: CircularProgressIndicator(
-              color: AppConstants.primaryColor,
-              strokeWidth: 2,
-            ),
-          );
-        },
-      );
-    } else {
-      return _buildErrorWidget();
-    }
-  }
-
   Widget _buildErrorWidget() {
     return Container(
       color: Colors.grey[200],
@@ -232,31 +242,6 @@ class ProfileIdentificationSection extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  ImageProvider? _getImageProvider(String imageData) {
-    if (imageData.isEmpty) {
-      return null;
-    }
-
-    try {
-      // Handle both data URI scheme and plain base64
-      String base64Data = imageData;
-      if (base64Data.contains('base64,')) {
-        base64Data = base64Data.split(',').last;
-      }
-
-      final bytes = base64Decode(base64Data);
-      return MemoryImage(bytes);
-    } catch (e) {
-      // If base64 decoding fails, try as network image
-      try {
-        return NetworkImage(imageData);
-      } catch (e) {
-        // If both fail, return null to show error widget
-        return null;
-      }
-    }
   }
 
   Widget _buildEmptyState() {
@@ -326,35 +311,38 @@ class ProfileIdentificationSection extends StatelessWidget {
     );
   }
 
-  String _getDocumentLabel(int index) {
-    switch (index) {
-      case 0:
+  String _getDocumentLabel(String key) {
+    // Map the Firestore keys to user-friendly labels
+    switch (key.toLowerCase()) {
+      case 'nationalidfront':
         return 'National ID (Front)';
-      case 1:
+      case 'nationalidback':
         return 'National ID (Back)';
-      case 2:
+      case 'studentidfront':
         return 'Student ID (Front)';
-      case 3:
+      case 'studentidback':
         return 'Student ID (Back)';
       default:
-        return 'ID Document ${index + 1}';
+        // Convert camelCase to readable format
+        return key.replaceAllMapped(
+          RegExp(r'([A-Z])'),
+          (match) => ' ${match.group(1)}',
+        ).trim();
     }
   }
 
-  IconData _getDocumentIcon(int index) {
-    switch (index) {
-      case 0:
-      case 1:
-        return Icons.credit_card_rounded;
-      case 2:
-      case 3:
-        return Icons.school_rounded;
-      default:
-        return Icons.badge_rounded;
+  IconData _getDocumentIcon(String key) {
+    // Determine icon based on document type
+    if (key.toLowerCase().contains('national')) {
+      return Icons.credit_card_rounded; // National ID
+    } else if (key.toLowerCase().contains('student')) {
+      return Icons.school_rounded; // Student ID
+    } else {
+      return Icons.description_rounded; // Generic document
     }
   }
 
-  void _showImageDialog(BuildContext context, String imageData, String label) {
+  void _showImageDialog(BuildContext context, String imageUrl, String label) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -407,7 +395,46 @@ class ProfileIdentificationSection extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: InteractiveViewer(
-                            child: _buildDialogImage(imageData),
+                            child: Image.network(
+                              imageUrl,
+                              fit: BoxFit.contain,
+                              width: double.infinity,
+                              height: double.infinity,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                if (loadingProgress == null) {
+                                  return child;
+                                }
+                                return const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.error_outline_rounded,
+                                        color: Colors.white,
+                                        size: 48,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Text(
+                                        'Failed to load image',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontFamily: 'Poppins',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
@@ -420,73 +447,5 @@ class ProfileIdentificationSection extends StatelessWidget {
         );
       },
     );
-  }
-
-  Widget _buildDialogImage(String imageData) {
-    final imageProvider = _getImageProvider(imageData);
-
-    if (imageProvider != null) {
-      return Image(
-        image: imageProvider,
-        fit: BoxFit.contain,
-        width: double.infinity,
-        height: double.infinity,
-        errorBuilder: (context, error, stackTrace) {
-          return const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline_rounded,
-                  color: Colors.white,
-                  size: 48,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Failed to load image',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-          if (wasSynchronouslyLoaded || frame != null) {
-            return child;
-          }
-          return const Center(
-            child: CircularProgressIndicator(
-              color: Colors.white,
-            ),
-          );
-        },
-      );
-    } else {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: Colors.white,
-              size: 48,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Failed to load image',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ],
-        ),
-      );
-    }
   }
 }

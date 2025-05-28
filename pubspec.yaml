@@ -51,6 +51,9 @@ dependencies:
   font_awesome_flutter: ^10.8.0
   syncfusion_flutter_datepicker: ^28.2.12
   percent_indicator: ^4.2.4
+  http: ^1.4.0
+  crypto: ^3.0.6
+  path: ^1.9.1
 
 flutter_launcher_icons:
   android: true

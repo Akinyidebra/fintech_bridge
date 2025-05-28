@@ -20,7 +20,7 @@ class ProfileContent extends StatefulWidget {
 class _ProfileContentState extends State<ProfileContent> {
   // Data storage - same structure as dashboard
   Map<String, dynamic>? _userProfile;
-  
+
   // Loading and error states
   bool _isLoading = true;
   String? _errorMessage;
@@ -39,10 +39,10 @@ class _ProfileContentState extends State<ProfileContent> {
 
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
-      
+
       // Fetch user profile data - same as dashboard
       final result = await dbService.getCurrentUserProfile();
-      
+
       if (!mounted) return;
 
       // Process user profile - same as dashboard
@@ -63,7 +63,7 @@ class _ProfileContentState extends State<ProfileContent> {
     }
   }
 
-  // Refresh data 
+  // Refresh data
   Future<void> _refreshProfile() async {
     await _loadProfileData();
   }
@@ -117,7 +117,8 @@ class _ProfileContentState extends State<ProfileContent> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppConstants.primaryColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -145,7 +146,7 @@ class _ProfileContentState extends State<ProfileContent> {
 
     // Get user data directly from the profile result
     final Student student = _userProfile!['data'] as Student;
-    
+
     final authService = Provider.of<AuthService>(context);
 
     return SingleChildScrollView(
@@ -155,9 +156,9 @@ class _ProfileContentState extends State<ProfileContent> {
         children: [
           // Profile Header Card
           ProfileHeaderCard(student: student),
-          
+
           const SizedBox(height: 20),
-          
+
           // Personal Information Section
           ProfileInfoSection(
             title: 'Personal Information',
@@ -201,22 +202,23 @@ class _ProfileContentState extends State<ProfileContent> {
                 ProfileInfoItem(
                   icon: Icons.calendar_today_rounded,
                   label: 'Verified Date',
-                  value: '${student.verifiedAt?.day}/${student.verifiedAt?.month}/${student.verifiedAt?.year}',
+                  value:
+                      '${student.verifiedAt?.day}/${student.verifiedAt?.month}/${student.verifiedAt?.year}',
                   backgroundColor: AppConstants.successColor.withOpacity(0.1),
                   iconColor: AppConstants.successColor,
                 ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Identification Documents Section
           ProfileIdentificationSection(
-            identificationImages: student.identificationImages ?? [],
-          ),
-          
+  identificationImages: student.identificationImages,
+),
+
           const SizedBox(height: 20),
-          
+
           // Academic Information Section
           ProfileInfoSection(
             title: 'Academic Information',
@@ -246,9 +248,9 @@ class _ProfileContentState extends State<ProfileContent> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Financial Information Section
           ProfileInfoSection(
             title: 'Financial Information',
@@ -258,7 +260,8 @@ class _ProfileContentState extends State<ProfileContent> {
               ProfileInfoItem(
                 icon: Icons.credit_score_rounded,
                 label: 'Loan Status',
-                value: student.hasActiveLoan ? 'Active Loan' : 'No Active Loans',
+                value:
+                    student.hasActiveLoan ? 'Active Loan' : 'No Active Loans',
                 backgroundColor: student.hasActiveLoan
                     ? AppConstants.successColor.withOpacity(0.1)
                     : AppConstants.primaryColor.withOpacity(0.1),
@@ -280,12 +283,15 @@ class _ProfileContentState extends State<ProfileContent> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Action Buttons
-          ProfileActionButtons(authService: authService, student: student,),
-          
+          ProfileActionButtons(
+            authService: authService,
+            student: student,
+          ),
+
           const SizedBox(height: 24),
         ],
       ),

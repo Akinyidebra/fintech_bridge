@@ -1,6 +1,6 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fintech_bridge/services/cloudinary.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/models/student_model.dart';
@@ -584,7 +584,7 @@ class DatabaseService extends ChangeNotifier {
     }
   }
 
-// Upload identification images as base64 strings
+  // Alternative version using batch upload for better performance
   Future<Map<String, dynamic>> uploadIdentificationImages({
     required File nationalIdFront,
     required File nationalIdBack,
@@ -606,22 +606,34 @@ class DatabaseService extends ChangeNotifier {
       String role = profileResult['role'];
       String userId = currentUser!.uid;
 
-      // Convert images to base64
-      String nationalIdFrontBase64 =
-          base64Encode(await nationalIdFront.readAsBytes());
-      String nationalIdBackBase64 =
-          base64Encode(await nationalIdBack.readAsBytes());
-      String studentIdFrontBase64 =
-          base64Encode(await studentIdFront.readAsBytes());
-      String studentIdBackBase64 =
-          base64Encode(await studentIdBack.readAsBytes());
+      // Upload all images using batch upload
+      final uploadResults = await Cloudinary.uploadIdentificationImages(
+        userId: userId,
+        nationalIdFront: nationalIdFront,
+        nationalIdBack: nationalIdBack,
+        studentIdFront: studentIdFront,
+        studentIdBack: studentIdBack,
+      );
 
-      // Prepare identification images data
+      // Check if all uploads were successful
+      final failedUploads = uploadResults.entries
+          .where((entry) => entry.value == null)
+          .map((entry) => entry.key)
+          .toList();
+
+      if (failedUploads.isNotEmpty) {
+        return {
+          'success': false,
+          'message': 'Failed to upload: ${failedUploads.join(', ')}'
+        };
+      }
+
+      // Prepare identification images data with Cloudinary URLs
       Map<String, dynamic> identificationData = {
-        'nationalIdFront': nationalIdFrontBase64,
-        'nationalIdBack': nationalIdBackBase64,
-        'studentIdFront': studentIdFrontBase64,
-        'studentIdBack': studentIdBackBase64,
+        'nationalIdFront': uploadResults['nationalIdFront']!,
+        'nationalIdBack': uploadResults['nationalIdBack']!,
+        'studentIdFront': uploadResults['studentIdFront']!,
+        'studentIdBack': uploadResults['studentIdBack']!,
         'uploadedAt': DateTime.now(),
       };
 
@@ -640,12 +652,19 @@ class DatabaseService extends ChangeNotifier {
         return {'success': false, 'message': 'Invalid user role'};
       }
 
-      return {'success': true, 'message': 'Documents uploaded successfully'};
+      return {
+        'success': true,
+        'message': 'Documents uploaded successfully',
+        'imageUrls': identificationData,
+      };
     } catch (e) {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {'success': false, 'message': 'Failed to upload documents'};
+      return {
+        'success': false,
+        'message': 'Failed to upload documents: ${e.toString()}'
+      };
     } finally {
       _setLoading(false);
     }

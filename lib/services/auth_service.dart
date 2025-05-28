@@ -36,7 +36,7 @@ class AuthService extends ChangeNotifier {
     required String course,
     required int yearOfStudy,
     String? profileImage,
-    List<String>? identificationImages,
+    Map<String, dynamic>? identificationImages,
     required String mpesaPhone,
     required String institutionName,
     List<String>? guarantorContacts,
@@ -157,7 +157,7 @@ class AuthService extends ChangeNotifier {
     String? website,
     String? description,
     String? profileImage,
-    List<String>? identificationImages,
+    Map<String, dynamic>? identificationImages,
     required bool Function(String) emailValidator,
   }) async {
     _setLoading(true);
@@ -326,7 +326,7 @@ class AuthService extends ChangeNotifier {
     required String course,
     required int yearOfStudy,
     String? profileImage,
-    List<String>? identificationImages,
+    Map<String, dynamic>? identificationImages,
     required String mpesaPhone,
     required String institutionName,
     List<String>? guarantorContacts,
@@ -482,7 +482,7 @@ class AuthService extends ChangeNotifier {
     String? website,
     String? description,
     String? profileImage,
-    List<String>? identificationImages,
+    Map<String, dynamic>? identificationImages,
   }) async {
     _setLoading(true);
     try {
