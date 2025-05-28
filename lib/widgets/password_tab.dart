@@ -42,7 +42,6 @@ class PasswordTab extends StatelessWidget {
           children: [
             _buildSectionTitle('Change Password'),
             const SizedBox(height: 16),
-            
             _buildPasswordField(
               controller: currentPasswordController,
               label: 'Current Password',
@@ -55,9 +54,7 @@ class PasswordTab extends StatelessWidget {
                 return null;
               },
             ),
-            
             const SizedBox(height: 16),
-            
             _buildPasswordField(
               controller: newPasswordController,
               label: 'New Password',
@@ -73,9 +70,7 @@ class PasswordTab extends StatelessWidget {
                 return null;
               },
             ),
-            
             const SizedBox(height: 16),
-            
             _buildPasswordField(
               controller: confirmPasswordController,
               label: 'Confirm New Password',
@@ -91,9 +86,7 @@ class PasswordTab extends StatelessWidget {
                 return null;
               },
             ),
-            
             const SizedBox(height: 32),
-            
             _buildChangePasswordButton(),
           ],
         ),
@@ -126,7 +119,8 @@ class PasswordTab extends StatelessWidget {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: const Icon(Icons.lock_rounded, color: AppConstants.primaryColor),
+        prefixIcon:
+            const Icon(Icons.lock_rounded, color: AppConstants.primaryColor),
         suffixIcon: IconButton(
           onPressed: onToggleVisibility,
           icon: Icon(

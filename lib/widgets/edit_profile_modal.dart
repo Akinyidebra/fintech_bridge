@@ -25,7 +25,7 @@ class EditProfileModal extends StatefulWidget {
 class _EditProfileModalState extends State<EditProfileModal>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  
+
   // Form controllers
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _phoneController;
@@ -33,24 +33,24 @@ class _EditProfileModalState extends State<EditProfileModal>
   late TextEditingController _courseController;
   late TextEditingController _yearController;
   late TextEditingController _institutionController;
-  
+
   // Password form controllers
   final _passwordFormKey = GlobalKey<FormState>();
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   // Image files
   File? _nationalIdFront;
   File? _nationalIdBack;
   File? _studentIdFront;
   File? _studentIdBack;
-  
+
   // Loading states
   bool _isUpdatingProfile = false;
   bool _isChangingPassword = false;
   bool _isUploadingImages = false;
-  
+
   // Password visibility
   bool _showCurrentPassword = false;
   bool _showNewPassword = false;
@@ -60,13 +60,16 @@ class _EditProfileModalState extends State<EditProfileModal>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    
+
     // Initialize controllers with current data
     _phoneController = TextEditingController(text: widget.student.phone);
-    _mpesaPhoneController = TextEditingController(text: widget.student.mpesaPhone);
+    _mpesaPhoneController =
+        TextEditingController(text: widget.student.mpesaPhone);
     _courseController = TextEditingController(text: widget.student.course);
-    _yearController = TextEditingController(text: widget.student.yearOfStudy.toString());
-    _institutionController = TextEditingController(text: widget.student.institutionName);
+    _yearController =
+        TextEditingController(text: widget.student.yearOfStudy.toString());
+    _institutionController =
+        TextEditingController(text: widget.student.institutionName);
   }
 
   @override
@@ -257,7 +260,7 @@ class _EditProfileModalState extends State<EditProfileModal>
 
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
-      
+
       final updateData = {
         'phone': _phoneController.text.trim(),
         'mpesaPhone': _mpesaPhoneController.text.trim(),
@@ -267,7 +270,7 @@ class _EditProfileModalState extends State<EditProfileModal>
       };
 
       final result = await dbService.updateUserProfile(updateData);
-      
+
       if (result['success']) {
         _showSuccessSnackBar('Profile updated successfully');
         Navigator.of(context).pop(true);
@@ -292,17 +295,20 @@ class _EditProfileModalState extends State<EditProfileModal>
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      
+
       final result = await authService.changePassword(
         _currentPasswordController.text,
         _newPasswordController.text,
       );
-      
+
       if (result['success']) {
         _showSuccessSnackBar('Password changed successfully');
+        // Clear the form fields
         _currentPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
+        // Close the modal and return to profile screen
+        Navigator.of(context).pop(true);
       } else {
         _showErrorSnackBar(result['message'] ?? 'Failed to change password');
       }
@@ -316,8 +322,10 @@ class _EditProfileModalState extends State<EditProfileModal>
   }
 
   Future<void> _uploadDocuments() async {
-    if (_nationalIdFront == null || _nationalIdBack == null ||
-        _studentIdFront == null || _studentIdBack == null) {
+    if (_nationalIdFront == null ||
+        _nationalIdBack == null ||
+        _studentIdFront == null ||
+        _studentIdBack == null) {
       _showErrorSnackBar('Please select all required documents');
       return;
     }
@@ -328,22 +336,25 @@ class _EditProfileModalState extends State<EditProfileModal>
 
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
-      
+
       final result = await dbService.uploadIdentificationImages(
         nationalIdFront: _nationalIdFront!,
         nationalIdBack: _nationalIdBack!,
         studentIdFront: _studentIdFront!,
         studentIdBack: _studentIdBack!,
       );
-      
+
       if (result['success']) {
         _showSuccessSnackBar('Documents uploaded successfully');
+        // Clear the selected images after successful upload
         setState(() {
           _nationalIdFront = null;
           _nationalIdBack = null;
           _studentIdFront = null;
           _studentIdBack = null;
         });
+        // Close the modal and return to profile screen
+        Navigator.of(context).pop(true);
       } else {
         _showErrorSnackBar(result['message'] ?? 'Failed to upload documents');
       }

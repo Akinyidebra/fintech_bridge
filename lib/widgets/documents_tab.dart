@@ -32,7 +32,6 @@ class DocumentsTab extends StatelessWidget {
         children: [
           _buildSectionTitle('Identification Documents'),
           const SizedBox(height: 16),
-          
           DocumentSection(
             title: 'National ID',
             icon: Icons.credit_card_rounded,
@@ -41,9 +40,7 @@ class DocumentsTab extends StatelessWidget {
             onPickFront: () => onPickImage('national_id_front'),
             onPickBack: () => onPickImage('national_id_back'),
           ),
-          
           const SizedBox(height: 24),
-          
           DocumentSection(
             title: 'Student ID',
             icon: Icons.school_rounded,
@@ -52,9 +49,7 @@ class DocumentsTab extends StatelessWidget {
             onPickFront: () => onPickImage('student_id_front'),
             onPickBack: () => onPickImage('student_id_back'),
           ),
-          
           const SizedBox(height: 32),
-          
           _buildUploadDocumentsButton(),
         ],
       ),

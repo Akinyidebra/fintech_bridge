@@ -34,7 +34,6 @@ class ProfileTab extends StatelessWidget {
           children: [
             _buildSectionTitle('Contact Information'),
             const SizedBox(height: 16),
-            
             _buildTextField(
               controller: phoneController,
               label: 'Phone Number',
@@ -47,9 +46,7 @@ class ProfileTab extends StatelessWidget {
                 return null;
               },
             ),
-            
             const SizedBox(height: 16),
-            
             _buildTextField(
               controller: mpesaPhoneController,
               label: 'M-Pesa Phone Number',
@@ -62,12 +59,9 @@ class ProfileTab extends StatelessWidget {
                 return null;
               },
             ),
-            
             const SizedBox(height: 32),
-            
             _buildSectionTitle('Academic Information'),
             const SizedBox(height: 16),
-            
             _buildTextField(
               controller: courseController,
               label: 'Course',
@@ -79,9 +73,7 @@ class ProfileTab extends StatelessWidget {
                 return null;
               },
             ),
-            
             const SizedBox(height: 16),
-            
             _buildTextField(
               controller: yearController,
               label: 'Year of Study',
@@ -98,9 +90,7 @@ class ProfileTab extends StatelessWidget {
                 return null;
               },
             ),
-            
             const SizedBox(height: 16),
-            
             _buildTextField(
               controller: institutionController,
               label: 'Institution',
@@ -112,9 +102,7 @@ class ProfileTab extends StatelessWidget {
                 return null;
               },
             ),
-            
             const SizedBox(height: 32),
-            
             _buildUpdateButton(),
           ],
         ),
