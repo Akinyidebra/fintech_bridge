@@ -1,5 +1,6 @@
 import 'package:fintech_bridge/widgets/profile_action_buttons_widget.dart';
 import 'package:fintech_bridge/widgets/profile_header_card_widget.dart';
+import 'package:fintech_bridge/widgets/profile_identification_widget.dart';
 import 'package:fintech_bridge/widgets/profile_info_section_widget.dart';
 import 'package:fintech_bridge/screens/loading_screen.dart';
 import 'package:flutter/material.dart';
@@ -209,6 +210,13 @@ class _ProfileContentState extends State<ProfileContent> {
           
           const SizedBox(height: 20),
           
+          // Identification Documents Section
+          ProfileIdentificationSection(
+            identificationImages: student.identificationImages ?? [],
+          ),
+          
+          const SizedBox(height: 20),
+          
           // Academic Information Section
           ProfileInfoSection(
             title: 'Academic Information',
@@ -276,7 +284,7 @@ class _ProfileContentState extends State<ProfileContent> {
           const SizedBox(height: 24),
           
           // Action Buttons
-          ProfileActionButtons(authService: authService),
+          ProfileActionButtons(authService: authService, student: student,),
           
           const SizedBox(height: 24),
         ],

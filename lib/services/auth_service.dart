@@ -339,7 +339,7 @@ class AuthService extends ChangeNotifier {
 
       // Verify user is a student
       DocumentSnapshot studentDoc =
-      await _firestore.collection('students').doc(currentUser!.uid).get();
+          await _firestore.collection('students').doc(currentUser!.uid).get();
       if (!studentDoc.exists) {
         return {'success': false, 'message': 'User is not a student'};
       }
@@ -359,7 +359,7 @@ class AuthService extends ChangeNotifier {
         verified: student.verified,
         verifiedAt: student.verifiedAt,
         identificationImages:
-        identificationImages ?? student.identificationImages,
+            identificationImages ?? student.identificationImages,
         mpesaPhone: mpesaPhone,
         institutionName: institutionName,
         hasActiveLoan: student.hasActiveLoan,
@@ -394,6 +394,84 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  // Change password method
+  Future<Map<String, dynamic>> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    _setLoading(true);
+    try {
+      if (currentUser == null) {
+        return {'success': false, 'message': 'No user is currently signed in'};
+      }
+
+      if (currentPassword.isEmpty || newPassword.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Current password and new password are required'
+        };
+      }
+
+      if (currentPassword == newPassword) {
+        return {
+          'success': false,
+          'message': 'New password must be different from current password'
+        };
+      }
+
+      // Re-authenticate user with current password
+      final credential = EmailAuthProvider.credential(
+        email: currentUser!.email!,
+        password: currentPassword,
+      );
+
+      await currentUser!.reauthenticateWithCredential(credential);
+
+      // Update password
+      await currentUser!.updatePassword(newPassword);
+
+      return {'success': true, 'message': 'Password changed successfully'};
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+      switch (e.code) {
+        case 'wrong-password':
+          errorMessage = 'Current password is incorrect';
+          break;
+        case 'weak-password':
+          errorMessage = 'New password is too weak';
+          break;
+        case 'requires-recent-login':
+          errorMessage = 'Please log in again and try changing your password';
+          break;
+        case 'user-mismatch':
+          errorMessage = 'The credential does not correspond to the user';
+          break;
+        case 'user-not-found':
+          errorMessage = 'No user found with this email';
+          break;
+        case 'invalid-credential':
+          errorMessage = 'Current password is incorrect';
+          break;
+        case 'too-many-requests':
+          errorMessage = 'Too many failed attempts. Please try again later';
+          break;
+        default:
+          errorMessage = 'Failed to change password. Please try again.';
+      }
+      return {'success': false, 'message': errorMessage};
+    } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to change password. Please try again later.'
+      };
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   // Update provider profile
   Future<Map<String, dynamic>> updateProviderProfile({
     required String businessName,
@@ -414,7 +492,7 @@ class AuthService extends ChangeNotifier {
 
       // Verify user is a provider
       DocumentSnapshot providerDoc =
-      await _firestore.collection('providers').doc(currentUser!.uid).get();
+          await _firestore.collection('providers').doc(currentUser!.uid).get();
       if (!providerDoc.exists) {
         return {'success': false, 'message': 'User is not a provider'};
       }
@@ -436,7 +514,7 @@ class AuthService extends ChangeNotifier {
         verified: provider.verified,
         verifiedAt: provider.verifiedAt,
         identificationImages:
-        identificationImages ?? provider.identificationImages,
+            identificationImages ?? provider.identificationImages,
         approved: provider.approved,
         createdAt: provider.createdAt,
         updatedAt: DateTime.now(),
@@ -470,9 +548,9 @@ class AuthService extends ChangeNotifier {
 
   // Login with email/password
   Future<Map<String, dynamic>> loginWithEmailAndPassword(
-      String email,
-      String password,
-      ) async {
+    String email,
+    String password,
+  ) async {
     _setLoading(true);
     try {
       if (email.isEmpty || password.isEmpty) {
@@ -496,7 +574,7 @@ class AuthService extends ChangeNotifier {
       // Determine user type and get appropriate data
       // First check if admin
       DocumentSnapshot adminDoc =
-      await _firestore.collection('admins').doc(credential.user!.uid).get();
+          await _firestore.collection('admins').doc(credential.user!.uid).get();
       if (adminDoc.exists) {
         Admin admin = Admin.fromFirestore(adminDoc);
         return {
@@ -652,7 +730,7 @@ class AuthService extends ChangeNotifier {
     try {
       // Try to get admin data
       DocumentSnapshot adminDoc =
-      await _firestore.collection('admins').doc(currentUser!.uid).get();
+          await _firestore.collection('admins').doc(currentUser!.uid).get();
       if (adminDoc.exists) {
         Admin admin = Admin.fromFirestore(adminDoc);
         return {'success': true, 'user': admin, 'role': 'admin'};
@@ -660,7 +738,7 @@ class AuthService extends ChangeNotifier {
 
       // Try to get student data
       DocumentSnapshot studentDoc =
-      await _firestore.collection('students').doc(currentUser!.uid).get();
+          await _firestore.collection('students').doc(currentUser!.uid).get();
       if (studentDoc.exists) {
         Student student = Student.fromFirestore(studentDoc);
         return {'success': true, 'user': student, 'role': 'student'};
@@ -668,7 +746,7 @@ class AuthService extends ChangeNotifier {
 
       // Try to get provider data
       DocumentSnapshot providerDoc =
-      await _firestore.collection('providers').doc(currentUser!.uid).get();
+          await _firestore.collection('providers').doc(currentUser!.uid).get();
       if (providerDoc.exists) {
         Provider provider = Provider.fromFirestore(providerDoc);
         return {'success': true, 'user': provider, 'role': 'provider'};

@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/services/auth_service.dart';
+import 'package:fintech_bridge/models/student_model.dart';
+import 'package:fintech_bridge/widgets/edit_profile_modal.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
 class ProfileActionButtons extends StatelessWidget {
   final AuthService authService;
+  final Student student;
+  final VoidCallback? onProfileUpdated;
 
   const ProfileActionButtons({
     super.key,
     required this.authService,
+    required this.student,
+    this.onProfileUpdated,
   });
 
   @override
@@ -15,8 +21,6 @@ class ProfileActionButtons extends StatelessWidget {
     return Column(
       children: [
         _buildEditProfileButton(context),
-        const SizedBox(height: 16),
-        _buildChangePasswordButton(context),
         const SizedBox(height: 16),
         _buildLogoutButton(context),
       ],
@@ -43,7 +47,7 @@ class ProfileActionButtons extends StatelessWidget {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () => _navigateToEditProfile(context),
+        onPressed: () => _showEditProfileModal(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
@@ -66,50 +70,6 @@ class ProfileActionButtons extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChangePasswordButton(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppConstants.primaryColor.withOpacity(0.3),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextButton.icon(
-        icon: const Icon(
-          Icons.password_rounded,
-          color: AppConstants.primaryColor,
-          size: 20,
-        ),
-        label: const Text(
-          'Change Password',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppConstants.primaryColor,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        onPressed: () => _navigateToChangePassword(context),
-        style: TextButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
         ),
       ),
     );
@@ -159,13 +119,19 @@ class ProfileActionButtons extends StatelessWidget {
     );
   }
 
-  // Navigation methods
-  void _navigateToEditProfile(BuildContext context) {
-    Navigator.of(context).pushNamed('/edit-profile');
-  }
+  // Show edit profile modal
+  Future<void> _showEditProfileModal(BuildContext context) async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EditProfileModal(student: student),
+    );
 
-  void _navigateToChangePassword(BuildContext context) {
-    Navigator.of(context).pushNamed('/change-password');
+    // If profile was updated successfully, call the callback
+    if (result == true && onProfileUpdated != null) {
+      onProfileUpdated!();
+    }
   }
 
   // Logout confirmation dialog
