@@ -7,7 +7,7 @@ class Student {
   final String studentId;
   final String phone;
   final String course;
-  final int yearOfStudy;
+  final double yearOfStudy;
   final String? profileImage;
   final bool verified;
   final DateTime? verifiedAt;

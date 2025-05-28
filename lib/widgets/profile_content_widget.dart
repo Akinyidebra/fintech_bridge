@@ -214,8 +214,8 @@ class _ProfileContentState extends State<ProfileContent> {
 
           // Identification Documents Section
           ProfileIdentificationSection(
-  identificationImages: student.identificationImages,
-),
+            identificationImages: student.identificationImages,
+          ),
 
           const SizedBox(height: 20),
 

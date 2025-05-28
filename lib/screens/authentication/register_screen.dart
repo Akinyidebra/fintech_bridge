@@ -177,7 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             studentId: _studentIdController.text,
             phone: _phoneController.text,
             course: _courseController.text,
-            yearOfStudy: int.parse(_yearOfStudyController.text),
+            yearOfStudy: double.parse(_yearOfStudyController.text),
             profileImage: _profileImageBase64,
             emailValidator: _isUniversityEmail,
             mpesaPhone: _mpesaPhoneController.text,
@@ -679,8 +679,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     if (value == null || value.isEmpty) {
                                       return 'Required';
                                     }
-                                    final year = int.tryParse(value);
-                                    if (year == null || year < 1 || year > 5) {
+                                    final year = double.tryParse(value);
+                                    if (year == null ||
+                                        year < 1.0 ||
+                                        year > 6.1) {
                                       return 'Invalid year';
                                     }
                                     return null;
@@ -711,25 +713,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   validator: (value) => value?.isEmpty ?? true
                                       ? 'Required'
                                       : null,
-                                ),
-                                const SizedBox(height: 20),
-                                TextFormField(
-                                  controller: _yearOfStudyController,
-                                  focusNode: _yearOfStudyFocusNode,
-                                  decoration: AppConstants.inputDecoration(
-                                    labelText: 'Year of Study',
-                                    prefixIcon: Icons.calendar_today_outlined,
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Required';
-                                    }
-                                    final year = int.tryParse(value);
-                                    if (year == null || year < 1 || year > 5) {
-                                      return 'Invalid year';
-                                    }
-                                    return null;
-                                  },
                                 ),
                               ],
 
