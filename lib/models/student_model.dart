@@ -11,7 +11,7 @@ class Student {
   final String? profileImage;
   final bool verified;
   final DateTime? verifiedAt;
-  final List<String>? identificationImages;
+  final Map<String, dynamic>? identificationImages;
   final String mpesaPhone;
   final String institutionName;
   final bool hasActiveLoan;
@@ -51,9 +51,9 @@ class Student {
       yearOfStudy: data['yearOfStudy'],
       profileImage: data['profileImage'],
       verified: data['verified'] ?? false,
-      verifiedAt: data['verifiedAt'] != null ? data['verifiedAt'].toDate() : null,
+      verifiedAt: data['verifiedAt']?.toDate(),
       identificationImages: data['identificationImages'] != null
-          ? List<String>.from(data['identificationImages'])
+          ? Map<String, dynamic>.from(data['identificationImages'])
           : null,
       mpesaPhone: data['mpesaPhone'],
       institutionName: data['institutionName'],
@@ -85,5 +85,36 @@ class Student {
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
+  }
+
+  // Helper method to get identification images as a list (if needed elsewhere)
+  List<String> get identificationImagesList {
+    if (identificationImages == null) return [];
+    return identificationImages!.values
+        .where((value) => value != null && value.toString().isNotEmpty)
+        .map((value) => value.toString())
+        .toList();
+  }
+
+  // Helper method to get specific identification images
+  String? get nationalIdFront => identificationImages?['nationalIdFront'];
+  String? get nationalIdBack => identificationImages?['nationalIdBack'];
+  String? get studentIdFront => identificationImages?['studentIdFront'];
+  String? get studentIdBack => identificationImages?['studentIdBack'];
+
+  // Helper method to check if student has any identification images
+  bool get hasIdentificationImages {
+    return identificationImages != null &&
+        identificationImages!.isNotEmpty &&
+        identificationImages!.values
+            .any((value) => value != null && value.toString().isNotEmpty);
+  }
+
+  // Helper method to count valid identification images
+  int get identificationImagesCount {
+    if (identificationImages == null) return 0;
+    return identificationImages!.values
+        .where((value) => value != null && value.toString().isNotEmpty)
+        .length;
   }
 }

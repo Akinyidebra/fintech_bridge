@@ -13,7 +13,7 @@ class Provider {
   final String? profileImage;
   final bool verified;
   final DateTime? verifiedAt;
-  final List<String>? identificationImages; // For business registration docs and ID verification
+  final Map<String, dynamic>? identificationImages;
   final bool approved;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -52,8 +52,8 @@ class Provider {
       profileImage: data['profileImage'],
       verified: data['verified'] ?? false,
       verifiedAt: data['verifiedAt']?.toDate(),
-      identificationImages: data['identificationImages'] != null 
-          ? List<String>.from(data['identificationImages']) 
+      identificationImages: data['identificationImages'] != null
+          ? Map<String, dynamic>.from(data['identificationImages'])
           : null,
       approved: data['approved'] ?? false,
       createdAt: data['createdAt'].toDate(),

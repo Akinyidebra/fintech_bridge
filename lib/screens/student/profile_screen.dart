@@ -69,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 setState(() => _currentIndex = 3);
               },
             ),
-            // Profile content
+            // Content
             Expanded(
               child: _screens[_currentIndex],
             ),

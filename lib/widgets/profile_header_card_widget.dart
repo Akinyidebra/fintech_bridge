@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/utils/constants.dart';
@@ -54,11 +55,15 @@ class ProfileHeaderCard extends StatelessWidget {
           ),
           child: CircleAvatar(
             radius: 40,
-            backgroundImage: student.profileImage != null &&
-                    student.profileImage!.isNotEmpty
-                ? NetworkImage(student.profileImage!)
-                : const AssetImage('assets/images/default_avatar.png')
-                    as ImageProvider,
+            backgroundImage: _getProfileImage(),
+            backgroundColor: Colors.grey[300],
+            child: _getProfileImage() == null 
+              ? const Icon(
+                  Icons.person,
+                  size: 40,
+                  color: Colors.grey,
+                )
+              : null,
           ),
         ),
         const SizedBox(width: 16),
@@ -131,6 +136,31 @@ class ProfileHeaderCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  ImageProvider? _getProfileImage() {
+    if (student.profileImage == null || student.profileImage!.isEmpty) {
+      return null;
+    }
+
+    try {
+      // Handle both data URI scheme and plain base64
+      String base64Data = student.profileImage!;
+      if (base64Data.contains('base64,')) {
+        base64Data = base64Data.split(',').last;
+      }
+      
+      final bytes = base64Decode(base64Data);
+      return MemoryImage(bytes);
+    } catch (e) {
+      // If base64 decoding fails, try as network image
+      try {
+        return NetworkImage(student.profileImage!);
+      } catch (e) {
+        // If both fail, try as asset image
+        return const AssetImage('assets/images/default_avatar.png');
+      }
+    }
   }
 
   Widget _buildProfileStats() {

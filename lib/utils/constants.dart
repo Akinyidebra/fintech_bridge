@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 
+// Create a constants class to encapsulate constants
+class Constants {
+  // Cloudinary configuration
+  static const String cloudinaryCloudName = 'dvhdyruva';
+  static const String cloudinaryApiKey = '426277598191425';
+  static const String cloudinaryApiSecret = 'wgqlR3bEORv2_aZailcWS1KW5xY';
+}
+
 class AppConstants {
   // Color palette
   static const Color primaryColor = Color(0xFF4361EE);
