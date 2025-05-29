@@ -1053,4 +1053,66 @@ class DatabaseService extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
+  // Get specific user profiles
+  Future<Map<String, dynamic>> getUserProfile(String userId) async {
+    try {
+      // Try students collection first
+      DocumentSnapshot studentDoc =
+          await _firestore.collection('students').doc(userId).get();
+
+      if (studentDoc.exists) {
+        return {
+          'success': true,
+          'data': studentDoc.data(),
+          'userType': 'student',
+          'message': 'Student profile fetched successfully',
+        };
+      }
+
+      // Try providers collection
+      DocumentSnapshot providerDoc =
+          await _firestore.collection('providers').doc(userId).get();
+
+      if (providerDoc.exists) {
+        return {
+          'success': true,
+          'data': providerDoc.data(),
+          'userType': 'provider',
+          'message': 'Provider profile fetched successfully',
+        };
+      }
+
+      return {
+        'success': false,
+        'data': null,
+        'userType': null,
+        'message': 'User not found',
+      };
+    } catch (e) {
+      print('Error fetching user profile: $e');
+      return {
+        'success': false,
+        'data': null,
+        'userType': null,
+        'message': 'Failed to fetch user profile: ${e.toString()}',
+      };
+    }
+  }
+
+  Future<String> getUserDisplayName(String userId) async {
+    final result = await getUserProfile(userId);
+    if (result['success'] != true) return 'Unknown User';
+
+    final data = result['data'] as Map<String, dynamic>? ?? {};
+
+    switch (result['userType']) {
+      case 'student':
+        return data['fullName']?.toString() ?? 'Unknown Student';
+      case 'provider':
+        return data['businessName']?.toString() ?? 'Unknown Provider';
+      default:
+        return 'Unknown User';
+    }
+  }
 }

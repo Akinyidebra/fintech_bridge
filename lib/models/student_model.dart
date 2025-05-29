@@ -15,7 +15,7 @@ class Student {
   final String mpesaPhone;
   final String institutionName;
   final bool hasActiveLoan;
-  final Map<String, dynamic>? guarantorDetails; // Changed from List<String>
+  final Map<String, dynamic>? guarantorDetails;
   final DateTime createdAt;
   final DateTime updatedAt;
 
