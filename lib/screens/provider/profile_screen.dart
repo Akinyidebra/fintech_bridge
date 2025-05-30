@@ -1,33 +1,22 @@
-// ignore_for_file: null_check_always_fails
-
-import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
-import 'package:fintech_bridge/widgets/dashboard_content.dart';
-import 'package:fintech_bridge/widgets/loans_content.dart';
-import 'package:fintech_bridge/widgets/profile_content_widget.dart';
+import 'package:fintech_bridge/widgets/provider_app_header.dart';
+import 'package:fintech_bridge/widgets/provider_dashboard_content.dart';
+import 'package:fintech_bridge/widgets/provider_loans_content.dart';
+import 'package:fintech_bridge/widgets/provider_profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
-import 'package:fintech_bridge/widgets/app_header.dart';
 import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
-import 'package:fintech_bridge/widgets/loan_application_content.dart';
 
-class LoanApplicationScreen extends StatefulWidget {
-  final String loanType;
-  final provider_model.Provider? provider;
-
-  const LoanApplicationScreen({
-    super.key,
-    required this.loanType,
-    this.provider,
-  });
+class ProviderProfileScreen extends StatefulWidget {
+  const ProviderProfileScreen({super.key});
 
   @override
-  State<LoanApplicationScreen> createState() => _LoanApplicationScreenState();
+  State<ProviderProfileScreen> createState() => _ProviderProfileScreenState();
 }
 
-class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
-  int _currentIndex = 1;
+class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
+  int _currentIndex = 2;
   late List<Widget> _screens;
 
   // Bottom navigation items for student dashboard
@@ -35,10 +24,6 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
     const BottomNavItem(
       icon: Icons.home_rounded,
       label: 'Home',
-    ),
-    const BottomNavItem(
-      icon: Icons.add_box_rounded,
-      label: 'Apply',
     ),
     const BottomNavItem(
       icon: Icons.account_balance_rounded,
@@ -54,10 +39,9 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
   void initState() {
     super.initState();
     _screens = [
-      const DashboardContent(),
-      const LoanApplicationContent(loanType: ''),
-      const LoansContent(),
-      const ProfileContent(),
+      const ProviderDashboardContent(),
+      const ProviderLoansContent(),
+      const ProviderProfileContent(),
     ];
   }
 
@@ -70,16 +54,16 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Custom App Header
-            AppHeader(
+            // Provider App Header
+            ProviderAppHeader(
               userProfileFuture: dbService.getCurrentUserProfile(),
               showLogo: true,
               showProfile: true,
               onProfileTap: () {
-                setState(() => _currentIndex = 3); // Navigate to profile tab
+                setState(() => _currentIndex = 2);
               },
             ),
-            // Loan Application content
+            // Content
             Expanded(
               child: _screens[_currentIndex],
             ),

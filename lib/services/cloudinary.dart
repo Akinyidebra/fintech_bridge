@@ -31,7 +31,20 @@ class Cloudinary {
     );
   }
 
-  // Batch upload for multiple identification images
+  // NEW: Specific method for provider identification documents
+  static Future<String?> uploadProviderIdentificationImage(
+    File file, {
+    required String userId,
+    required String documentType, // e.g., 'business_license_front', 'tax_certificate'
+  }) async {
+    final title = '${userId}_$documentType';
+    return await _uploadToCloudinaryWithPreset(
+      file: file,
+      title: title,
+    );
+  }
+
+  // Batch upload for multiple identification images (students)
   static Future<Map<String, String?>> uploadIdentificationImages({
     required String userId,
     required File nationalIdFront,
@@ -71,6 +84,50 @@ class Cloudinary {
     results['nationalIdBack'] = urls[1];
     results['studentIdFront'] = urls[2];
     results['studentIdBack'] = urls[3];
+
+    return results;
+  }
+
+  // NEW: Batch upload for provider identification images
+  static Future<Map<String, String?>> uploadProviderIdentificationImages({
+    required String userId,
+    required File businessLicenseFront,
+    required File businessLicenseBack,
+    required File taxCertificate,
+    required File bankStatement,
+  }) async {
+    final results = <String, String?>{};
+    
+    // Upload all images concurrently for better performance
+    final futures = [
+      uploadProviderIdentificationImage(
+        businessLicenseFront,
+        userId: userId,
+        documentType: 'business_license_front',
+      ),
+      uploadProviderIdentificationImage(
+        businessLicenseBack,
+        userId: userId,
+        documentType: 'business_license_back',
+      ),
+      uploadProviderIdentificationImage(
+        taxCertificate,
+        userId: userId,
+        documentType: 'tax_certificate',
+      ),
+      uploadProviderIdentificationImage(
+        bankStatement,
+        userId: userId,
+        documentType: 'bank_statement',
+      ),
+    ];
+
+    final urls = await Future.wait(futures);
+    
+    results['businessLicenseFront'] = urls[0];
+    results['businessLicenseBack'] = urls[1];
+    results['taxCertificate'] = urls[2];
+    results['bankStatement'] = urls[3];
 
     return results;
   }

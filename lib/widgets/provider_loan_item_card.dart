@@ -3,14 +3,16 @@ import 'package:intl/intl.dart';
 import 'package:fintech_bridge/models/loan_model.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
-class LoanItemCard extends StatelessWidget {
+class ProviderLoanItemCard extends StatelessWidget {
   final Loan loan;
   final VoidCallback onTap;
+  final bool showStudentInfo;
 
-  const LoanItemCard({
+  const ProviderLoanItemCard({
     super.key,
     required this.loan,
     required this.onTap,
+    this.showStudentInfo = false,
   });
 
   @override
@@ -37,7 +39,7 @@ class LoanItemCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // Main content section with fixed overflow
+            // Main content section
             Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -76,7 +78,7 @@ class LoanItemCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 14),
 
-                      // Title and ID - Flexible to prevent overflow
+                      // Title and Student Info - Flexible to prevent overflow
                       Expanded(
                         flex: 3,
                         child: Column(
@@ -94,23 +96,44 @@ class LoanItemCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppConstants.backgroundSecondaryColor,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                'ID: ${loan.id.length > 8 ? loan.id.substring(0, 8) : loan.id}...',
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  color: AppConstants.textSecondaryColor,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
+                            if (showStudentInfo) ...[
+                              // Student ID instead of Loan ID
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppConstants.backgroundSecondaryColor,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'Student: ${loan.studentId.length > 8 ? loan.studentId.substring(0, 8) : loan.studentId}...',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    color: AppConstants.textSecondaryColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ] else ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppConstants.backgroundSecondaryColor,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'ID: ${loan.id.length > 8 ? loan.id.substring(0, 8) : loan.id}...',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    color: AppConstants.textSecondaryColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -186,10 +209,10 @@ class LoanItemCard extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Bottom row - Date and Interest Rate
+                  // Bottom row - Application Date and Interest Rate
                   Row(
                     children: [
-                      // Creation Date
+                      // Application Date
                       Expanded(
                         child: Row(
                           children: [
@@ -217,6 +240,38 @@ class LoanItemCard extends StatelessWidget {
                           ],
                         ),
                       ),
+
+                      // Term Duration
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppConstants.accentColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.schedule_rounded,
+                              size: 11,
+                              color: AppConstants.accentColor,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${loan.termMonths}mo',
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 10,
+                                color: AppConstants.accentColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 6),
 
                       // Interest Rate
                       Container(
@@ -249,9 +304,79 @@ class LoanItemCard extends StatelessWidget {
                       ),
                     ],
                   ),
+
+                  // Institution Name (if different from provider)
+                  if (showStudentInfo && loan.institutionName.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.school_rounded,
+                          size: 14,
+                          color: AppConstants.textSecondaryColor
+                              .withOpacity(0.7),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Institution: ${loan.institutionName}',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: AppConstants.textSecondaryColor
+                                  .withOpacity(0.8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
+            
+            // Quick action button for pending loans
+            if (loan.status == 'PENDING') ...[
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.grey.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.pending_actions_rounded,
+                      size: 16,
+                      color: AppConstants.warningColor,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Requires Review',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        color: AppConstants.warningColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Spacer(),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 12,
+                      color: AppConstants.textSecondaryColor,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

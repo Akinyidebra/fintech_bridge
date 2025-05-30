@@ -34,12 +34,12 @@ class AuthService extends ChangeNotifier {
     required String studentId,
     required String phone,
     required String course,
-    required int yearOfStudy,
+    required double yearOfStudy,
     String? profileImage,
     Map<String, dynamic>? identificationImages,
     required String mpesaPhone,
     required String institutionName,
-    List<String>? guarantorContacts,
+    Map<String, dynamic>? guarantorDetails,
     required bool Function(String) emailValidator,
   }) async {
     _setLoading(true);
@@ -101,7 +101,7 @@ class AuthService extends ChangeNotifier {
         mpesaPhone: mpesaPhone,
         institutionName: institutionName,
         hasActiveLoan: false,
-        guarantorContacts: guarantorContacts ?? [],
+        guarantorDetails: guarantorDetails,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -324,12 +324,12 @@ class AuthService extends ChangeNotifier {
     required String fullName,
     required String phone,
     required String course,
-    required int yearOfStudy,
+    required double yearOfStudy,
     String? profileImage,
     Map<String, dynamic>? identificationImages,
     required String mpesaPhone,
     required String institutionName,
-    List<String>? guarantorContacts,
+    Map<String, dynamic>? guarantorDetails,
   }) async {
     _setLoading(true);
     try {
@@ -363,7 +363,7 @@ class AuthService extends ChangeNotifier {
         mpesaPhone: mpesaPhone,
         institutionName: institutionName,
         hasActiveLoan: student.hasActiveLoan,
-        guarantorContacts: guarantorContacts ?? student.guarantorContacts,
+        guarantorDetails: guarantorDetails ?? student.guarantorDetails,
         createdAt: student.createdAt,
         updatedAt: DateTime.now(),
       );

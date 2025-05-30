@@ -56,10 +56,7 @@ class PaymentService extends ChangeNotifier {
 
       // Validate payment amount
       if (amount <= 0) {
-        return {
-          'success': false,
-          'message': 'Invalid payment amount'
-        };
+        return {'success': false, 'message': 'Invalid payment amount'};
       }
 
       if (amount > loan.remainingBalance) {
@@ -79,8 +76,8 @@ class PaymentService extends ChangeNotifier {
         type: 'REPAYMENT',
         createdAt: now,
         status: 'COMPLETED',
-        description: note?.isNotEmpty == true 
-            ? 'Loan repayment - $note' 
+        description: note?.isNotEmpty == true
+            ? 'Loan repayment - $note'
             : 'Loan repayment via $paymentMethod',
       );
 
@@ -104,16 +101,18 @@ class PaymentService extends ChangeNotifier {
       // If loan is fully paid, update status and student record
       if (isFullyPaid) {
         loanUpdateData['status'] = 'PAID';
-        
+
         // Update student's active loan status
-        final studentRef = _firestore.collection('students').doc(loan.studentId);
+        final studentRef =
+            _firestore.collection('students').doc(loan.studentId);
         batch.update(studentRef, {
           'hasActiveLoan': false,
           'updatedAt': now,
         });
       } else {
         // Update next due date (advance by 30 days for monthly payments)
-        loanUpdateData['nextDueDate'] = loan.nextDueDate.add(const Duration(days: 30));
+        loanUpdateData['nextDueDate'] =
+            loan.nextDueDate.add(const Duration(days: 30));
       }
 
       final loanRef = _firestore.collection('loans').doc(loanId);
@@ -138,7 +137,8 @@ class PaymentService extends ChangeNotifier {
       }
       return {
         'success': false,
-        'message': 'Payment processing failed. Please check your connection and try again.'
+        'message':
+            'Payment processing failed. Please check your connection and try again.'
       };
     } finally {
       _setLoading(false);
@@ -366,6 +366,32 @@ class PaymentService extends ChangeNotifier {
       };
     } finally {
       _setLoading(false);
+    }
+  }
+
+  Future<Map<String, dynamic>> getAllTransactions() async {
+    try {
+      final QuerySnapshot snapshot = await _firestore
+          .collection('transactions')
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      final List<tm.Transaction> transactions = snapshot.docs
+          .map((doc) => tm.Transaction.fromFirestore(doc))
+          .toList();
+
+      return {
+        'success': true,
+        'data': transactions,
+        'message': 'Transactions fetched successfully',
+      };
+    } catch (e) {
+      print('Error fetching all transactions: $e');
+      return {
+        'success': false,
+        'data': null,
+        'message': 'Failed to fetch transactions: ${e.toString()}',
+      };
     }
   }
 }

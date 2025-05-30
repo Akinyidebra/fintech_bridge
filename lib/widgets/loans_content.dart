@@ -9,14 +9,14 @@ import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/loans_tab_bar.dart';
 import 'package:fintech_bridge/widgets/loan_item_card.dart';
 
-class MyLoansContent extends StatefulWidget {
-  const MyLoansContent({super.key});
+class LoansContent extends StatefulWidget {
+  const LoansContent({super.key});
 
   @override
-  State<MyLoansContent> createState() => _MyLoansContentState();
+  State<LoansContent> createState() => _LoansContentState();
 }
 
-class _MyLoansContentState extends State<MyLoansContent>
+class _LoansContentState extends State<LoansContent>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
@@ -26,7 +26,7 @@ class _MyLoansContentState extends State<MyLoansContent>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadLoansData();
   }
 
@@ -123,29 +123,26 @@ class _MyLoansContentState extends State<MyLoansContent>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _refreshData,
-      color: AppConstants.primaryColor,
-      child: Column(
-        children: [
-          // Tab Bar with improved spacing
-          LoansTabBar(controller: _tabController),
+    return Column(
+      children: [
+        // Tab Bar with improved spacing
+        LoansTabBar(controller: _tabController),
 
-          const SizedBox(height: 16), // Space between tab bar and content
+        const SizedBox(height: 16), // Space between tab bar and content
 
-          // Tab Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildLoansTab('ALL'),
-                _buildLoansTab('ACTIVE'),
-                _buildLoansTab('PENDING'),
-              ],
-            ),
+        // Tab Content
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildLoansTab('ALL'),
+              _buildLoansTab('PENDING'),
+              _buildLoansTab('APPROVED'),
+              _buildLoansTab('REJECTED'),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -169,10 +166,12 @@ class _MyLoansContentState extends State<MyLoansContent>
   List<Loan> _filterLoans(List<Loan> loans, String filter) {
     if (filter == 'ALL') {
       return loans;
-    } else if (filter == 'ACTIVE') {
+    } else if (filter == 'APPROVED') {
       return loans.where((loan) => loan.status == 'APPROVED').toList();
     } else if (filter == 'PENDING') {
       return loans.where((loan) => loan.status == 'PENDING').toList();
+    } else if (filter == 'REJECTED') {
+      return loans.where((loan) => loan.status == 'REJECTED').toList();
     }
     return loans;
   }

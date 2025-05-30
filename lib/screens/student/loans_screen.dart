@@ -1,8 +1,5 @@
-// ignore_for_file: null_check_always_fails
-
-import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 import 'package:fintech_bridge/widgets/dashboard_content.dart';
-import 'package:fintech_bridge/widgets/loans_content.dart';
+import 'package:fintech_bridge/widgets/loan_application_content.dart';
 import 'package:fintech_bridge/widgets/profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,24 +7,19 @@ import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/app_header.dart';
 import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
-import 'package:fintech_bridge/widgets/loan_application_content.dart';
+import 'package:fintech_bridge/widgets/loans_content.dart';
 
-class LoanApplicationScreen extends StatefulWidget {
-  final String loanType;
-  final provider_model.Provider? provider;
-
-  const LoanApplicationScreen({
+class LoansScreen extends StatefulWidget {
+  const LoansScreen({
     super.key,
-    required this.loanType,
-    this.provider,
   });
 
   @override
-  State<LoanApplicationScreen> createState() => _LoanApplicationScreenState();
+  State<LoansScreen> createState() => _LoansScreenState();
 }
 
-class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
-  int _currentIndex = 1;
+class _LoansScreenState extends State<LoansScreen> {
+  int _currentIndex = 2; // Start at Loans tab
   late List<Widget> _screens;
 
   // Bottom navigation items for student dashboard
@@ -79,7 +71,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                 setState(() => _currentIndex = 3); // Navigate to profile tab
               },
             ),
-            // Loan Application content
+            // Main content
             Expanded(
               child: _screens[_currentIndex],
             ),

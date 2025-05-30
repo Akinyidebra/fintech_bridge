@@ -670,7 +670,92 @@ class DatabaseService extends ChangeNotifier {
     }
   }
 
-  // Update provider profile
+  // NEW: Method for uploading provider identification images
+  Future<Map<String, dynamic>> uploadProviderIdentificationImages({
+    required File businessLicenseFront,
+    required File businessLicenseBack,
+    required File taxCertificate,
+    required File bankStatement,
+  }) async {
+    _setLoading(true);
+    try {
+      if (currentUser == null) {
+        return {'success': false, 'message': 'No user signed in'};
+      }
+
+      // Get current user profile to determine role
+      final profileResult = await getCurrentUserProfile();
+      if (!profileResult['success']) {
+        return profileResult;
+      }
+
+      String role = profileResult['role'];
+      String userId = currentUser!.uid;
+
+      // Verify user is a provider
+      if (role != 'provider') {
+        return {
+          'success': false,
+          'message': 'This method is only for providers'
+        };
+      }
+
+      // Upload all images using batch upload for providers
+      final uploadResults = await Cloudinary.uploadProviderIdentificationImages(
+        userId: userId,
+        businessLicenseFront: businessLicenseFront,
+        businessLicenseBack: businessLicenseBack,
+        taxCertificate: taxCertificate,
+        bankStatement: bankStatement,
+      );
+
+      // Check if all uploads were successful
+      final failedUploads = uploadResults.entries
+          .where((entry) => entry.value == null)
+          .map((entry) => entry.key)
+          .toList();
+
+      if (failedUploads.isNotEmpty) {
+        return {
+          'success': false,
+          'message': 'Failed to upload: ${failedUploads.join(', ')}'
+        };
+      }
+
+      // Prepare provider identification images data with Cloudinary URLs
+      Map<String, dynamic> providerIdentificationData = {
+        'businessLicenseFront': uploadResults['businessLicenseFront']!,
+        'businessLicenseBack': uploadResults['businessLicenseBack']!,
+        'taxCertificate': uploadResults['taxCertificate']!,
+        'bankStatement': uploadResults['bankStatement']!,
+        'uploadedAt': DateTime.now(),
+      };
+
+      // Update the providers collection
+      await _firestore.collection('providers').doc(userId).update({
+        'identificationImages': providerIdentificationData,
+        'updatedAt': DateTime.now(),
+      });
+
+      return {
+        'success': true,
+        'message': 'Provider documents uploaded successfully',
+        'imageUrls': providerIdentificationData,
+      };
+    } catch (e) {
+      if (e is FirebaseException && e.code == 'unavailable') {
+        return {'success': false, 'message': 'No internet connection'};
+      }
+      return {
+        'success': false,
+        'message': 'Failed to upload provider documents: ${e.toString()}'
+      };
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+// Update provider profile
   Future<Map<String, dynamic>> updateProviderProfile(
       String providerId, Map<String, dynamic> data) async {
     _setLoading(true);
@@ -705,6 +790,11 @@ class DatabaseService extends ChangeNotifier {
       // Get updated provider
       DocumentSnapshot updatedDoc =
           await _firestore.collection('providers').doc(providerId).get();
+
+      if (!updatedDoc.exists) {
+        return {'success': false, 'message': 'Provider not found'};
+      }
+
       Provider updatedProvider = Provider.fromFirestore(updatedDoc);
 
       return {
@@ -713,10 +803,14 @@ class DatabaseService extends ChangeNotifier {
         'data': updatedProvider
       };
     } catch (e) {
+      print('Error updating provider profile: $e'); // Add logging
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
-      return {'success': false, 'message': 'Failed to update profile'};
+      return {
+        'success': false,
+        'message': 'Failed to update profile: ${e.toString()}'
+      };
     } finally {
       _setLoading(false);
     }
@@ -1051,6 +1145,68 @@ class DatabaseService extends ChangeNotifier {
       };
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // Get specific user profiles
+  Future<Map<String, dynamic>> getUserProfile(String userId) async {
+    try {
+      // Try students collection first
+      DocumentSnapshot studentDoc =
+          await _firestore.collection('students').doc(userId).get();
+
+      if (studentDoc.exists) {
+        return {
+          'success': true,
+          'data': studentDoc.data(),
+          'userType': 'student',
+          'message': 'Student profile fetched successfully',
+        };
+      }
+
+      // Try providers collection
+      DocumentSnapshot providerDoc =
+          await _firestore.collection('providers').doc(userId).get();
+
+      if (providerDoc.exists) {
+        return {
+          'success': true,
+          'data': providerDoc.data(),
+          'userType': 'provider',
+          'message': 'Provider profile fetched successfully',
+        };
+      }
+
+      return {
+        'success': false,
+        'data': null,
+        'userType': null,
+        'message': 'User not found',
+      };
+    } catch (e) {
+      print('Error fetching user profile: $e');
+      return {
+        'success': false,
+        'data': null,
+        'userType': null,
+        'message': 'Failed to fetch user profile: ${e.toString()}',
+      };
+    }
+  }
+
+  Future<String> getUserDisplayName(String userId) async {
+    final result = await getUserProfile(userId);
+    if (result['success'] != true) return 'Unknown User';
+
+    final data = result['data'] as Map<String, dynamic>? ?? {};
+
+    switch (result['userType']) {
+      case 'student':
+        return data['fullName']?.toString() ?? 'Unknown Student';
+      case 'provider':
+        return data['businessName']?.toString() ?? 'Unknown Provider';
+      default:
+        return 'Unknown User';
     }
   }
 }

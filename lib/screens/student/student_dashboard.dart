@@ -4,7 +4,7 @@ import 'package:fintech_bridge/widgets/loan_application_content.dart';
 import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
 import 'package:fintech_bridge/widgets/app_header.dart';
 import 'package:fintech_bridge/services/database_service.dart';
-import 'package:fintech_bridge/widgets/my_loans_content.dart';
+import 'package:fintech_bridge/widgets/loans_content.dart';
 import 'package:fintech_bridge/widgets/profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -46,7 +46,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     _screens = [
       const DashboardContent(),
       const LoanApplicationContent(loanType: ''),
-      const MyLoansContent(),
+      const LoansContent(),
       const ProfileContent(),
     ];
   }
@@ -54,7 +54,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   Widget build(BuildContext context) {
     final dbService = Provider.of<DatabaseService>(context, listen: false);
-    
+
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       body: SafeArea(

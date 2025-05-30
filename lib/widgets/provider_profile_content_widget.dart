@@ -1,25 +1,27 @@
-import 'package:fintech_bridge/widgets/profile_action_buttons_widget.dart';
-import 'package:fintech_bridge/widgets/profile_header_card_widget.dart';
-import 'package:fintech_bridge/widgets/profile_identification_widget.dart';
-import 'package:fintech_bridge/widgets/profile_info_section_widget.dart';
 import 'package:fintech_bridge/screens/loading_screen.dart';
+import 'package:fintech_bridge/widgets/provider_profile_action_buttons_widget.dart';
+import 'package:fintech_bridge/widgets/provider_profile_header_card_widget.dart';
+import 'package:fintech_bridge/widgets/provider_profile_identification_widget.dart';
+import 'package:fintech_bridge/widgets/provider_profile_info_section_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/auth_service.dart';
 import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
-import 'package:fintech_bridge/models/student_model.dart';
+import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 
-class ProfileContent extends StatefulWidget {
-  const ProfileContent({super.key});
+class ProviderProfileContent extends StatefulWidget {
+  final provider_model.Provider? provider;
+
+  const ProviderProfileContent({super.key, this.provider});
 
   @override
-  State<ProfileContent> createState() => _ProfileContentState();
+  State<ProviderProfileContent> createState() => _ProviderProfileContentState();
 }
 
-class _ProfileContentState extends State<ProfileContent> {
-  // Data storage - same structure as dashboard
-  Map<String, dynamic>? _userProfile;
+class _ProviderProfileContentState extends State<ProviderProfileContent> {
+  // Data storage - modified to store provider data properly
+  provider_model.Provider? _providerProfile;
 
   // Loading and error states
   bool _isLoading = true;
@@ -40,16 +42,25 @@ class _ProfileContentState extends State<ProfileContent> {
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
 
-      // Fetch user profile data - same as dashboard
-      final result = await dbService.getCurrentUserProfile();
-
-      if (!mounted) return;
-
-      // Process user profile - same as dashboard
-      if (result['success']) {
-        _userProfile = result;
+      // If provider is passed as parameter, use it directly
+      if (widget.provider != null) {
+        _providerProfile = widget.provider;
       } else {
-        _errorMessage = result['message'] ?? 'Failed to load profile data';
+        // Otherwise, fetch current user profile
+        final result = await dbService.getCurrentUserProfile();
+
+        if (!mounted) return;
+
+        if (result['success']) {
+          // Check if the current user is a provider
+          if (result['role'] == 'provider') {
+            _providerProfile = result['data'] as provider_model.Provider;
+          } else {
+            _errorMessage = 'Access denied. This page is for providers only.';
+          }
+        } else {
+          _errorMessage = result['message'] ?? 'Failed to load profile data';
+        }
       }
     } catch (e) {
       _errorMessage = 'Failed to load profile data: ${e.toString()}';
@@ -70,15 +81,15 @@ class _ProfileContentState extends State<ProfileContent> {
 
   @override
   Widget build(BuildContext context) {
-    // Show loading screen while data is being fetched - same as dashboard
+    // Show loading screen while data is being fetched
     if (_isLoading) {
       return const LoadingScreen(
-        message: 'Loading your profile...',
+        message: 'Loading provider profile...',
         isFullScreen: false,
       );
     }
 
-    // Show error state with retry option - same as dashboard
+    // Show error state with retry option
     if (_errorMessage != null) {
       return _buildErrorState();
     }
@@ -139,14 +150,12 @@ class _ProfileContentState extends State<ProfileContent> {
   }
 
   Widget _buildProfileContent() {
-    // Check if profile data exists - same structure as dashboard
-    if (_userProfile == null || _userProfile!['success'] != true) {
+    // Check if provider profile data exists
+    if (_providerProfile == null) {
       return _buildEmptyProfileState(context);
     }
 
-    // Get user data directly from the profile result
-    final Student student = _userProfile!['data'] as Student;
-
+    final provider = _providerProfile!;
     final authService = Provider.of<AuthService>(context);
 
     return SingleChildScrollView(
@@ -155,57 +164,51 @@ class _ProfileContentState extends State<ProfileContent> {
       child: Column(
         children: [
           // Profile Header Card
-          ProfileHeaderCard(student: student),
+          ProviderProfileHeaderCard(provider: provider),
 
           const SizedBox(height: 20),
 
-          // Personal Information Section
-          ProfileInfoSection(
-            title: 'Personal Information',
-            icon: Icons.person_rounded,
+          // Business Information Section
+          ProviderProfileInfoSection(
+            title: 'Business Information',
+            icon: Icons.business_rounded,
             iconColor: AppConstants.primaryColor,
             items: [
               ProfileInfoItem(
-                icon: Icons.email_rounded,
-                label: 'University Email',
-                value: student.universityEmail,
+                icon: Icons.business_rounded,
+                label: 'Business Name',
+                value: provider.businessName,
                 backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
                 iconColor: AppConstants.primaryColor,
               ),
               ProfileInfoItem(
-                icon: Icons.phone_rounded,
-                label: 'Phone',
-                value: student.phone,
+                icon: Icons.email_rounded,
+                label: 'Business Email',
+                value: provider.businessEmail,
                 backgroundColor: AppConstants.accentColor.withOpacity(0.1),
                 iconColor: AppConstants.accentColor,
               ),
               ProfileInfoItem(
-                icon: Icons.phone_android_rounded,
-                label: 'M-Pesa Phone',
-                value: student.mpesaPhone,
+                icon: Icons.phone_rounded,
+                label: 'Phone',
+                value: provider.phone,
                 backgroundColor: AppConstants.secondaryColor.withOpacity(0.1),
                 iconColor: AppConstants.secondaryColor,
               ),
               ProfileInfoItem(
-                icon: Icons.verified_user_rounded,
-                label: 'Verification Status',
-                value: student.verified ? 'Verified' : 'Pending Verification',
-                backgroundColor: (student.verified
-                        ? AppConstants.successColor
-                        : AppConstants.warningColor)
-                    .withOpacity(0.1),
-                iconColor: student.verified
-                    ? AppConstants.successColor
-                    : AppConstants.warningColor,
+                icon: Icons.category_rounded,
+                label: 'Business Type',
+                value: provider.businessType,
+                backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
+                iconColor: AppConstants.primaryColor,
               ),
-              if (student.verifiedAt != null)
+              if (provider.website != null && provider.website!.isNotEmpty)
                 ProfileInfoItem(
-                  icon: Icons.calendar_today_rounded,
-                  label: 'Verified Date',
-                  value:
-                      '${student.verifiedAt?.day}/${student.verifiedAt?.month}/${student.verifiedAt?.year}',
-                  backgroundColor: AppConstants.successColor.withOpacity(0.1),
-                  iconColor: AppConstants.successColor,
+                  icon: Icons.language_rounded,
+                  label: 'Website',
+                  value: provider.website!,
+                  backgroundColor: AppConstants.accentColor.withOpacity(0.1),
+                  iconColor: AppConstants.accentColor,
                 ),
             ],
           ),
@@ -213,73 +216,92 @@ class _ProfileContentState extends State<ProfileContent> {
           const SizedBox(height: 20),
 
           // Identification Documents Section
-          ProfileIdentificationSection(
-            identificationImages: student.identificationImages,
+          ProviderProfileIdentificationSection(
+            identificationImages: provider.identificationImages,
           ),
 
           const SizedBox(height: 20),
 
-          // Academic Information Section
-          ProfileInfoSection(
-            title: 'Academic Information',
-            icon: Icons.school_rounded,
+          // Services Information Section
+          ProviderProfileInfoSection(
+            title: 'Services & Rates',
+            icon: Icons.account_balance_wallet_rounded,
             iconColor: AppConstants.secondaryColor,
             items: [
               ProfileInfoItem(
-                icon: Icons.school_rounded,
-                label: 'Course',
-                value: student.course,
+                icon: Icons.percent_rounded,
+                label: 'Interest Rate',
+                value: '${provider.interestRate.toStringAsFixed(1)}% per annum',
                 backgroundColor: AppConstants.secondaryColor.withOpacity(0.1),
                 iconColor: AppConstants.secondaryColor,
               ),
               ProfileInfoItem(
-                icon: Icons.calendar_today_rounded,
-                label: 'Year of Study',
-                value: 'Year ${student.yearOfStudy}',
+                icon: Icons.list_alt_rounded,
+                label: 'Loan Types',
+                value: provider.loanTypes.join(', '),
                 backgroundColor: AppConstants.accentColor.withOpacity(0.1),
                 iconColor: AppConstants.accentColor,
               ),
-              ProfileInfoItem(
-                icon: Icons.account_balance_rounded,
-                label: 'Institution',
-                value: student.institutionName,
-                backgroundColor: AppConstants.secondaryColor.withOpacity(0.1),
-                iconColor: AppConstants.secondaryColor,
-              ),
+              if (provider.description != null &&
+                  provider.description!.isNotEmpty)
+                ProfileInfoItem(
+                  icon: Icons.description_rounded,
+                  label: 'Description',
+                  value: provider.description!,
+                  backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
+                  iconColor: AppConstants.primaryColor,
+                ),
             ],
           ),
 
           const SizedBox(height: 20),
 
-          // Financial Information Section
-          ProfileInfoSection(
-            title: 'Financial Information',
-            icon: Icons.account_balance_wallet_rounded,
+          // Status Information Section
+          ProviderProfileInfoSection(
+            title: 'Account Status',
+            icon: Icons.verified_user_rounded,
             iconColor: AppConstants.accentColor,
             items: [
               ProfileInfoItem(
-                icon: Icons.credit_score_rounded,
-                label: 'Loan Status',
-                value:
-                    student.hasActiveLoan ? 'Active Loan' : 'No Active Loans',
-                backgroundColor: student.hasActiveLoan
-                    ? AppConstants.successColor.withOpacity(0.1)
-                    : AppConstants.primaryColor.withOpacity(0.1),
-                iconColor: student.hasActiveLoan
+                icon: Icons.verified_user_rounded,
+                label: 'Verification Status',
+                value: provider.verified ? 'Verified' : 'Pending Verification',
+                backgroundColor: (provider.verified
+                        ? AppConstants.successColor
+                        : AppConstants.warningColor)
+                    .withOpacity(0.1),
+                iconColor: provider.verified
                     ? AppConstants.successColor
-                    : AppConstants.primaryColor,
+                    : AppConstants.warningColor,
+              ),
+              if (provider.verifiedAt != null)
+                ProfileInfoItem(
+                  icon: Icons.calendar_today_rounded,
+                  label: 'Verified Date',
+                  value:
+                      '${provider.verifiedAt?.day}/${provider.verifiedAt?.month}/${provider.verifiedAt?.year}',
+                  backgroundColor: AppConstants.successColor.withOpacity(0.1),
+                  iconColor: AppConstants.successColor,
+                ),
+              ProfileInfoItem(
+                icon: Icons.approval_rounded,
+                label: 'Approval Status',
+                value: provider.approved ? 'Approved' : 'Pending Approval',
+                backgroundColor: (provider.approved
+                        ? AppConstants.successColor
+                        : AppConstants.warningColor)
+                    .withOpacity(0.1),
+                iconColor: provider.approved
+                    ? AppConstants.successColor
+                    : AppConstants.warningColor,
               ),
               ProfileInfoItem(
-                icon: Icons.people_alt_rounded,
-                label: 'Guarantors',
-                value: student.guarantorContacts.isNotEmpty
-                    ? '${student.guarantorContacts.length} Guarantor(s)'
-                    : 'No Guarantors',
-                backgroundColor: AppConstants.accentColor.withOpacity(0.1),
-                iconColor: AppConstants.accentColor,
-                additionalContent: student.guarantorContacts.isNotEmpty
-                    ? _buildGuarantorsList(student.guarantorContacts)
-                    : null,
+                icon: Icons.schedule_rounded,
+                label: 'Member Since',
+                value:
+                    '${provider.createdAt.day}/${provider.createdAt.month}/${provider.createdAt.year}',
+                backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
+                iconColor: AppConstants.primaryColor,
               ),
             ],
           ),
@@ -287,50 +309,12 @@ class _ProfileContentState extends State<ProfileContent> {
           const SizedBox(height: 24),
 
           // Action Buttons
-          ProfileActionButtons(
+          ProviderProfileActionButtons(
             authService: authService,
-            student: student,
+            provider: provider,
           ),
 
           const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGuarantorsList(List<String> guarantors) {
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppConstants.backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ...guarantors.map((contact) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.person_rounded,
-                      size: 18,
-                      color: AppConstants.accentColor,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      contact,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppConstants.textColor,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ],
-                ),
-              )),
         ],
       ),
     );
@@ -342,13 +326,13 @@ class _ProfileContentState extends State<ProfileContent> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(
-            Icons.person_off_rounded,
+            Icons.business_center_rounded,
             size: 60,
             color: Colors.grey,
           ),
           const SizedBox(height: 16),
           const Text(
-            'Profile information not found',
+            'Business profile information not found',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -369,7 +353,7 @@ class _ProfileContentState extends State<ProfileContent> {
             ),
             icon: const Icon(Icons.edit_rounded, size: 20),
             label: const Text(
-              'Complete Profile',
+              'Complete Business Profile',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -405,3 +389,4 @@ class ProfileInfoItem {
     this.additionalContent,
   });
 }
+
