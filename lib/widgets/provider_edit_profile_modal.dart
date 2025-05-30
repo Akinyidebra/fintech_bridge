@@ -37,15 +37,48 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
 
   // Selected loan types
   List<String> _selectedLoanTypes = [];
+  // Updated loan types list with comprehensive university student options
   final List<String> _availableLoanTypes = [
-    'Personal Loan',
     'Student Loan',
-    'Business Loan',
-    'Emergency Loan',
-    'Asset Financing',
-    'Working Capital',
-    'Equipment Financing',
-    'Invoice Financing',
+    'Tuition Fee Loan',
+    'Accommodation Loan',
+    'Textbook & Supplies Loan',
+    'Study Abroad Loan',
+    'Research Project Loan',
+    'Graduation Loan',
+    'Laptop & Equipment Loan',
+    'Transport & Commute Loan',
+    'Exam Fee Loan',
+    'Internship Support Loan',
+    'Thesis & Project Loan',
+    'Student Housing Loan',
+    'Campus Meal Plan Loan',
+    'University Event Loan',
+    'Field Trip Loan',
+    'Student Organization Loan',
+    'Postgraduate Study Loan',
+    'Professional Course Loan',
+    'Certification Exam Loan',
+    'Library & Study Materials',
+    'Laboratory Equipment Loan',
+    'Student Conference Loan',
+    'Academic Workshop Loan',
+    'Online Course Loan',
+    'Language Course Loan',
+    'Skills Development Loan',
+    'Career Training Loan',
+    'Interview Preparation Loan',
+    'Job Search Support Loan',
+    'Professional Networking Loan',
+    'Student Entrepreneurship Loan',
+    'Co-curricular Activities Loan',
+    'Sports Equipment Loan',
+    'Art & Creative Supplies Loan',
+    'Music Instrument Loan',
+    'Photography Equipment Loan',
+    'Technology Upgrade Loan',
+    'Software License Loan',
+    'Student Mental Health Support',
   ];
 
   // Password form controllers
@@ -71,29 +104,70 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
   bool _showNewPassword = false;
   bool _showConfirmPassword = false;
 
+  // Add loading state variable
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _initializeControllers();
+  }
 
-    // Initialize controllers with current provider data
-    _businessNameController =
-        TextEditingController(text: widget.provider?.businessName);
-    _businessEmailController =
-        TextEditingController(text: widget.provider?.businessEmail);
-    _phoneController = TextEditingController(text: widget.provider?.phone);
-    _businessTypeController =
-        TextEditingController(text: widget.provider?.businessType);
-    _websiteController =
-        TextEditingController(text: widget.provider?.website ?? '');
-    _descriptionController =
-        TextEditingController(text: widget.provider?.description ?? '');
-    _interestRateController =
-        TextEditingController(text: widget.provider?.interestRate.toString());
+  void _initializeControllers() {
+    // Initialize controllers with empty values first
+    _businessNameController = TextEditingController();
+    _businessEmailController = TextEditingController();
+    _phoneController = TextEditingController();
+    _businessTypeController = TextEditingController();
+    _websiteController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _interestRateController = TextEditingController();
+    _selectedLoanTypes = <String>[];
 
-    // Initialize selected loan types
-    _selectedLoanTypes =
-        List<String>.from(widget.provider?.loanTypes as Iterable);
+    // Wait for provider data to be available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProviderData();
+    });
+  }
+
+  void _loadProviderData() {
+    if (widget.provider != null) {
+      setState(() {
+        // Update controllers with provider data
+        _businessNameController.text = widget.provider!.businessName;
+        _businessEmailController.text = widget.provider!.businessEmail;
+        _phoneController.text = widget.provider!.phone;
+        _businessTypeController.text = widget.provider!.businessType;
+        _websiteController.text = widget.provider!.website ?? '';
+        _descriptionController.text = widget.provider!.description ?? '';
+        _interestRateController.text = widget.provider!.interestRate.toString();
+
+        // Initialize selected loan types with proper null safety
+        _selectedLoanTypes = <String>[];
+        if (widget.provider!.loanTypes.isNotEmpty) {
+          try {
+            // Ensure we're working with a proper list
+            final loanTypesList = widget.provider!.loanTypes;
+            _selectedLoanTypes = loanTypesList.cast<String>().toList();
+          } catch (e) {
+            print('Error initializing loan types: $e');
+            _selectedLoanTypes = <String>[];
+          }
+        }
+
+        _isLoading = false;
+      });
+    } else {
+      // If provider is null, still set loading to false after a brief delay
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -120,22 +194,42 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        children: [
-          _buildModalHeader(),
-          _buildTabBar(),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
+      child: _isLoading
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: AppConstants.primaryColor,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading business profile...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppConstants.textColor,
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Column(
               children: [
-                _buildProfileTab(),
-                _buildPasswordTab(),
-                _buildDocumentsTab(),
+                _buildModalHeader(),
+                _buildTabBar(),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildProfileTab(),
+                      _buildPasswordTab(),
+                      _buildDocumentsTab(),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -333,11 +427,25 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
               child: ClipOval(
                 child: _profileImage != null
                     ? Image.file(_profileImage!, fit: BoxFit.cover)
-                    : widget.provider?.profileImage != null
+                    : (widget.provider?.profileImage != null &&
+                            widget.provider!.profileImage!.isNotEmpty)
                         ? Image.memory(
-                            base64Decode(
-                                widget.provider!.profileImage!.split(',')[1]),
+                            base64Decode(widget.provider!.profileImage!
+                                    .contains(',')
+                                ? widget.provider!.profileImage!.split(',')[1]
+                                : widget.provider!.profileImage!),
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color:
+                                    AppConstants.primaryColor.withOpacity(0.1),
+                                child: const Icon(
+                                  Icons.business,
+                                  size: 40,
+                                  color: AppConstants.primaryColor,
+                                ),
+                              );
+                            },
                           )
                         : Container(
                             color: AppConstants.primaryColor.withOpacity(0.1),
@@ -445,8 +553,9 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
                 });
               },
               validator: (value) {
-                if (value?.isEmpty ?? true)
+                if (value?.isEmpty ?? true) {
                   return 'Current password is required';
+                }
                 return null;
               },
             ),
@@ -462,8 +571,9 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
               },
               validator: (value) {
                 if (value?.isEmpty ?? true) return 'New password is required';
-                if (value!.length < 6)
+                if (value!.length < 6) {
                   return 'Password must be at least 6 characters';
+                }
                 return null;
               },
             ),
@@ -478,10 +588,12 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
                 });
               },
               validator: (value) {
-                if (value?.isEmpty ?? true)
+                if (value?.isEmpty ?? true) {
                   return 'Please confirm your password';
-                if (value != _newPasswordController.text)
+                }
+                if (value != _newPasswordController.text) {
                   return 'Passwords do not match';
+                }
                 return null;
               },
             ),
@@ -839,6 +951,15 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
 
       final providerId = currentUser.uid;
 
+      // Parse interest rate safely
+      double interestRate = 0.0;
+      try {
+        interestRate = double.parse(_interestRateController.text.trim());
+      } catch (e) {
+        _showErrorSnackBar('Please enter a valid interest rate');
+        return;
+      }
+
       final updateData = {
         'businessName': _businessNameController.text.trim(),
         'businessEmail': _businessEmailController.text.trim(),
@@ -850,8 +971,9 @@ class _ProviderEditProfileModalState extends State<ProviderEditProfileModal>
         'description': _descriptionController.text.trim().isNotEmpty
             ? _descriptionController.text.trim()
             : null,
-        'interestRate': double.parse(_interestRateController.text.trim()),
-        'loanTypes': _selectedLoanTypes,
+        'interestRate': interestRate,
+        'loanTypes': List<String>.from(
+            _selectedLoanTypes), // Ensure proper list conversion
         'updatedAt': DateTime.now(),
       };
 

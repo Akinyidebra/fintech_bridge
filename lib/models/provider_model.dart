@@ -38,17 +38,19 @@ class Provider {
   });
 
   factory Provider.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map;
+    Map data = doc.data() as Map<String, dynamic>;
     return Provider(
       id: doc.id,
-      businessName: data['businessName'],
-      businessEmail: data['businessEmail'],
-      phone: data['phone'],
-      businessType: data['businessType'],
-      loanTypes: List<String>.from(data['loanTypes']),
+      businessName: data['businessName'] ?? '',
+      businessEmail: data['businessEmail'] ?? '',
+      phone: data['phone'] ?? '',
+      businessType: data['businessType'] ?? '',
+      loanTypes: data['loanTypes'] != null
+          ? List<String>.from(data['loanTypes'])
+          : <String>[], // Ensure empty list instead of null
       website: data['website'],
       description: data['description'],
-      interestRate: data['interestRate'].toDouble(),
+      interestRate: (data['interestRate'] ?? 0).toDouble(),
       profileImage: data['profileImage'],
       verified: data['verified'] ?? false,
       verifiedAt: data['verifiedAt']?.toDate(),
@@ -56,8 +58,8 @@ class Provider {
           ? Map<String, dynamic>.from(data['identificationImages'])
           : null,
       approved: data['approved'] ?? false,
-      createdAt: data['createdAt'].toDate(),
-      updatedAt: data['updatedAt'].toDate(),
+      createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
+      updatedAt: data['updatedAt']?.toDate() ?? DateTime.now(),
     );
   }
 

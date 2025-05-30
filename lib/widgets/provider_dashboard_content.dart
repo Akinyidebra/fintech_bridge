@@ -201,7 +201,7 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
   Map<String, int> _calculateLoanStats(List<Loan> loans) {
     int activeLoans = loans.where((l) => l.status == 'APPROVED').length;
     int pendingApplications = loans.where((l) => l.status == 'PENDING').length;
-    int completedLoans = loans.where((l) => l.status == 'COMPLETED').length;
+    int completedLoans = loans.where((l) => l.status == 'PAID').length;
     int totalApplications = loans.length;
     int rejectedApplications =
         loans.where((l) => l.status == 'REJECTED').length;
@@ -417,26 +417,6 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
               },
               // Removed onApprovePressed and onRejectPressed callbacks
             )),
-
-        if (pendingLoans.length > 3)
-          Padding(
-            padding: const EdgeInsets.only(top: 12.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/provider/all-applications');
-                },
-                child: Text(
-                  'View All ${pendingLoans.length} Applications',
-                  style: const TextStyle(
-                    color: AppConstants.primaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -480,26 +460,6 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
             // Removed onTap to make it non-clickable
           );
         })),
-
-        if (_providerTransactions!.length > 4)
-          Padding(
-            padding: const EdgeInsets.only(top: 12.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/provider/all-activity');
-                },
-                child: const Text(
-                  'View All Activity',
-                  style: TextStyle(
-                    color: AppConstants.primaryColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }

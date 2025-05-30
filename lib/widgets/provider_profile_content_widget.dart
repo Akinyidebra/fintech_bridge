@@ -10,25 +10,6 @@ import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 
-// Data class for profile info items - moved to top level for better organization
-class ProfileInfoItem {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color backgroundColor;
-  final Color iconColor;
-  final Widget? additionalContent;
-
-  const ProfileInfoItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.backgroundColor,
-    required this.iconColor,
-    this.additionalContent,
-  });
-}
-
 class ProviderProfileContent extends StatefulWidget {
   final provider_model.Provider? provider;
 
@@ -386,6 +367,26 @@ class _ProviderProfileContentState extends State<ProviderProfileContent> {
   }
 
   void _navigateToEditProfile(BuildContext context) {
-    Navigator.of(context).pushNamed('/edit-provider-profile');
+    Navigator.of(context).pushNamed('/edit-profile');
   }
 }
+
+// Data class for profile info items
+class ProfileInfoItem {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color backgroundColor;
+  final Color iconColor;
+  final Widget? additionalContent;
+
+  const ProfileInfoItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.backgroundColor,
+    required this.iconColor,
+    this.additionalContent,
+  });
+}
+
