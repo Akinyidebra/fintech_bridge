@@ -9,7 +9,7 @@ import 'package:fintech_bridge/widgets/loan_provider_selector.dart';
 import 'package:fintech_bridge/widgets/loan_details_form.dart';
 import 'package:fintech_bridge/widgets/terms_section.dart';
 import 'package:fintech_bridge/widgets/gradient_button.dart';
-import 'package:fintech_bridge/widgets/loan_header_card.dart';
+import 'package:fintech_bridge/widgets/loan_application_header_card.dart';
 import 'package:fintech_bridge/widgets/loan_form_container.dart';
 import 'package:fintech_bridge/widgets/term_selector_modal.dart';
 import 'package:fintech_bridge/widgets/loan_application_logic.dart';
@@ -210,7 +210,7 @@ class _LoanApplicationContentState extends State<LoanApplicationContent>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Loan Header Card
-              const LoanHeaderCard(),
+              const LoanApplicationHeaderCard(),
               const SizedBox(height: 24),
 
               const Text(

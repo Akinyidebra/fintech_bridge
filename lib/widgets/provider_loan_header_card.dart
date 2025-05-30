@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
-class MyLoanHeaderCard extends StatelessWidget {
-  const MyLoanHeaderCard({
+class ProviderLoanHeaderCard extends StatelessWidget {
+  const ProviderLoanHeaderCard({
     super.key,
   });
 
@@ -35,7 +35,7 @@ class MyLoanHeaderCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(
-              Icons.account_balance_wallet_outlined,
+              Icons.business_center_outlined,
               color: Colors.white,
               size: 24,
             ),
@@ -46,7 +46,7 @@ class MyLoanHeaderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'My Loans',
+                  'Loan Applications',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -56,7 +56,7 @@ class MyLoanHeaderCard extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'Track and manage your loan applications',
+                  'Review and manage student loan applications',
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 14,

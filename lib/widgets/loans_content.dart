@@ -9,14 +9,14 @@ import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/loans_tab_bar.dart';
 import 'package:fintech_bridge/widgets/loan_item_card.dart';
 
-class MyLoansContent extends StatefulWidget {
-  const MyLoansContent({super.key});
+class LoansContent extends StatefulWidget {
+  const LoansContent({super.key});
 
   @override
-  State<MyLoansContent> createState() => _MyLoansContentState();
+  State<LoansContent> createState() => _LoansContentState();
 }
 
-class _MyLoansContentState extends State<MyLoansContent>
+class _LoansContentState extends State<LoansContent>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
@@ -123,29 +123,25 @@ class _MyLoansContentState extends State<MyLoansContent>
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _refreshData,
-      color: AppConstants.primaryColor,
-      child: Column(
-        children: [
-          // Tab Bar with improved spacing
-          LoansTabBar(controller: _tabController),
+    return Column(
+      children: [
+        // Tab Bar with improved spacing
+        LoansTabBar(controller: _tabController),
 
-          const SizedBox(height: 16), // Space between tab bar and content
+        const SizedBox(height: 16), // Space between tab bar and content
 
-          // Tab Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildLoansTab('ALL'),
-                _buildLoansTab('ACTIVE'),
-                _buildLoansTab('PENDING'),
-              ],
-            ),
+        // Tab Content
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildLoansTab('ALL'),
+              _buildLoansTab('ACTIVE'),
+              _buildLoansTab('PENDING'),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

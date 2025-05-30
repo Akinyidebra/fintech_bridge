@@ -1,25 +1,24 @@
-import 'package:fintech_bridge/widgets/dashboard_content.dart';
-import 'package:fintech_bridge/widgets/loan_application_content.dart';
-import 'package:fintech_bridge/widgets/profile_content_widget.dart';
+import 'package:fintech_bridge/widgets/provider_app_header.dart';
+import 'package:fintech_bridge/widgets/provider_dashboard_content.dart';
+import 'package:fintech_bridge/widgets/provider_loans_content.dart';
+import 'package:fintech_bridge/widgets/provider_profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
-import 'package:fintech_bridge/widgets/app_header.dart';
 import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
-import 'package:fintech_bridge/widgets/my_loans_content.dart';
 
-class MyLoansScreen extends StatefulWidget {
-  const MyLoansScreen({
+class ProviderLoansScreen extends StatefulWidget {
+  const ProviderLoansScreen({
     super.key,
   });
 
   @override
-  State<MyLoansScreen> createState() => _MyLoansScreenState();
+  State<ProviderLoansScreen> createState() => _ProviderLoansScreenState();
 }
 
-class _MyLoansScreenState extends State<MyLoansScreen> {
-  int _currentIndex = 2; // Start at Loans tab
+class _ProviderLoansScreenState extends State<ProviderLoansScreen> {
+  int _currentIndex = 1;
   late List<Widget> _screens;
 
   // Bottom navigation items for student dashboard
@@ -27,10 +26,6 @@ class _MyLoansScreenState extends State<MyLoansScreen> {
     const BottomNavItem(
       icon: Icons.home_rounded,
       label: 'Home',
-    ),
-    const BottomNavItem(
-      icon: Icons.add_box_rounded,
-      label: 'Apply',
     ),
     const BottomNavItem(
       icon: Icons.account_balance_rounded,
@@ -46,10 +41,9 @@ class _MyLoansScreenState extends State<MyLoansScreen> {
   void initState() {
     super.initState();
     _screens = [
-      const DashboardContent(),
-      const LoanApplicationContent(loanType: ''),
-      const MyLoansContent(),
-      const ProfileContent(),
+      const ProviderDashboardContent(),
+      const ProviderLoansContent(),
+      const ProviderProfileContent(),
     ];
   }
 
@@ -62,13 +56,13 @@ class _MyLoansScreenState extends State<MyLoansScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Custom App Header
-            AppHeader(
+            // Provider App Header
+            ProviderAppHeader(
               userProfileFuture: dbService.getCurrentUserProfile(),
               showLogo: true,
               showProfile: true,
               onProfileTap: () {
-                setState(() => _currentIndex = 3); // Navigate to profile tab
+                setState(() => _currentIndex = 2);
               },
             ),
             // Main content

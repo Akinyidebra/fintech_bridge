@@ -1,11 +1,11 @@
-import 'package:fintech_bridge/widgets/loan_header_card.dart';
+import 'package:fintech_bridge/widgets/provider_loan_header_card.dart';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
-class LoansTabBar extends StatelessWidget {
+class ProviderLoansTabBar extends StatelessWidget {
   final TabController controller;
 
-  const LoansTabBar({
+  const ProviderLoansTabBar({
     super.key,
     required this.controller,
   });
@@ -18,7 +18,7 @@ class LoansTabBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header section with better spacing
-          const LoanHeaderCard(),
+          const ProviderLoanHeaderCard(),
           const SizedBox(height: 20),
 
           // Tab bar container with improved design
@@ -53,28 +53,33 @@ class LoansTabBar extends StatelessWidget {
               labelStyle: const TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 13,
               ),
               unselectedLabelStyle: const TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w500,
-                fontSize: 14,
+                fontSize: 13,
               ),
               dividerColor: Colors.transparent,
               overlayColor: WidgetStateProperty.all(Colors.transparent),
               splashFactory: NoSplash.splashFactory,
+              isScrollable: false,
               tabs: const [
                 Tab(
                   height: 44,
-                  child: Text('All Loans'),
-                ),
-                Tab(
-                  height: 44,
-                  child: Text('Active'),
+                  child: Text('All'),
                 ),
                 Tab(
                   height: 44,
                   child: Text('Pending'),
+                ),
+                Tab(
+                  height: 44,
+                  child: Text('Approved'),
+                ),
+                Tab(
+                  height: 44,
+                  child: Text('Rejected'),
                 ),
               ],
             ),

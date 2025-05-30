@@ -1,5 +1,6 @@
 import 'package:fintech_bridge/widgets/provider_app_header.dart';
 import 'package:fintech_bridge/widgets/provider_dashboard_content.dart';
+import 'package:fintech_bridge/widgets/provider_loans_content.dart';
 import 'package:fintech_bridge/widgets/provider_profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -39,6 +40,7 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
     super.initState();
     _screens = [
       const ProviderDashboardContent(),
+      const ProviderLoansContent(),
       const ProviderProfileContent(),
     ];
   }

@@ -2,7 +2,7 @@
 
 import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 import 'package:fintech_bridge/widgets/dashboard_content.dart';
-import 'package:fintech_bridge/widgets/my_loans_content.dart';
+import 'package:fintech_bridge/widgets/loans_content.dart';
 import 'package:fintech_bridge/widgets/profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -56,7 +56,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
     _screens = [
       const DashboardContent(),
       const LoanApplicationContent(loanType: ''),
-      const MyLoansContent(),
+      const LoansContent(),
       const ProfileContent(),
     ];
   }

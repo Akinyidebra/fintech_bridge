@@ -7,18 +7,18 @@ import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/app_header.dart';
 import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
-import 'package:fintech_bridge/widgets/my_loans_content.dart';
+import 'package:fintech_bridge/widgets/loans_content.dart';
 
-class MyLoansScreen extends StatefulWidget {
-  const MyLoansScreen({
+class LoansScreen extends StatefulWidget {
+  const LoansScreen({
     super.key,
   });
 
   @override
-  State<MyLoansScreen> createState() => _MyLoansScreenState();
+  State<LoansScreen> createState() => _LoansScreenState();
 }
 
-class _MyLoansScreenState extends State<MyLoansScreen> {
+class _LoansScreenState extends State<LoansScreen> {
   int _currentIndex = 2; // Start at Loans tab
   late List<Widget> _screens;
 
@@ -48,7 +48,7 @@ class _MyLoansScreenState extends State<MyLoansScreen> {
     _screens = [
       const DashboardContent(),
       const LoanApplicationContent(loanType: ''),
-      const MyLoansContent(),
+      const LoansContent(),
       const ProfileContent(),
     ];
   }
