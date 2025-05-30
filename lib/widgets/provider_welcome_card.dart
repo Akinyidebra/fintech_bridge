@@ -116,28 +116,45 @@ class ProviderWelcomeCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  // Status badge with flexible sizing
+                  // Status badge with white container background for visibility
                   Flexible(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                      // padding: const EdgeInsets.all(
+                      //     14),
+                      padding: const EdgeInsets.fromLTRB(
+                          25, 10, 25, 10),
                       decoration: BoxDecoration(
-                        color:
-                            _getStatusColor(provider.verified).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: _getStatusColor(provider.verified)
-                              .withOpacity(0.5),
-                          width: 1,
-                        ),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(19),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        _getStatusText(provider.verified),
-                        style: TextStyle(
-                          color: _getStatusColor(provider.verified),
-                          fontSize: 10, // Reduced font size
-                          fontWeight: FontWeight.w600,
-                          fontFamily: 'Poppins',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(provider.verified)
+                              .withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _getStatusColor(provider.verified)
+                                .withOpacity(0.5),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _getStatusText(provider.verified),
+                          style: TextStyle(
+                            color: _getStatusColor(provider.verified),
+                            fontSize: 10, // Reduced font size
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Poppins',
+                          ),
                         ),
                       ),
                     ),

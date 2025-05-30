@@ -27,9 +27,8 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
   Map<String, dynamic>? _providerProfile;
   List<Loan>? _providerLoans;
   Map<String, int>? _loanStats;
-  List<Map<String, dynamic>>?
-      _providerTransactions; // Changed to hold enriched transaction data
-  Map<String, String> _studentNamesCache = {}; // Cache for student names
+  List<Map<String, dynamic>>? _providerTransactions;
+  final Map<String, String> _studentNamesCache = {};
 
   // Loading and error states
   bool _isLoading = true;
@@ -157,26 +156,6 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
             String studentId = loan.studentId;
 
             if (loan.studentId != 'Unknown' && loan.studentId.isNotEmpty) {
-              // if (_studentNamesCache.containsKey(loan.studentId)) {
-              //   studentName = _studentNamesCache[loan.studentId]!;
-              // } else {
-              //   final userResult = await dbService.getUserProfile(loan.studentId);
-
-              //   // CRITICAL FIX: Handle both student and provider cases
-              //   if (userResult['success'] == true) {
-              //     final userData = userResult['data'] as Map<String, dynamic>? ?? {};
-
-              //     if (userResult['userType'] == 'student') {
-              //       studentName = userData['fullName']?.toString() ?? 'Unknown Student';
-              //     }
-              //     // Add provider name handling if needed
-              //     else if (userResult['userType'] == 'provider') {
-              //       studentName = userData['businessName']?.toString() ?? 'Unknown Provider';
-              //     }
-              //   }
-
-              //   _studentNamesCache[loan.studentId] = studentName;
-              // }
               if (_studentNamesCache.containsKey(loan.studentId)) {
                 studentName = _studentNamesCache[loan.studentId]!;
               } else {
@@ -237,7 +216,7 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
   }
 
   Future<void> _refreshData() async {
-    _studentNamesCache.clear(); // Clear cache on refresh
+    _studentNamesCache.clear();
     await _loadAllData();
   }
 
@@ -269,14 +248,12 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Flexible(
-                child: Text(
-                  _errorMessage!,
-                  style: AppConstants.bodyMedium,
-                  textAlign: TextAlign.center,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                _errorMessage!,
+                style: AppConstants.bodyMedium,
+                textAlign: TextAlign.center,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 24),
               ElevatedButton(
@@ -293,40 +270,32 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: _refreshData,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width - 32,
-            minHeight: MediaQuery.of(context).size.height - 200,
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome Card
+          ProviderWelcomeCard(
+            providerProfileFuture: Future.value(_providerProfile),
+            loanStats: _loanStats ?? {},
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Card with fixed height constraints
-              ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxHeight: 200,
-                  minHeight: 150,
-                ),
-                child: ProviderWelcomeCard(
-                  providerProfileFuture: Future.value(_providerProfile),
-                  loanStats: _loanStats ?? {},
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildProviderOverview(),
-              const SizedBox(height: 20),
-              _buildPendingApplications(),
-              const SizedBox(height: 20),
-              _buildRecentActivity(),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
+
+          const SizedBox(height: 24),
+
+          _buildProviderOverview(),
+
+          const SizedBox(height: 24),
+
+          _buildPendingApplications(),
+
+          const SizedBox(height: 24),
+
+          _buildRecentActivity(),
+
+          const SizedBox(height: 24),
+        ],
       ),
     );
   }
@@ -341,77 +310,68 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 4.0, bottom: 12.0),
-          child: Text(
-            'Business Overview',
-            style: AppConstants.headlineSmall,
+        const Text(
+          'Business Overview',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppConstants.textColor,
           ),
         ),
-        // First row of stats with intrinsic height to prevent overflow
-        IntrinsicHeight(
-          child: Row(
-            children: [
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  child: ProviderStatsCard(
-                    title: 'Active Loans',
-                    value: _loanStats!['active'].toString(),
-                    icon: Icons.trending_up_rounded,
-                    color: AppConstants.successColor,
-                    subtitle: 'Currently disbursed',
-                  ),
-                ),
+
+        const SizedBox(height: 16),
+
+        // First row of stats
+        Row(
+          children: [
+            Expanded(
+              child: ProviderStatsCard(
+                title: 'Active Loans',
+                value: _loanStats!['active'].toString(),
+                icon: Icons.trending_up_rounded,
+                color: AppConstants.successColor,
+                subtitle: 'Currently disbursed',
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  child: ProviderStatsCard(
-                    title: 'Pending',
-                    value: _loanStats!['pending'].toString(),
-                    icon: Icons.pending_actions_rounded,
-                    color: AppConstants.warningColor,
-                    subtitle: 'Awaiting approval',
-                  ),
-                ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ProviderStatsCard(
+                title: 'Pending',
+                value: _loanStats!['pending'].toString(),
+                icon: Icons.pending_actions_rounded,
+                color: AppConstants.warningColor,
+                subtitle: 'Awaiting approval',
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+
         const SizedBox(height: 12),
-        // Second row of stats with intrinsic height
-        IntrinsicHeight(
-          child: Row(
-            children: [
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  child: ProviderStatsCard(
-                    title: 'Completed',
-                    value: _loanStats!['completed'].toString(),
-                    icon: Icons.check_circle_rounded,
-                    color: AppConstants.primaryColor,
-                    subtitle: 'Fully repaid',
-                  ),
-                ),
+
+        // Second row of stats
+        Row(
+          children: [
+            Expanded(
+              child: ProviderStatsCard(
+                title: 'Completed',
+                value: _loanStats!['completed'].toString(),
+                icon: Icons.check_circle_rounded,
+                color: AppConstants.primaryColor,
+                subtitle: 'Fully repaid',
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  child: ProviderStatsCard(
-                    title: 'Total Apps',
-                    value: _loanStats!['total'].toString(),
-                    icon: Icons.receipt_long_rounded,
-                    color: AppConstants.accentColor,
-                    subtitle: 'All applications',
-                  ),
-                ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ProviderStatsCard(
+                title: 'Total Apps',
+                value: _loanStats!['total'].toString(),
+                icon: Icons.receipt_long_rounded,
+                color: AppConstants.accentColor,
+                subtitle: 'All applications',
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
@@ -436,38 +396,31 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 4.0, bottom: 12.0),
-          child: Text(
-            'Pending Applications',
-            style: AppConstants.headlineSmall,
+        const Text(
+          'Pending Applications',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppConstants.textColor,
           ),
         ),
-        // List of pending applications with proper constraints
-        ...pendingLoans.take(3).map((loan) => ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width - 32,
-                maxHeight: 200,
-              ),
-              child: PendingApplicationCard(
-                loan: loan,
-                onViewPressed: () {
-                  Navigator.pushNamed(context, '/provider/loan-details',
-                      arguments: loan.id);
-                },
-                onApprovePressed: () {
-                  // TODO: Implement approve functionality
-                  print('Approve loan: ${loan.id}');
-                },
-                onRejectPressed: () {
-                  // TODO: Implement reject functionality
-                  print('Reject loan: ${loan.id}');
-                },
-              ),
+
+        const SizedBox(height: 16),
+
+        // List of pending applications
+        ...pendingLoans.take(3).map((loan) => PendingApplicationCard(
+              loan: loan,
+              onViewPressed: () {
+                Navigator.pushNamed(context, '/provider/loan-details',
+                    arguments: loan.id);
+              },
+              // Removed onApprovePressed and onRejectPressed callbacks
             )),
+
         if (pendingLoans.length > 3)
           Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+            padding: const EdgeInsets.only(top: 12.0),
             child: SizedBox(
               width: double.infinity,
               child: TextButton(
@@ -498,42 +451,39 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 4.0, bottom: 12.0),
-          child: Text(
-            'Recent Activity',
-            style: AppConstants.headlineSmall,
+        const Text(
+          'Recent Activity',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppConstants.textColor,
           ),
         ),
-        // List of recent activity items with proper constraints
+
+        const SizedBox(height: 16),
+
+        // List of recent activity items (non-clickable)
         ...(_providerTransactions!.take(4).map((enrichedTransaction) {
           final transaction = enrichedTransaction['transaction'] as Transaction;
           final studentName = enrichedTransaction['studentName'] as String;
 
-          return ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width - 32,
-              maxHeight: 100,
-            ),
-            child: ProviderActivityItem(
-              icon: _getTransactionIcon(transaction.type),
-              iconColor: _getTransactionColor(transaction.type),
-              title: _getProviderTransactionTitle(transaction, studentName),
-              date: DateFormat('MMM dd, yyyy hh:mm a')
-                  .format(transaction.createdAt),
-              amount: _currencyFormat.format(transaction.amount),
-              loanId: transaction.loanId,
-              studentName: studentName,
-              onTap: () {
-                // TODO: Navigate to transaction details
-                print('Tapped transaction: ${transaction.id}');
-              },
-            ),
+          return ProviderActivityItem(
+            icon: _getTransactionIcon(transaction.type),
+            iconColor: _getTransactionColor(transaction.type),
+            title: _getProviderTransactionTitle(transaction, studentName),
+            date: DateFormat('MMM dd, yyyy hh:mm a')
+                .format(transaction.createdAt),
+            amount: _currencyFormat.format(transaction.amount),
+            loanId: transaction.loanId,
+            studentName: studentName,
+            // Removed onTap to make it non-clickable
           );
         })),
+
         if (_providerTransactions!.length > 4)
           Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+            padding: const EdgeInsets.only(top: 12.0),
             child: SizedBox(
               width: double.infinity,
               child: TextButton(

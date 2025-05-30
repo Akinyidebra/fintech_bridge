@@ -59,7 +59,7 @@ class ProviderStatsCard extends StatelessWidget {
                   ),
                 ),
                 if (onTap != null)
-                  Icon(
+                  const Icon(
                     Icons.arrow_forward_ios_rounded,
                     color: AppConstants.textSecondaryColor,
                     size: 16,
