@@ -12,12 +12,16 @@ class LoanDetailsForm extends StatelessWidget {
 
   // Define loan purposes (moved from the main class)
   final List<String> _loanPurposes = [
-    'Education',
-    'Medical Expenses',
-    'Business',
-    'Home Improvement',
-    'Debt Consolidation',
-    'Travel',
+    'Tuition & Academic Fees',
+    'Study Materials & Equipment',
+    'Accommodation & Housing',
+    'Technology & Software',
+    'Research & Projects',
+    'Professional Development',
+    'Student Life & Activities',
+    'Transportation & Travel',
+    'Health & Wellness',
+    'Career Preparation',
     'Other'
   ];
 
@@ -44,9 +48,9 @@ class LoanDetailsForm extends StatelessWidget {
           hint: '5,000',
           keyboardType: TextInputType.number,
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         // Loan Purpose Dropdown
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,9 +109,9 @@ class LoanDetailsForm extends StatelessWidget {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         // Loan Term Field
         CustomTextField(
           controller: termController,
@@ -116,9 +120,9 @@ class LoanDetailsForm extends StatelessWidget {
           readOnly: true,
           onTap: onTermTap,
         ),
-        
+
         const SizedBox(height: 20),
-        
+
         // Additional Details
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
