@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:fintech_bridge/services/auth_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:flutter/material.dart';
@@ -60,6 +59,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _isLoading = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  List<String> _selectedLoanTypes = [];
+  String? _loanTypesError;
 
   final List<String> _validUniversityDomains = [
     'kabarak.ac.ke',
@@ -71,7 +72,49 @@ class _RegisterScreenState extends State<RegisterScreen>
     'usiu.ac.ke',
     'mku.ac.ke',
     'egerton.ac.ke',
-    'gmail.com',
+  ];
+
+  final List<String> _availableLoanTypes = [
+    'Student Loan',
+    'Tuition Fee Loan',
+    'Accommodation Loan',
+    'Textbook & Supplies Loan',
+    'Study Abroad Loan',
+    'Research Project Loan',
+    'Graduation Loan',
+    'Laptop & Equipment Loan',
+    'Transport & Commute Loan',
+    'Exam Fee Loan',
+    'Internship Support Loan',
+    'Thesis & Project Loan',
+    'Student Housing Loan',
+    'Campus Meal Plan Loan',
+    'University Event Loan',
+    'Field Trip Loan',
+    'Student Organization Loan',
+    'Postgraduate Study Loan',
+    'Professional Course Loan',
+    'Certification Exam Loan',
+    'Library & Study Materials',
+    'Laboratory Equipment Loan',
+    'Student Conference Loan',
+    'Academic Workshop Loan',
+    'Online Course Loan',
+    'Language Course Loan',
+    'Skills Development Loan',
+    'Career Training Loan',
+    'Interview Preparation Loan',
+    'Job Search Support Loan',
+    'Professional Networking Loan',
+    'Student Entrepreneurship Loan',
+    'Co-curricular Activities Loan',
+    'Sports Equipment Loan',
+    'Art & Creative Supplies Loan',
+    'Music Instrument Loan',
+    'Photography Equipment Loan',
+    'Technology Upgrade Loan',
+    'Software License Loan',
+    'Student Mental Health Support',
   ];
 
   @override
@@ -161,6 +204,9 @@ class _RegisterScreenState extends State<RegisterScreen>
       return;
     }
 
+    _validateLoanTypes();
+    if (_loanTypesError != null) return;
+
     if (_formKey.currentState!.validate()) {
       LoadingOverlay.show(context, message: 'Registering...');
       setState(() => _isLoading = true);
@@ -184,19 +230,13 @@ class _RegisterScreenState extends State<RegisterScreen>
             institutionName: _institutionController.text,
           );
         } else {
-          List<String> loanTypes = _loanTypesController.text
-              .split(',')
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .toList();
-
           result = await authService.registerProvider(
             businessName: _fullNameController.text,
             email: _emailController.text,
             password: _passwordController.text,
             phone: _phoneController.text,
             businessType: _businessTypeController.text,
-            loanTypes: loanTypes,
+            loanTypes: _selectedLoanTypes,
             interestRate: double.parse(_interestRateController.text),
             website: _websiteController.text.isNotEmpty
                 ? _websiteController.text
@@ -260,11 +300,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     return null;
   }
 
-  String? _validateLoanTypes(String? value) {
-    if (_selectedRole == 'provider' && (value == null || value.isEmpty)) {
-      return 'Enter loan types (comma separated)';
+  void _validateLoanTypes() {
+    if (_selectedRole == 'provider' && _selectedLoanTypes.isEmpty) {
+      setState(() => _loanTypesError = 'Select at least one loan type');
+    } else {
+      setState(() => _loanTypesError = null);
     }
-    return null;
   }
 
   String? _validateInterestRate(String? value) {
@@ -441,8 +482,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 children: [
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () => setState(
-                                          () => _selectedRole = 'student'),
+                                      onTap: () => setState(() {
+                                        _selectedRole = 'student';
+                                        _selectedLoanTypes = [];
+                                        _loanTypesError = null;
+                                      }),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 16),
@@ -501,8 +545,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: GestureDetector(
-                                      onTap: () => setState(
-                                          () => _selectedRole = 'provider'),
+                                      onTap: () => setState(() {
+                                        _selectedRole = 'provider';
+                                        _selectedLoanTypes = [];
+                                        _loanTypesError = null;
+                                      }),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 16),
@@ -728,14 +775,115 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   validator: _validateBusinessType,
                                 ),
                                 const SizedBox(height: 20),
-                                TextFormField(
-                                  controller: _loanTypesController,
-                                  focusNode: _loanTypesFocusNode,
-                                  decoration: AppConstants.inputDecoration(
-                                    labelText: 'Loan Types (comma separated)',
-                                    prefixIcon: Icons.list_alt,
-                                  ),
-                                  validator: _validateLoanTypes,
+                                // Loan Types Multi-Select Dropdown
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Loan Types',
+                                      style: AppConstants.bodyMedium.copyWith(
+                                        color: AppConstants.textSecondaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: _loanTypesError != null
+                                              ? AppConstants.errorColor
+                                              : AppConstants.borderColor,
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: ExpansionTile(
+                                        tilePadding: const EdgeInsets.symmetric(
+                                            horizontal: 16),
+                                        title: Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: _selectedLoanTypes.isEmpty
+                                              ? [
+                                                  Text(
+                                                    'Select loan types',
+                                                    style: AppConstants
+                                                        .bodyMedium
+                                                        .copyWith(
+                                                      color: AppConstants
+                                                          .textSecondaryColor
+                                                          .withOpacity(0.7),
+                                                    ),
+                                                  )
+                                                ]
+                                              : _selectedLoanTypes.map((type) {
+                                                  return Chip(
+                                                    label: Text(type),
+                                                    backgroundColor:
+                                                        AppConstants
+                                                            .primaryColor
+                                                            .withOpacity(0.1),
+                                                    deleteIcon: const Icon(
+                                                        Icons.close,
+                                                        size: 18),
+                                                    onDeleted: () =>
+                                                        setState(() {
+                                                      _selectedLoanTypes
+                                                          .remove(type);
+                                                    }),
+                                                  );
+                                                }).toList(),
+                                        ),
+                                        children: [
+                                          SizedBox(
+                                            height: 200,
+                                            child: ListView.builder(
+                                              itemCount:
+                                                  _availableLoanTypes.length,
+                                              itemBuilder: (context, index) {
+                                                final type =
+                                                    _availableLoanTypes[index];
+                                                return CheckboxListTile(
+                                                  title: Text(type),
+                                                  value: _selectedLoanTypes
+                                                      .contains(type),
+                                                  onChanged: (value) {
+                                                    setState(() {
+                                                      if (value == true) {
+                                                        if (!_selectedLoanTypes
+                                                            .contains(type)) {
+                                                          _selectedLoanTypes
+                                                              .add(type);
+                                                        }
+                                                      } else {
+                                                        _selectedLoanTypes
+                                                            .remove(type);
+                                                      }
+                                                      _loanTypesError = null;
+                                                    });
+                                                  },
+                                                  activeColor:
+                                                      AppConstants.primaryColor,
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (_loanTypesError != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                            left: 16, top: 8),
+                                        child: Text(
+                                          _loanTypesError!,
+                                          style:
+                                              AppConstants.bodySmall.copyWith(
+                                            color: AppConstants.errorColor,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 const SizedBox(height: 20),
                                 TextFormField(
