@@ -1,28 +1,36 @@
-import 'package:fintech_bridge/utils/constants.dart';
-import 'package:fintech_bridge/widgets/provider_app_header.dart';
-import 'package:fintech_bridge/widgets/provider_dashboard_content.dart';
-import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
-import 'package:fintech_bridge/services/database_service.dart';
-import 'package:fintech_bridge/widgets/provider_profile_content_widget.dart';
+import 'package:fintech_bridge/widgets/dashboard_content.dart';
+import 'package:fintech_bridge/widgets/loan_application_content.dart';
+import 'package:fintech_bridge/widgets/profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fintech_bridge/services/database_service.dart';
+import 'package:fintech_bridge/utils/constants.dart';
+import 'package:fintech_bridge/widgets/app_header.dart';
+import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
+import 'package:fintech_bridge/widgets/my_loans_content.dart';
 
-class ProviderDashboard extends StatefulWidget {
-  const ProviderDashboard({super.key});
+class MyLoansScreen extends StatefulWidget {
+  const MyLoansScreen({
+    super.key,
+  });
 
   @override
-  State<ProviderDashboard> createState() => _ProviderDashboardState();
+  State<MyLoansScreen> createState() => _MyLoansScreenState();
 }
 
-class _ProviderDashboardState extends State<ProviderDashboard> {
-  int _currentIndex = 0;
+class _MyLoansScreenState extends State<MyLoansScreen> {
+  int _currentIndex = 2; // Start at Loans tab
   late List<Widget> _screens;
 
-  // Bottom navigation items for provider dashboard
+  // Bottom navigation items for student dashboard
   final List<BottomNavItem> _navItems = [
     const BottomNavItem(
       icon: Icons.home_rounded,
       label: 'Home',
+    ),
+    const BottomNavItem(
+      icon: Icons.add_box_rounded,
+      label: 'Apply',
     ),
     const BottomNavItem(
       icon: Icons.account_balance_rounded,
@@ -38,8 +46,10 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   void initState() {
     super.initState();
     _screens = [
-      const ProviderDashboardContent(),
-      const ProviderProfileContent(),
+      const DashboardContent(),
+      const LoanApplicationContent(loanType: ''),
+      const MyLoansContent(),
+      const ProfileContent(),
     ];
   }
 
@@ -52,16 +62,16 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
       body: SafeArea(
         child: Column(
           children: [
-            // Provider App Header
-            ProviderAppHeader(
+            // Custom App Header
+            AppHeader(
               userProfileFuture: dbService.getCurrentUserProfile(),
               showLogo: true,
               showProfile: true,
               onProfileTap: () {
-                setState(() => _currentIndex = 2);
+                setState(() => _currentIndex = 3); // Navigate to profile tab
               },
             ),
-            // Screen content
+            // Main content
             Expanded(
               child: _screens[_currentIndex],
             ),

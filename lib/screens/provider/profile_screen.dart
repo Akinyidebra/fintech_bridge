@@ -1,24 +1,24 @@
-import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/provider_app_header.dart';
 import 'package:fintech_bridge/widgets/provider_dashboard_content.dart';
-import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
-import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/widgets/provider_profile_content_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fintech_bridge/services/database_service.dart';
+import 'package:fintech_bridge/utils/constants.dart';
+import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
 
-class ProviderDashboard extends StatefulWidget {
-  const ProviderDashboard({super.key});
+class ProviderProfileScreen extends StatefulWidget {
+  const ProviderProfileScreen({super.key});
 
   @override
-  State<ProviderDashboard> createState() => _ProviderDashboardState();
+  State<ProviderProfileScreen> createState() => _ProviderProfileScreenState();
 }
 
-class _ProviderDashboardState extends State<ProviderDashboard> {
-  int _currentIndex = 0;
+class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
+  int _currentIndex = 2;
   late List<Widget> _screens;
 
-  // Bottom navigation items for provider dashboard
+  // Bottom navigation items for student dashboard
   final List<BottomNavItem> _navItems = [
     const BottomNavItem(
       icon: Icons.home_rounded,
@@ -61,7 +61,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                 setState(() => _currentIndex = 2);
               },
             ),
-            // Screen content
+            // Content
             Expanded(
               child: _screens[_currentIndex],
             ),
