@@ -26,7 +26,7 @@ class _LoansContentState extends State<LoansContent>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadLoansData();
   }
 
@@ -136,8 +136,9 @@ class _LoansContentState extends State<LoansContent>
             controller: _tabController,
             children: [
               _buildLoansTab('ALL'),
-              _buildLoansTab('ACTIVE'),
               _buildLoansTab('PENDING'),
+              _buildLoansTab('APPROVED'),
+              _buildLoansTab('REJECTED'),
             ],
           ),
         ),
@@ -165,10 +166,12 @@ class _LoansContentState extends State<LoansContent>
   List<Loan> _filterLoans(List<Loan> loans, String filter) {
     if (filter == 'ALL') {
       return loans;
-    } else if (filter == 'ACTIVE') {
+    } else if (filter == 'APPROVED') {
       return loans.where((loan) => loan.status == 'APPROVED').toList();
     } else if (filter == 'PENDING') {
       return loans.where((loan) => loan.status == 'PENDING').toList();
+    } else if (filter == 'REJECTED') {
+      return loans.where((loan) => loan.status == 'REJECTED').toList();
     }
     return loans;
   }

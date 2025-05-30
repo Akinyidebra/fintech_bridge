@@ -343,7 +343,7 @@ class LoanItemCard extends StatelessWidget {
   String _getStatusText(String status) {
     switch (status.toUpperCase()) {
       case 'APPROVED':
-        return 'Active';
+        return 'Approved';
       case 'PENDING':
         return 'Pending';
       case 'REJECTED':

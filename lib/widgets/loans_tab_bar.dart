@@ -53,12 +53,12 @@ class LoansTabBar extends StatelessWidget {
               labelStyle: const TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 13,
               ),
               unselectedLabelStyle: const TextStyle(
                 fontFamily: 'Poppins',
                 fontWeight: FontWeight.w500,
-                fontSize: 14,
+                fontSize: 13,
               ),
               dividerColor: Colors.transparent,
               overlayColor: WidgetStateProperty.all(Colors.transparent),
@@ -66,15 +66,19 @@ class LoansTabBar extends StatelessWidget {
               tabs: const [
                 Tab(
                   height: 44,
-                  child: Text('All Loans'),
-                ),
-                Tab(
-                  height: 44,
-                  child: Text('Active'),
+                  child: Text('All'),
                 ),
                 Tab(
                   height: 44,
                   child: Text('Pending'),
+                ),
+                Tab(
+                  height: 44,
+                  child: Text('Approved'),
+                ),
+                Tab(
+                  height: 44,
+                  child: Text('Rejected'),
                 ),
               ],
             ),
