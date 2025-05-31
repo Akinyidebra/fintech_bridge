@@ -186,7 +186,7 @@ class AdminStudentActionButtons extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.warning_amber_rounded,
                     color: AppConstants.warningColor,
                     size: 20,

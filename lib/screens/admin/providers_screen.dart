@@ -2,20 +2,21 @@ import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/admin_app_header.dart';
 import 'package:fintech_bridge/widgets/admin_dashboard_content.dart';
+import 'package:fintech_bridge/widgets/admin_provider_content.dart';
 import 'package:fintech_bridge/widgets/admin_student_content.dart';
 import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class AdminDashboard extends StatefulWidget {
-  const AdminDashboard({super.key});
+class ProvidersScreen extends StatefulWidget {
+  const ProvidersScreen({super.key});
 
   @override
-  State<AdminDashboard> createState() => _AdminDashboardState();
+  State<ProvidersScreen> createState() => _ProvidersScreenState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> {
-  int _currentIndex = 1;
+class _ProvidersScreenState extends State<ProvidersScreen> {
+  int _currentIndex = 2;
   late List<Widget> _screens;
 
   // Bottom navigation items for admin dashboard
@@ -44,6 +45,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     _screens = [
       const AdminDashboardContent(),
       const AdminStudentContent(),
+      const AdminProviderContent(),
     ];
   }
 

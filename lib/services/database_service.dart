@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/models/provider_model.dart';
 import 'package:fintech_bridge/models/admin_model.dart';
+import 'package:fintech_bridge/models/transaction_model.dart' as tm;
+import 'package:fintech_bridge/models/notification_model.dart';
 
 class DatabaseService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -1141,37 +1143,157 @@ class DatabaseService extends ChangeNotifier {
     }
   }
 
-  // Update Student Verification
+  // Update the updateStudentVerification method
   Future<Map<String, dynamic>> updateStudentVerification(
     String studentId,
     bool verified, {
     String? reason,
   }) async {
     try {
-      final Map<String, dynamic> updateData = {
+      final batch = _firestore.batch();
+      final now = DateTime.now();
+
+      // 1. Update student document
+      final studentRef = _firestore.collection('students').doc(studentId);
+      final updateData = {
         'verified': verified,
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
       if (verified) {
-        // If verifying, add verification timestamp
         updateData['verifiedAt'] = FieldValue.serverTimestamp();
+        updateData['unverificationReason'] = FieldValue.delete();
       } else {
-        // If unverifying, remove verification timestamp and add reason
-        updateData['verifiedAt'] = null;
+        updateData['verifiedAt'] = FieldValue.delete();
         if (reason != null && reason.isNotEmpty) {
           updateData['unverificationReason'] = reason;
-          updateData['unverifiedAt'] = FieldValue.serverTimestamp();
         }
       }
 
-      await _firestore.collection('students').doc(studentId).update(updateData);
+      batch.update(studentRef, updateData);
+
+      // 2. Create verification transaction with userId field
+      final transaction = tm.Transaction(
+        id: '',
+        loanId: '', // Empty for non-loan transactions
+        userId: studentId, // ADD THIS: Store the user ID directly
+        userType: 'student', // ADD THIS: Store the user type
+        amount: 0,
+        type: verified ? 'VERIFICATION' : 'UNVERIFICATION',
+        createdAt: now,
+        status: 'COMPLETED',
+        description: verified
+            ? 'Student account verified'
+            : 'Student account unverified${reason != null ? ". Reason: $reason" : ""}',
+      );
+
+      final transactionRef = _firestore.collection('transactions').doc();
+      batch.set(transactionRef, transaction.toMap());
+
+      // 3. Create notification
+      final notification = AppNotification(
+        id: '',
+        userId: studentId,
+        title: verified ? 'Account Verified' : 'Account Unverified',
+        body: verified
+            ? 'Your account has been verified. You can now apply for loans.'
+            : 'Your account verification has been removed.${reason != null ? " Reason: $reason" : ""}',
+        type: 'ACCOUNT_VERIFICATION_UPDATE',
+        isRead: false,
+        createdAt: now,
+      );
+
+      final notificationRef = _firestore.collection('notifications').doc();
+      batch.set(notificationRef, notification.toJson());
+
+      // 4. Commit all operations
+      await batch.commit();
 
       return {
         'success': true,
         'message': verified
             ? 'Student verified successfully'
             : 'Student unverified successfully',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Failed to update verification status: ${e.toString()}',
+      };
+    }
+  }
+
+// Update the provider verification method
+  Future<Map<String, dynamic>> updateProviderVerification(
+    String providerId,
+    bool verified, {
+    String? reason,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+      final now = DateTime.now();
+
+      // 1. Update provider document
+      final providerRef = _firestore.collection('providers').doc(providerId);
+      final updateData = {
+        'verified': verified,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (verified) {
+        updateData['verifiedAt'] = FieldValue.serverTimestamp();
+        updateData['unverificationReason'] = FieldValue.delete();
+      } else {
+        updateData['verifiedAt'] = FieldValue.delete();
+        if (reason != null && reason.isNotEmpty) {
+          updateData['unverificationReason'] = reason;
+        }
+      }
+
+      batch.update(providerRef, updateData);
+
+      // 2. Create verification transaction with userId field
+      final transaction = tm.Transaction(
+        id: '',
+        loanId: '', // Empty for non-loan transactions
+        userId: providerId, // ADD THIS: Store the user ID directly
+        userType: 'provider', // ADD THIS: Store the user type
+        amount: 0,
+        type: verified ? 'VERIFICATION' : 'UNVERIFICATION',
+        createdAt: now,
+        status: 'COMPLETED',
+        description: verified
+            ? 'Provider account verified'
+            : 'Provider account unverified${reason != null ? ". Reason: $reason" : ""}',
+      );
+
+      final transactionRef = _firestore.collection('transactions').doc();
+      batch.set(transactionRef, transaction.toMap());
+
+      // 3. Create notification
+      final notification = AppNotification(
+        id: '',
+        userId: providerId,
+        title: verified ? 'Account Verified' : 'Account Unverified',
+        body: verified
+            ? 'Your provider account has been verified. Students can now see your loan offers.'
+            : 'Your provider verification has been removed.${reason != null ? " Reason: $reason" : ""}',
+        type: 'ACCOUNT_VERIFICATION_UPDATE',
+        isRead: false,
+        createdAt: now,
+      );
+
+      final notificationRef = _firestore.collection('notifications').doc();
+      batch.set(notificationRef, notification.toJson());
+
+      // 4. Commit all operations
+      await batch.commit();
+
+      return {
+        'success': true,
+        'message': verified
+            ? 'Provider verified successfully'
+            : 'Provider unverified successfully',
       };
     } catch (e) {
       return {

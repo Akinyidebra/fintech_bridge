@@ -150,7 +150,6 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
     try {
       final paymentService =
           Provider.of<PaymentService>(context, listen: false);
-
       final allTransactionsResult = await paymentService.getAllTransactions();
 
       if (allTransactionsResult['success'] &&
@@ -161,87 +160,96 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
 
         for (tm.Transaction transaction in allTransactions) {
           try {
-            // Find the related loan
-            final loan = _allLoans?.firstWhere(
-              (l) => l.id == transaction.loanId,
-              orElse: () => Loan(
-                id: '',
-                studentId: 'Unknown',
-                providerId: 'Unknown',
-                amount: 0,
-                interestRate: 0,
-                termMonths: 0,
-                status: '',
-                institutionName: '',
-                purpose: '',
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-                providerName: '',
-                loanType: '',
-                mpesaPhone: '',
-                monthlyPayment: 0,
-                remainingBalance: 0,
-                nextDueDate: DateTime.now(),
-                dueDate: DateTime.now(),
-                mpesaTransactionCode: '',
-                repaymentStartDate: DateTime.now(),
-              ),
-            );
-
-            // Get student and provider names
             String studentName = 'Unknown Student';
             String providerName = 'Unknown Provider';
+            String studentId = 'Unknown';
+            String providerId = 'Unknown';
+            double loanAmount = 0.0;
+            String loanPurpose = 'Unknown';
+            String institutionName = 'Unknown';
 
-            if (loan != null &&
-                loan.studentId.isNotEmpty &&
-                loan.studentId != 'Unknown') {
-              if (_userNamesCache.containsKey('student_${loan.studentId}')) {
-                studentName = _userNamesCache['student_${loan.studentId}']!;
-              } else {
-                final student = _allStudents?.firstWhere(
-                  (s) => s.id == loan.studentId,
-                  orElse: () => Student(
-                    id: '',
-                    fullName: 'Unknown Student',
-                    universityEmail: '',
-                    studentId: '',
-                    phone: '',
-                    course: '',
-                    yearOfStudy: 0,
-                    mpesaPhone: '',
-                    institutionName: '',
-                    hasActiveLoan: false,
-                    createdAt: DateTime.now(),
-                    updatedAt: DateTime.now(),
-                  ),
-                );
-                studentName = student?.fullName ?? 'Unknown Student';
-                _userNamesCache['student_${loan.studentId}'] = studentName;
+            // Handle verification transactions differently
+            if (transaction.type.toUpperCase() == 'VERIFICATION' ||
+                transaction.type.toUpperCase() == 'UNVERIFICATION') {
+              if (transaction.userId != null && transaction.userType != null) {
+                if (transaction.userType == 'student') {
+                  // Get student info directly using userId
+                  if (_userNamesCache
+                      .containsKey('student_${transaction.userId}')) {
+                    studentName =
+                        _userNamesCache['student_${transaction.userId}']!;
+                  } else {
+                    final student = _allStudents?.firstWhere(
+                      (s) => s.id == transaction.userId,
+                    );
+                    if (student != null) {
+                      studentName = student.fullName;
+                      studentId = student.id;
+                      institutionName = student.institutionName;
+                      _userNamesCache['student_${transaction.userId}'] =
+                          studentName;
+                    }
+                  }
+                } else if (transaction.userType == 'provider') {
+                  // Get provider info directly using userId
+                  if (_userNamesCache
+                      .containsKey('provider_${transaction.userId}')) {
+                    providerName =
+                        _userNamesCache['provider_${transaction.userId}']!;
+                  } else {
+                    final provider = _allProviders?.firstWhere(
+                      (p) => p.id == transaction.userId,
+                    );
+                    if (provider != null) {
+                      providerName = provider.businessName;
+                      providerId = provider.id;
+                      _userNamesCache['provider_${transaction.userId}'] =
+                          providerName;
+                    }
+                  }
+                }
               }
-            }
+            } else {
+              // Handle loan-related transactions (existing logic)
+              final loan = _allLoans?.firstWhere(
+                (l) => l.id == transaction.loanId,
+              );
 
-            if (loan != null &&
-                loan.providerId.isNotEmpty &&
-                loan.providerId != 'Unknown') {
-              if (_userNamesCache.containsKey('provider_${loan.providerId}')) {
-                providerName = _userNamesCache['provider_${loan.providerId}']!;
-              } else {
-                final provider = _allProviders?.firstWhere(
-                  (p) => p.id == loan.providerId,
-                  orElse: () => provider_model.Provider(
-                    id: '',
-                    businessName: 'Unknown Provider',
-                    businessEmail: '',
-                    phone: '',
-                    businessType: '',
-                    loanTypes: [],
-                    interestRate: 0,
-                    createdAt: DateTime.now(),
-                    updatedAt: DateTime.now(),
-                  ),
-                );
-                providerName = provider?.businessName ?? 'Unknown Provider';
-                _userNamesCache['provider_${loan.providerId}'] = providerName;
+              if (loan != null) {
+                loanAmount = loan.amount;
+                loanPurpose = loan.purpose;
+                institutionName = loan.institutionName;
+                studentId = loan.studentId;
+                providerId = loan.providerId;
+
+                // Get student name
+                if (_userNamesCache.containsKey('student_${loan.studentId}')) {
+                  studentName = _userNamesCache['student_${loan.studentId}']!;
+                } else {
+                  final student = _allStudents?.firstWhere(
+                    (s) => s.id == loan.studentId,
+                  );
+                  if (student != null) {
+                    studentName = student.fullName;
+                    _userNamesCache['student_${loan.studentId}'] = studentName;
+                  }
+                }
+
+                // Get provider name
+                if (_userNamesCache
+                    .containsKey('provider_${loan.providerId}')) {
+                  providerName =
+                      _userNamesCache['provider_${loan.providerId}']!;
+                } else {
+                  final provider = _allProviders?.firstWhere(
+                    (p) => p.id == loan.providerId,
+                  );
+                  if (provider != null) {
+                    providerName = provider.businessName;
+                    _userNamesCache['provider_${loan.providerId}'] =
+                        providerName;
+                  }
+                }
               }
             }
 
@@ -249,11 +257,11 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
               'transaction': transaction,
               'studentName': studentName,
               'providerName': providerName,
-              'studentId': loan?.studentId ?? 'Unknown',
-              'providerId': loan?.providerId ?? 'Unknown',
-              'loanAmount': loan?.amount ?? 0.0,
-              'loanPurpose': loan?.purpose ?? 'Unknown',
-              'institutionName': loan?.institutionName ?? 'Unknown',
+              'studentId': studentId,
+              'providerId': providerId,
+              'loanAmount': loanAmount,
+              'loanPurpose': loanPurpose,
+              'institutionName': institutionName,
             });
           } catch (e) {
             print('Error enriching transaction ${transaction.id}: $e');
@@ -743,6 +751,9 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
               Navigator.pushNamed(context, '/admin/transaction-details',
                   arguments: transaction.id);
             },
+            // NEW: Add verification status and user type
+            verificationStatus: _getVerificationStatus(transaction.type),
+            userType: _getUserType(transaction),
           );
         })),
       ],
@@ -762,6 +773,10 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
         return 'Interest charged: $studentName to $providerName';
       case 'PENALTY':
         return 'Penalty charged: $studentName to $providerName';
+      case 'VERIFICATION':
+        return 'Account verified for $studentName';
+      case 'UNVERIFICATION':
+        return 'Account unverified for $studentName';
       default:
         return '${transaction.description} - $studentName & $providerName';
     }
@@ -789,6 +804,10 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
       case 'PENALTY_COLLECTED':
       case 'PENALTY':
         return Icons.warning_amber_rounded;
+      case 'VERIFICATION':
+        return Icons.verified_user_rounded;
+      case 'UNVERIFICATION':
+        return Icons.no_accounts_rounded;
       default:
         return Icons.swap_horiz_rounded;
     }
@@ -812,8 +831,34 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
       case 'PENALTY_COLLECTED':
       case 'PENALTY':
         return AppConstants.errorColor;
+      case 'VERIFICATION':
+        return AppConstants.successColor;
+      case 'UNVERIFICATION':
+        return AppConstants.warningColor;
       default:
         return AppConstants.secondaryColor;
     }
+  }
+
+  // Add this new method to extract verification status
+  String? _getVerificationStatus(String type) {
+    switch (type.toUpperCase()) {
+      case 'VERIFICATION':
+        return 'verified';
+      case 'UNVERIFICATION':
+        return 'unverified';
+      default:
+        return null;
+    }
+  }
+
+  // Add this new method to extract user type
+  String? _getUserType(tm.Transaction transaction) {
+    if (transaction.description.contains('Student')) {
+      return 'student';
+    } else if (transaction.description.contains('Provider')) {
+      return 'provider';
+    }
+    return null;
   }
 }

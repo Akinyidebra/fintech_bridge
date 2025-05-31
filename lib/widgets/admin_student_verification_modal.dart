@@ -17,10 +17,12 @@ class AdminStudentVerificationModal extends StatefulWidget {
   });
 
   @override
-  State<AdminStudentVerificationModal> createState() => _AdminStudentVerificationModalState();
+  State<AdminStudentVerificationModal> createState() =>
+      _AdminStudentVerificationModalState();
 }
 
-class _AdminStudentVerificationModalState extends State<AdminStudentVerificationModal> {
+class _AdminStudentVerificationModalState
+    extends State<AdminStudentVerificationModal> {
   bool _isLoading = false;
   String? _reason;
   final TextEditingController _reasonController = TextEditingController();
@@ -51,14 +53,16 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: widget.student.verified 
+                    color: widget.student.verified
                         ? AppConstants.warningColor.withOpacity(0.1)
                         : AppConstants.successColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    widget.student.verified ? Icons.remove_circle : Icons.verified,
-                    color: widget.student.verified 
+                    widget.student.verified
+                        ? Icons.remove_circle
+                        : Icons.verified,
+                    color: widget.student.verified
                         ? AppConstants.warningColor
                         : AppConstants.successColor,
                     size: 24,
@@ -70,7 +74,9 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.student.verified ? 'Unverify Student' : 'Verify Student',
+                        widget.student.verified
+                            ? 'Unverify Student'
+                            : 'Verify Student',
                         style: AppConstants.headlineSmall,
                       ),
                       const SizedBox(height: 4),
@@ -93,9 +99,9 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Current Status
             Container(
               padding: const EdgeInsets.all(16),
@@ -117,9 +123,10 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: widget.student.verified 
+                          color: widget.student.verified
                               ? AppConstants.successColor.withOpacity(0.1)
                               : AppConstants.warningColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -128,13 +135,14 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                           widget.student.verified ? 'VERIFIED' : 'UNVERIFIED',
                           style: AppConstants.bodySmall.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: widget.student.verified 
+                            color: widget.student.verified
                                 ? AppConstants.successColor
                                 : AppConstants.warningColor,
                           ),
                         ),
                       ),
-                      if (widget.student.verified && widget.student.verifiedAt != null) ...[
+                      if (widget.student.verified &&
+                          widget.student.verifiedAt != null) ...[
                         const SizedBox(width: 12),
                         Text(
                           'Verified on ${_formatDate(widget.student.verifiedAt!)}',
@@ -148,9 +156,9 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Verification Checklist (only show when verifying)
             if (!widget.student.verified) ...[
               const Text(
@@ -158,7 +166,6 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                 style: AppConstants.bodyLarge,
               ),
               const SizedBox(height: 12),
-              
               _buildChecklistItem(
                 'Student ID documents uploaded',
                 widget.student.hasIdentificationImages,
@@ -175,10 +182,9 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                 'Guarantor information provided',
                 widget.student.hasCompleteGuarantorInfo,
               ),
-              
               const SizedBox(height: 24),
             ],
-            
+
             // Reason field (for unverification)
             if (widget.student.verified) ...[
               const Text(
@@ -200,7 +206,8 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppConstants.primaryColor),
+                    borderSide:
+                        const BorderSide(color: AppConstants.primaryColor),
                   ),
                   contentPadding: const EdgeInsets.all(16),
                 ),
@@ -212,7 +219,7 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
               ),
               const SizedBox(height: 24),
             ],
-            
+
             // Action Buttons
             Row(
               children: [
@@ -241,7 +248,7 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleVerification,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: widget.student.verified 
+                      backgroundColor: widget.student.verified
                           ? AppConstants.warningColor
                           : AppConstants.successColor,
                       foregroundColor: Colors.white,
@@ -256,7 +263,8 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
@@ -270,7 +278,7 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                 ),
               ],
             ),
-            
+
             // Loading overlay
             if (_isLoading) ...[
               const SizedBox(height: 16),
@@ -287,12 +295,13 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
                       width: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppConstants.primaryColor),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            AppConstants.primaryColor),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      widget.student.verified 
+                      widget.student.verified
                           ? 'Unverifying student...'
                           : 'Verifying student...',
                       style: AppConstants.bodyMedium.copyWith(
@@ -317,14 +326,15 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
           Icon(
             isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
             size: 20,
-            color: isCompleted ? AppConstants.successColor : Colors.grey.shade400,
+            color:
+                isCompleted ? AppConstants.successColor : Colors.grey.shade400,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               title,
               style: AppConstants.bodyMedium.copyWith(
-                color: isCompleted 
+                color: isCompleted
                     ? AppConstants.primaryColor
                     : AppConstants.textSecondaryColor,
               ),
@@ -337,10 +347,10 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
 
   bool _hasCompleteProfile() {
     return widget.student.fullName.isNotEmpty &&
-           widget.student.phone.isNotEmpty &&
-           widget.student.course.isNotEmpty &&
-           widget.student.studentId.isNotEmpty &&
-           widget.student.institutionName.isNotEmpty;
+        widget.student.phone.isNotEmpty &&
+        widget.student.course.isNotEmpty &&
+        widget.student.studentId.isNotEmpty &&
+        widget.student.institutionName.isNotEmpty;
   }
 
   String _formatDate(DateTime date) {
@@ -360,9 +370,9 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
 
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
-      
+
       Map<String, dynamic> result;
-      
+
       if (widget.student.verified) {
         // Unverify student
         result = await dbService.updateStudentVerification(
@@ -383,8 +393,7 @@ class _AdminStudentVerificationModalState extends State<AdminStudentVerification
         widget.onVerificationSuccess();
       } else {
         widget.onVerificationError(
-          result['message'] ?? 'Failed to update verification status'
-        );
+            result['message'] ?? 'Failed to update verification status');
       }
     } catch (e) {
       widget.onVerificationError('Error: ${e.toString()}');

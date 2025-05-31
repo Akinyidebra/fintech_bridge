@@ -2,6 +2,7 @@ import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 import 'package:fintech_bridge/widgets/admin_app_header.dart';
 import 'package:fintech_bridge/widgets/admin_dashboard_content.dart';
+import 'package:fintech_bridge/widgets/admin_provider_content.dart';
 import 'package:fintech_bridge/widgets/admin_student_content.dart';
 import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +45,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
     _screens = [
       const AdminDashboardContent(),
       const AdminStudentContent(),
+      const AdminProviderContent(),
     ];
   }
 
