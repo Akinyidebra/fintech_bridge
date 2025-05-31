@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
 class AdminProviderDetailsScreen extends StatelessWidget {
-  final String studentId;
+  final String providerId;
 
-  const AdminProviderDetailsScreen({super.key, required this.studentId});
+  const AdminProviderDetailsScreen({super.key, required this.providerId});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +20,7 @@ class AdminProviderDetailsScreen extends StatelessWidget {
           _showHelpDialog(context);
         },
       ),
-      body: AdminStudentDetailsContent(studentId: studentId),
+      body: AdminStudentDetailsContent(providerId: providerId),
     );
   }
 

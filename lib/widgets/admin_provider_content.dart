@@ -1,15 +1,17 @@
-import 'package:fintech_bridge/screens/admin/admin_student_details_screen.dart';
+import 'package:fintech_bridge/screens/admin/admin_provider_details_screen.dart';
 import 'package:fintech_bridge/screens/loading_screen.dart';
 import 'package:fintech_bridge/services/database_service.dart';
-import 'package:fintech_bridge/widgets/admin_student_item_card.dart';
-import 'package:fintech_bridge/widgets/admin_students_tab_bar.dart';
+import 'package:fintech_bridge/widgets/admin_provider_item_card.dart';
+import 'package:fintech_bridge/widgets/admin_provider_tab_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/utils/constants.dart';
-import 'package:fintech_bridge/models/student_model.dart';
+import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 
 class AdminProviderContent extends StatefulWidget {
-  const AdminProviderContent({super.key});
+  final provider_model.Provider? provider;
+
+  const AdminProviderContent({super.key, this.provider});
 
   @override
   State<AdminProviderContent> createState() => _AdminProviderContentState();
@@ -20,13 +22,13 @@ class _AdminProviderContentState extends State<AdminProviderContent>
   late TabController _tabController;
   bool _isLoading = true;
   String? _errorMessage;
-  List<Student> _allStudents = [];
+  List<provider_model.Provider>? _allProviders;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadStudentsData();
+    _loadProvidersData();
   }
 
   @override
@@ -35,7 +37,7 @@ class _AdminProviderContentState extends State<AdminProviderContent>
     super.dispose();
   }
 
-  Future<void> _loadStudentsData() async {
+  Future<void> _loadProvidersData() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -43,29 +45,30 @@ class _AdminProviderContentState extends State<AdminProviderContent>
 
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
-      final result = await dbService.getAllStudents();
+      // You'll need to implement getAllProviders() in your DatabaseService
+      final result = await dbService.getAllProviders();
 
       if (result['success']) {
         setState(() {
-          _allStudents = result['data'] as List<Student>;
+          _allProviders = result['data'] as List<provider_model.Provider>?;
           _isLoading = false;
         });
       } else {
         setState(() {
-          _errorMessage = 'Failed to load students';
+          _errorMessage = 'Failed to load providers';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error loading students: ${e.toString()}';
+        _errorMessage = 'Error loading providers: ${e.toString()}';
         _isLoading = false;
       });
     }
   }
 
   Future<void> _refreshData() async {
-    await _loadStudentsData();
+    await _loadProvidersData();
   }
 
   @override
@@ -73,7 +76,7 @@ class _AdminProviderContentState extends State<AdminProviderContent>
     // Show loading screen while data is being fetched
     if (_isLoading) {
       return const LoadingScreen(
-        message: 'Loading students...',
+        message: 'Loading providers...',
         isFullScreen: false,
       );
     }
@@ -125,7 +128,7 @@ class _AdminProviderContentState extends State<AdminProviderContent>
     return Column(
       children: [
         // Tab Bar with improved spacing
-        AdminStudentsTabBar(controller: _tabController),
+        AdminProvidersTabBar(controller: _tabController),
 
         const SizedBox(height: 16), // Space between tab bar and content
 
@@ -134,9 +137,9 @@ class _AdminProviderContentState extends State<AdminProviderContent>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildStudentsTab('ALL'),
-              _buildStudentsTab('PENDING'),
-              _buildStudentsTab('VERIFIED'),
+              _buildProvidersTab('ALL'),
+              _buildProvidersTab('PENDING'),
+              _buildProvidersTab('VERIFIED'),
             ],
           ),
         ),
@@ -144,10 +147,10 @@ class _AdminProviderContentState extends State<AdminProviderContent>
     );
   }
 
-  Widget _buildStudentsTab(String filter) {
-    final filteredStudents = _filterStudents(_allStudents, filter);
+  Widget _buildProvidersTab(String filter) {
+    final filteredProviders = _filterProviders(_allProviders ?? [], filter);
 
-    if (filteredStudents.isEmpty) {
+    if (filteredProviders.isEmpty) {
       return _buildEmptyState(filter);
     }
 
@@ -155,24 +158,25 @@ class _AdminProviderContentState extends State<AdminProviderContent>
       onRefresh: _refreshData,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20), // Adjusted padding
-        itemCount: filteredStudents.length,
-        itemBuilder: (context, index) => AdminStudentItemCard(
-          student: filteredStudents[index],
-          onTap: () => _navigateToStudentDetails(filteredStudents[index]),
+        itemCount: filteredProviders.length,
+        itemBuilder: (context, index) => AdminProviderItemCard(
+          provider: filteredProviders[index],
+          onTap: () => _navigateToProviderDetails(filteredProviders[index]),
         ),
       ),
     );
   }
 
-  List<Student> _filterStudents(List<Student> students, String filter) {
+  List<provider_model.Provider> _filterProviders(
+      List<provider_model.Provider> providers, String filter) {
     if (filter == 'ALL') {
-      return students;
+      return providers;
     } else if (filter == 'VERIFIED') {
-      return students.where((student) => student.verified == true).toList();
+      return providers.where((provider) => provider.verified == true).toList();
     } else if (filter == 'PENDING') {
-      return students.where((student) => student.verified == false).toList();
+      return providers.where((provider) => provider.verified == false).toList();
     }
-    return students;
+    return providers;
   }
 
   Widget _buildEmptyState(String filter) {
@@ -204,7 +208,7 @@ class _AdminProviderContentState extends State<AdminProviderContent>
                     ],
                   ),
                   child: Icon(
-                    Icons.school_outlined,
+                    Icons.business_outlined,
                     size: 56,
                     color: AppConstants.textSecondaryColor.withOpacity(0.6),
                   ),
@@ -212,8 +216,8 @@ class _AdminProviderContentState extends State<AdminProviderContent>
                 const SizedBox(height: 32),
                 Text(
                   filter == 'ALL'
-                      ? 'No students yet'
-                      : 'No ${filter.toLowerCase()} students',
+                      ? 'No providers yet'
+                      : 'No ${filter.toLowerCase()} providers',
                   style: AppConstants.headlineSmall.copyWith(
                     color: AppConstants.textColor,
                     fontSize: 22,
@@ -222,8 +226,8 @@ class _AdminProviderContentState extends State<AdminProviderContent>
                 const SizedBox(height: 12),
                 Text(
                   filter == 'ALL'
-                      ? 'Students will appear here once they register'
-                      : 'You don\'t have any ${filter.toLowerCase()} students at the moment',
+                      ? 'Providers will appear here once they register'
+                      : 'You don\'t have any ${filter.toLowerCase()} providers at the moment',
                   style: AppConstants.bodyMedium.copyWith(
                     color: AppConstants.textSecondaryColor,
                     fontSize: 15,
@@ -263,12 +267,12 @@ class _AdminProviderContentState extends State<AdminProviderContent>
     );
   }
 
-  void _navigateToStudentDetails(Student student) {
+  void _navigateToProviderDetails(provider_model.Provider provider) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AdminStudentDetailsScreen(
-          studentId: student.id,
+        builder: (context) => AdminProviderDetailsScreen(
+          providerId: provider.id,
         ),
       ),
     ).then((_) => _refreshData());
