@@ -88,7 +88,7 @@ class _LoanApplicationContentState extends State<LoanApplicationContent>
 
   Future<void> _loadProvidersWithCentralizedState() async {
     try {
-      final loadedProviders = await _loanService.getApprovedProviders();
+      final loadedProviders = await _loanService.getVerifiedProviders();
 
       if (!mounted) return;
 

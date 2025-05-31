@@ -43,11 +43,11 @@ class LoanService extends ChangeNotifier {
     }
   }
 
-  Future<List<model.Provider>> getApprovedProviders() async {
+  Future<List<model.Provider>> getVerifiedProviders() async {
     try {
       final snapshot = await _firestore
           .collection('providers')
-          .where('approved', isEqualTo: true)
+          .where('verified', isEqualTo: true)
           .get();
 
       return snapshot.docs

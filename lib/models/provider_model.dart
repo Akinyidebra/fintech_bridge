@@ -14,7 +14,6 @@ class Provider {
   final bool verified;
   final DateTime? verifiedAt;
   final Map<String, dynamic>? identificationImages;
-  final bool approved;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -32,7 +31,6 @@ class Provider {
     this.verified = false,
     this.verifiedAt,
     this.identificationImages,
-    this.approved = false,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -57,7 +55,6 @@ class Provider {
       identificationImages: data['identificationImages'] != null
           ? Map<String, dynamic>.from(data['identificationImages'])
           : null,
-      approved: data['approved'] ?? false,
       createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
       updatedAt: data['updatedAt']?.toDate() ?? DateTime.now(),
     );
@@ -77,7 +74,6 @@ class Provider {
       'verified': verified,
       'verifiedAt': verifiedAt,
       'identificationImages': identificationImages,
-      'approved': approved,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };

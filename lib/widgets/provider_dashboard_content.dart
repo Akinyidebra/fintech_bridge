@@ -1,6 +1,7 @@
 import 'package:fintech_bridge/models/loan_model.dart';
 import 'package:fintech_bridge/models/transaction_model.dart';
 import 'package:fintech_bridge/screens/loading_screen.dart';
+import 'package:fintech_bridge/screens/provider/loan_details_screen.dart';
 import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/services/loan_service.dart';
 import 'package:fintech_bridge/services/payment_service.dart';
@@ -412,10 +413,15 @@ class _ProviderDashboardContentState extends State<ProviderDashboardContent> {
         ...pendingLoans.take(3).map((loan) => PendingApplicationCard(
               loan: loan,
               onViewPressed: () {
-                Navigator.pushNamed(context, '/provider/loan-details',
-                    arguments: loan.id);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProviderLoanDetailsScreen(
+                      loanId: loan.id,
+                    ),
+                  ),
+                );
               },
-              // Removed onApprovePressed and onRejectPressed callbacks
             )),
       ],
     );

@@ -215,7 +215,6 @@ class AuthService extends ChangeNotifier {
         verified: false,
         verifiedAt: null,
         identificationImages: identificationImages,
-        approved: false,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -515,7 +514,6 @@ class AuthService extends ChangeNotifier {
         verifiedAt: provider.verifiedAt,
         identificationImages:
             identificationImages ?? provider.identificationImages,
-        approved: provider.approved,
         createdAt: provider.createdAt,
         updatedAt: DateTime.now(),
       );
