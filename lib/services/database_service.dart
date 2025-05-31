@@ -1024,7 +1024,6 @@ class DatabaseService extends ChangeNotifier {
 
           // If still no providers, get ANY providers as last resort
           if (featuredProviders.isEmpty) {
-
             final anyProviderDocs =
                 await _firestore.collection('providers').limit(3).get();
 
@@ -1139,6 +1138,46 @@ class DatabaseService extends ChangeNotifier {
         return data['businessName']?.toString() ?? 'Unknown Provider';
       default:
         return 'Unknown User';
+    }
+  }
+
+  // Update Student Verification
+  Future<Map<String, dynamic>> updateStudentVerification(
+    String studentId,
+    bool verified, {
+    String? reason,
+  }) async {
+    try {
+      final Map<String, dynamic> updateData = {
+        'verified': verified,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (verified) {
+        // If verifying, add verification timestamp
+        updateData['verifiedAt'] = FieldValue.serverTimestamp();
+      } else {
+        // If unverifying, remove verification timestamp and add reason
+        updateData['verifiedAt'] = null;
+        if (reason != null && reason.isNotEmpty) {
+          updateData['unverificationReason'] = reason;
+          updateData['unverifiedAt'] = FieldValue.serverTimestamp();
+        }
+      }
+
+      await _firestore.collection('students').doc(studentId).update(updateData);
+
+      return {
+        'success': true,
+        'message': verified
+            ? 'Student verified successfully'
+            : 'Student unverified successfully',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Failed to update verification status: ${e.toString()}',
+      };
     }
   }
 }

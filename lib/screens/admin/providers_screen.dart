@@ -7,14 +7,14 @@ import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class StudentsScreen extends StatefulWidget {
-  const StudentsScreen({super.key});
+class AdminDashboard extends StatefulWidget {
+  const AdminDashboard({super.key});
 
   @override
-  State<StudentsScreen> createState() => _StudentsScreenState();
+  State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _StudentsScreenState extends State<StudentsScreen> {
+class _AdminDashboardState extends State<AdminDashboard> {
   int _currentIndex = 1;
   late List<Widget> _screens;
 

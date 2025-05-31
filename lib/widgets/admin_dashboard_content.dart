@@ -3,6 +3,7 @@ import 'package:fintech_bridge/models/loan_model.dart';
 import 'package:fintech_bridge/models/transaction_model.dart' as tm;
 import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
+import 'package:fintech_bridge/screens/admin/admin_student_details_screen.dart';
 import 'package:fintech_bridge/screens/loading_screen.dart';
 import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/services/payment_service.dart';
@@ -154,8 +155,8 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
 
       if (allTransactionsResult['success'] &&
           allTransactionsResult['data'] is List) {
-        final allTransactions = (allTransactionsResult['data'] as List)
-            .cast<tm.Transaction>();
+        final allTransactions =
+            (allTransactionsResult['data'] as List).cast<tm.Transaction>();
         List<Map<String, dynamic>> enrichedTransactions = [];
 
         for (tm.Transaction transaction in allTransactions) {
@@ -293,26 +294,32 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
     int verifiedStudents = students.where((s) => s.verified).length;
     int unverifiedStudents = totalStudents - verifiedStudents;
     int studentsWithActiveLoans = students.where((s) => s.hasActiveLoan).length;
-    int studentsWithCompleteDocs = students.where((s) => s.hasIdentificationImages).length;
+    int studentsWithCompleteDocs =
+        students.where((s) => s.hasIdentificationImages).length;
 
     // Provider statistics
     int totalProviders = providers.length;
     int verifiedProviders = providers.where((p) => p.verified).length;
     int unverifiedProviders = totalProviders - verifiedProviders;
-    int activeProviders = providers.where((p) => p.verified && p.loanTypes.isNotEmpty).length;
+    int activeProviders =
+        providers.where((p) => p.verified && p.loanTypes.isNotEmpty).length;
 
     // Loan statistics
     int totalLoans = loans.length;
     int activeLoans = loans.where((l) => l.status == 'ACTIVE').length;
     int pendingLoans = loans.where((l) => l.status == 'PENDING').length;
     double totalLoanAmount = loans.fold(0.0, (sum, loan) => sum + loan.amount);
-    double averageLoanAmount = totalLoans > 0 ? totalLoanAmount / totalLoans : 0.0;
+    double averageLoanAmount =
+        totalLoans > 0 ? totalLoanAmount / totalLoans : 0.0;
 
     // Recent activity (last 7 days)
     final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
-    int recentStudentSignups = students.where((s) => s.createdAt.isAfter(sevenDaysAgo)).length;
-    int recentProviderSignups = providers.where((p) => p.createdAt.isAfter(sevenDaysAgo)).length;
-    int recentLoanApplications = loans.where((l) => l.createdAt.isAfter(sevenDaysAgo)).length;
+    int recentStudentSignups =
+        students.where((s) => s.createdAt.isAfter(sevenDaysAgo)).length;
+    int recentProviderSignups =
+        providers.where((p) => p.createdAt.isAfter(sevenDaysAgo)).length;
+    int recentLoanApplications =
+        loans.where((l) => l.createdAt.isAfter(sevenDaysAgo)).length;
 
     return {
       'totalStudents': totalStudents,
@@ -442,9 +449,10 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                 value: _systemStats!['totalStudents'].toString(),
                 icon: Icons.school_rounded,
                 color: AppConstants.primaryColor,
-                subtitle: '${_systemStats!['verifiedStudents']} verified, ${_systemStats!['unverifiedStudents']} pending',
-                trend: _systemStats!['recentStudentSignups'] > 0 
-                    ? '+${_systemStats!['recentStudentSignups']} this week' 
+                subtitle:
+                    '${_systemStats!['verifiedStudents']} verified, ${_systemStats!['unverifiedStudents']} pending',
+                trend: _systemStats!['recentStudentSignups'] > 0
+                    ? '+${_systemStats!['recentStudentSignups']} this week'
                     : null,
               ),
             ),
@@ -455,9 +463,10 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                 value: _systemStats!['totalProviders'].toString(),
                 icon: Icons.business_rounded,
                 color: AppConstants.accentColor,
-                subtitle: '${_systemStats!['verifiedProviders']} verified, ${_systemStats!['unverifiedProviders']} pending',
-                trend: _systemStats!['recentProviderSignups'] > 0 
-                    ? '+${_systemStats!['recentProviderSignups']} this week' 
+                subtitle:
+                    '${_systemStats!['verifiedProviders']} verified, ${_systemStats!['unverifiedProviders']} pending',
+                trend: _systemStats!['recentProviderSignups'] > 0
+                    ? '+${_systemStats!['recentProviderSignups']} this week'
                     : null,
               ),
             ),
@@ -475,9 +484,10 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                 value: _systemStats!['totalLoans'].toString(),
                 icon: Icons.account_balance_wallet_rounded,
                 color: AppConstants.successColor,
-                subtitle: '${_systemStats!['activeLoans']} active, ${_systemStats!['pendingLoans']} pending',
-                trend: _systemStats!['recentLoanApplications'] > 0 
-                    ? '+${_systemStats!['recentLoanApplications']} this week' 
+                subtitle:
+                    '${_systemStats!['activeLoans']} active, ${_systemStats!['pendingLoans']} pending',
+                trend: _systemStats!['recentLoanApplications'] > 0
+                    ? '+${_systemStats!['recentLoanApplications']} this week'
                     : null,
               ),
             ),
@@ -485,10 +495,13 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
             Expanded(
               child: AdminStatsCard(
                 title: 'Avg. Loan Amount',
-                value: _currencyFormat.format(_systemStats!['averageLoanAmount']).replaceAll('.00', ''),
+                value: _currencyFormat
+                    .format(_systemStats!['averageLoanAmount'])
+                    .replaceAll('.00', ''),
                 icon: Icons.trending_up_rounded,
                 color: AppConstants.warningColor,
-                subtitle: 'Total: ${_currencyFormat.format(_systemStats!['totalLoanAmount']).replaceAll('.00', '')}',
+                subtitle:
+                    'Total: ${_currencyFormat.format(_systemStats!['totalLoanAmount']).replaceAll('.00', '')}',
               ),
             ),
           ],
@@ -502,10 +515,13 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
             Expanded(
               child: AdminStatsCard(
                 title: 'Unverified Users',
-                value: (_systemStats!['unverifiedStudents'] + _systemStats!['unverifiedProviders']).toString(),
+                value: (_systemStats!['unverifiedStudents'] +
+                        _systemStats!['unverifiedProviders'])
+                    .toString(),
                 icon: Icons.pending_actions_rounded,
                 color: AppConstants.errorColor,
-                subtitle: '${_systemStats!['unverifiedStudents']} students, ${_systemStats!['unverifiedProviders']} providers',
+                subtitle:
+                    '${_systemStats!['unverifiedStudents']} students, ${_systemStats!['unverifiedProviders']} providers',
                 trend: 'Requires attention',
               ),
             ),
@@ -533,12 +549,14 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
     }
 
     // Get unverified users
-    final unverifiedStudents = _allStudents?.where((student) => !student.verified).toList() ?? [];
-    final unverifiedProviders = _allProviders?.where((provider) => !provider.verified).toList() ?? [];
+    final unverifiedStudents =
+        _allStudents?.where((student) => !student.verified).toList() ?? [];
+    final unverifiedProviders =
+        _allProviders?.where((provider) => !provider.verified).toList() ?? [];
 
     // Combine and sort by creation date (most recent first)
     List<Map<String, dynamic>> pendingVerifications = [];
-    
+
     for (var student in unverifiedStudents) {
       pendingVerifications.add({
         'type': 'student',
@@ -546,16 +564,17 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
         'createdAt': student.createdAt,
       });
     }
-    
+
     for (var provider in unverifiedProviders) {
       pendingVerifications.add({
-        'type': 'provider', 
+        'type': 'provider',
         'data': provider,
         'createdAt': provider.createdAt,
       });
     }
 
-    pendingVerifications.sort((a, b) => b['createdAt'].compareTo(a['createdAt']));
+    pendingVerifications
+        .sort((a, b) => b['createdAt'].compareTo(a['createdAt']));
 
     if (pendingVerifications.isEmpty) {
       return const Column(
@@ -572,7 +591,8 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
           ),
           SizedBox(height: 16),
           EmptySectionWidget(
-            message: '🎉 All users are verified! Great job maintaining platform quality.',
+            message:
+                '🎉 All users are verified! Great job maintaining platform quality.',
           ),
         ],
       );
@@ -620,8 +640,14 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
               phone: student.phone,
               createdAt: student.createdAt,
               onViewPressed: () {
-                Navigator.pushNamed(context, '/admin/student-verification', 
-                    arguments: student.id);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AdminStudentDetailsScreen(
+                      studentId: student.id,
+                    ),
+                  ),
+                );
               },
             );
           } else {
@@ -637,8 +663,14 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
               website: provider.website,
               createdAt: provider.createdAt,
               onViewPressed: () {
-                Navigator.pushNamed(context, '/admin/provider-verification',
-                    arguments: provider.id);
+                // Navigator.push(
+                //   context,
+                //   MaterialPageRoute(
+                //     builder: (context) => AdminStudentDetailsScreen(
+                //       studentId: student.id,
+                //     ),
+                //   ),
+                // );
               },
             );
           }
@@ -648,9 +680,11 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
           const SizedBox(height: 12),
           Center(
             child: TextButton.icon(
-              onPressed: () => Navigator.pushNamed(context, '/admin/verification'),
+              onPressed: () =>
+                  Navigator.pushNamed(context, '/admin/verification'),
               icon: const Icon(Icons.visibility_rounded),
-              label: Text('View all ${pendingVerifications.length} pending verifications'),
+              label: Text(
+                  'View all ${pendingVerifications.length} pending verifications'),
               style: TextButton.styleFrom(
                 foregroundColor: AppConstants.primaryColor,
               ),
@@ -689,15 +723,18 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
 
         // List of recent activity items (show first 4)
         ...(_allTransactions!.take(4).map((enrichedTransaction) {
-          final transaction = enrichedTransaction['transaction'] as tm.Transaction;
+          final transaction =
+              enrichedTransaction['transaction'] as tm.Transaction;
           final studentName = enrichedTransaction['studentName'] as String;
           final providerName = enrichedTransaction['providerName'] as String;
 
           return AdminActivityItem(
             icon: _getTransactionIcon(transaction.type),
             iconColor: _getTransactionColor(transaction.type),
-            title: _getAdminTransactionTitle(transaction, studentName, providerName),
-            date: DateFormat('MMM dd, yyyy hh:mm a').format(transaction.createdAt),
+            title: _getAdminTransactionTitle(
+                transaction, studentName, providerName),
+            date: DateFormat('MMM dd, yyyy hh:mm a')
+                .format(transaction.createdAt),
             amount: _currencyFormat.format(transaction.amount),
             loanId: transaction.loanId,
             studentName: studentName,
@@ -712,7 +749,8 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
     );
   }
 
-  String _getAdminTransactionTitle(tm.Transaction transaction, String studentName, String providerName) {
+  String _getAdminTransactionTitle(
+      tm.Transaction transaction, String studentName, String providerName) {
     switch (transaction.type.toUpperCase()) {
       case 'REPAYMENT':
         return '$studentName made repayment to $providerName';
