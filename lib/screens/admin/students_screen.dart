@@ -15,7 +15,7 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
-  int _currentIndex = 0;
+  int _currentIndex = 1;
   late List<Widget> _screens;
 
   // Bottom navigation items for admin dashboard
