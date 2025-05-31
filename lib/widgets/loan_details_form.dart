@@ -78,6 +78,7 @@ class LoanDetailsForm extends StatelessWidget {
                 child: DropdownButton<String>(
                   isExpanded: true,
                   value: selectedPurpose,
+                  hint: const Text('Select loan purpose'),
                   icon: const Icon(
                     Icons.keyboard_arrow_down_rounded,
                     color: AppConstants.primaryColor,

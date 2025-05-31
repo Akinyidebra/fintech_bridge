@@ -283,26 +283,6 @@ class _ProviderProfileContentState extends State<ProviderProfileContent> {
                   backgroundColor: AppConstants.successColor.withOpacity(0.1),
                   iconColor: AppConstants.successColor,
                 ),
-              ProfileInfoItem(
-                icon: Icons.approval_rounded,
-                label: 'Approval Status',
-                value: provider.approved ? 'Approved' : 'Pending Approval',
-                backgroundColor: (provider.approved
-                        ? AppConstants.successColor
-                        : AppConstants.warningColor)
-                    .withOpacity(0.1),
-                iconColor: provider.approved
-                    ? AppConstants.successColor
-                    : AppConstants.warningColor,
-              ),
-              ProfileInfoItem(
-                icon: Icons.schedule_rounded,
-                label: 'Member Since',
-                value:
-                    '${provider.createdAt.day}/${provider.createdAt.month}/${provider.createdAt.year}',
-                backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
-                iconColor: AppConstants.primaryColor,
-              ),
             ],
           ),
 
@@ -389,4 +369,3 @@ class ProfileInfoItem {
     this.additionalContent,
   });
 }
-

@@ -13,20 +13,20 @@ mixin ProviderLoaderMixin<T extends StatefulWidget> on State<T> {
     provider_model.Provider? initialProvider,
   }) async {
     if (!mounted) return;
-    
+
     setState(() {
       isLoadingProviders = true;
     });
 
     try {
-      final loadedProviders = await loanService.getApprovedProviders();
-      
+      final loadedProviders = await loanService.getVerifiedProviders();
+
       if (!mounted) return;
-      
+
       setState(() {
         providers = loadedProviders;
         isLoadingProviders = false;
-        
+
         if (initialProvider != null) {
           selectedProvider = providers.firstWhere(
             (p) => p.id == initialProvider.id,
@@ -40,11 +40,11 @@ mixin ProviderLoaderMixin<T extends StatefulWidget> on State<T> {
       });
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() {
         isLoadingProviders = false;
       });
-      
+
       _showProviderError(e.toString());
     }
   }

@@ -9,7 +9,7 @@ class Loan {
   final String institutionName;
   final String mpesaPhone;
   final double amount;
-  final String status; // PENDING/APPROVED/REJECTED/PAID
+  final String status;
   final String purpose;
   final double interestRate;
   final int termMonths;
@@ -18,7 +18,7 @@ class Loan {
   final DateTime nextDueDate;
   final DateTime dueDate;
   final String mpesaTransactionCode;
-  final String repaymentMethod; // M-Pesa, Bank, etc.
+  final String repaymentMethod;
   final DateTime repaymentStartDate;
   final double latePaymentPenaltyRate;
   final DateTime createdAt;

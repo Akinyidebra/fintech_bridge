@@ -175,8 +175,7 @@ class DatabaseService extends ChangeNotifier {
           'success': true,
           'data': provider,
           'role': 'provider',
-          'verified': provider.verified,
-          'approved': provider.approved
+          'verified': provider.verified
         };
       }
 
@@ -255,10 +254,10 @@ class DatabaseService extends ChangeNotifier {
         return {'success': false, 'message': 'Unauthorized access'};
       }
 
-      // Query providers that need approval and verification
+      // Query providers that need verification
       final pendingProvidersDocs = await _firestore
           .collection('providers')
-          .where('approved', isEqualTo: false)
+          .where('verified', isEqualTo: false)
           .where('identificationImages',
               isNull: false) // Only providers who uploaded documents
           .get();
@@ -338,7 +337,7 @@ class DatabaseService extends ChangeNotifier {
 
   // Admin: Approve or reject provider
   Future<Map<String, dynamic>> updateProviderApprovalStatus(
-      String providerId, bool isApproved) async {
+      String providerId, bool isVerified) async {
     _setLoading(true);
     try {
       // Check if current user is admin
@@ -362,57 +361,26 @@ class DatabaseService extends ChangeNotifier {
 
       // Update approval status
       await _firestore.collection('providers').doc(providerId).update({
-        'approved': isApproved,
-        'verified': isApproved, // Also set verified to true if approved
-        'verifiedAt': isApproved ? DateTime.now() : null,
+        'verified': isVerified,
+        'verifiedAt': isVerified ? DateTime.now() : null,
         'updatedAt': DateTime.now(),
       });
 
       // Also update in the users collection
       await _firestore.collection('users').doc(providerId).update({
-        'approved': isApproved,
-        'verified': isApproved,
+        'verified': isVerified,
       });
 
       return {
         'success': true,
         'message':
-            isApproved ? 'Provider approved successfully' : 'Provider rejected'
+            isVerified ? 'Provider verified successfully' : 'Provider rejected'
       };
     } catch (e) {
       if (e is FirebaseException && e.code == 'unavailable') {
         return {'success': false, 'message': 'No internet connection'};
       }
       return {'success': false, 'message': 'Failed to update provider status'};
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  // Get verified providers
-  Future<Map<String, dynamic>> getVerifiedProviders() async {
-    _setLoading(true);
-    try {
-      final providerDocs = await _firestore
-          .collection('providers')
-          .where('verified', isEqualTo: true)
-          .where('approved', isEqualTo: true)
-          .get();
-
-      List<Provider> providers = [];
-      for (var doc in providerDocs.docs) {
-        providers.add(Provider.fromFirestore(doc));
-      }
-
-      return {'success': true, 'data': providers};
-    } catch (e) {
-      if (e is FirebaseException && e.code == 'unavailable') {
-        return {'success': false, 'message': 'No internet connection'};
-      }
-      return {
-        'success': false,
-        'message': 'Failed to retrieve verified providers'
-      };
     } finally {
       _setLoading(false);
     }
@@ -425,7 +393,6 @@ class DatabaseService extends ChangeNotifier {
       final providerDocs = await _firestore
           .collection('providers')
           .where('verified', isEqualTo: true)
-          .where('approved', isEqualTo: true)
           .where('loanTypes', arrayContains: loanType)
           .get();
 
@@ -452,7 +419,6 @@ class DatabaseService extends ChangeNotifier {
       final providerDocs = await _firestore
           .collection('providers')
           .where('verified', isEqualTo: true)
-          .where('approved', isEqualTo: true)
           .orderBy('interestRate', descending: false)
           .get();
 
@@ -823,7 +789,6 @@ class DatabaseService extends ChangeNotifier {
       final providerDocs = await _firestore
           .collection('providers')
           .where('verified', isEqualTo: true)
-          .where('approved', isEqualTo: true)
           .get();
 
       Set<String> loanTypes = {};
@@ -870,24 +835,9 @@ class DatabaseService extends ChangeNotifier {
           .where('verified', isEqualTo: true)
           .get();
 
-      // Get approved providers
-      final approvedProvidersDocs = await _firestore
-          .collection('providers')
-          .where('approved', isEqualTo: true)
-          .get();
-
-      // Get pending providers (have documents but not approved)
-      final pendingProvidersDocs = await _firestore
-          .collection('providers')
-          .where('approved', isEqualTo: false)
-          .where('identificationImages', isNull: false)
-          .get();
-
       Map<String, dynamic> statistics = {
         'totalProviders': allProvidersDocs.docs.length,
         'verifiedProviders': verifiedProvidersDocs.docs.length,
-        'approvedProviders': approvedProvidersDocs.docs.length,
-        'pendingProviders': pendingProvidersDocs.docs.length,
       };
 
       return {'success': true, 'data': statistics};
@@ -998,8 +948,6 @@ class DatabaseService extends ChangeNotifier {
         List<String> topProviderIds =
             sortedProviders.take(5).map((entry) => entry.key).toList();
 
-        print('DEBUG: Top provider IDs: $topProviderIds');
-
         // Fetch the actual provider data for these IDs
         for (String providerId in topProviderIds) {
           try {
@@ -1008,19 +956,10 @@ class DatabaseService extends ChangeNotifier {
 
             if (providerDoc.exists) {
               Provider provider = Provider.fromFirestore(providerDoc);
-              print(
-                  'DEBUG: Provider ${provider.businessName} - verified: ${provider.verified}, approved: ${provider.approved}');
 
-              // More lenient filtering - include if at least one condition is met
-              if (provider.verified || provider.approved) {
+              if (provider.verified) {
                 featuredProviders.add(provider);
-                print('DEBUG: Added provider: ${provider.businessName}');
-              } else {
-                print(
-                    'DEBUG: Skipped provider ${provider.businessName} - not verified or approved');
               }
-            } else {
-              print('DEBUG: Provider document $providerId does not exist');
             }
           } catch (e) {
             print('DEBUG: Error fetching provider $providerId: $e');
@@ -1040,18 +979,15 @@ class DatabaseService extends ChangeNotifier {
         Set<String> existingIds = featuredProviders.map((p) => p.id).toSet();
 
         try {
-          // First try: Get verified AND approved providers
+          // First try: Get verified providers
           QuerySnapshot additionalDocs;
           try {
             additionalDocs = await _firestore
                 .collection('providers')
                 .where('verified', isEqualTo: true)
-                .where('approved', isEqualTo: true)
                 .orderBy('interestRate', descending: false)
                 .limit(5 - featuredProviders.length)
                 .get();
-            print(
-                'DEBUG: Found ${additionalDocs.docs.length} verified AND approved providers');
           } catch (e) {
             print('DEBUG: Compound query failed, trying simpler approach: $e');
 
@@ -1071,11 +1007,9 @@ class DatabaseService extends ChangeNotifier {
             if (!existingIds.contains(doc.id)) {
               try {
                 Provider provider = Provider.fromFirestore(doc);
-                print(
-                    'DEBUG: Checking additional provider ${provider.businessName} - verified: ${provider.verified}, approved: ${provider.approved}');
 
                 // More lenient filtering for additional providers
-                if (provider.verified || provider.approved) {
+                if (provider.verified) {
                   featuredProviders.add(provider);
                   existingIds.add(doc.id);
                   print(
@@ -1090,8 +1024,6 @@ class DatabaseService extends ChangeNotifier {
 
           // If still no providers, get ANY providers as last resort
           if (featuredProviders.isEmpty) {
-            print(
-                'DEBUG: No verified/approved providers found, getting any available providers...');
 
             final anyProviderDocs =
                 await _firestore.collection('providers').limit(3).get();

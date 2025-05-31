@@ -189,17 +189,6 @@ class ProviderProfileHeaderCard extends StatelessWidget {
                 : Icons.pending_rounded,
             iconColor: provider.verified ? Colors.white : Colors.amber,
           ),
-          _buildStatDivider(),
-          _buildStatItem(
-            'Status',
-            provider.approved ? 'Approved' : 'Pending',
-            icon: provider.approved
-                ? Icons.check_circle_rounded
-                : Icons.unpublished_rounded,
-            iconColor: provider.approved
-                ? Colors.greenAccent
-                : Colors.white70,
-          ),
         ],
       ),
     );

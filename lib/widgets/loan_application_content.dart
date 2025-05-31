@@ -36,7 +36,7 @@ class _LoanApplicationContentState extends State<LoanApplicationContent>
   final _amountController = TextEditingController();
   final _purposeController = TextEditingController();
   final _termController = TextEditingController();
-  String _selectedPurpose = 'Education';
+  String _selectedPurpose = 'Tuition & Academic Fees';
   String? _selectedLoanType;
   late LoanService _loanService;
 
@@ -88,7 +88,7 @@ class _LoanApplicationContentState extends State<LoanApplicationContent>
 
   Future<void> _loadProvidersWithCentralizedState() async {
     try {
-      final loadedProviders = await _loanService.getApprovedProviders();
+      final loadedProviders = await _loanService.getVerifiedProviders();
 
       if (!mounted) return;
 
