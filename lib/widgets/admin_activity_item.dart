@@ -12,6 +12,8 @@ class AdminActivityItem extends StatelessWidget {
   final String? loanId;
   final String? studentName;
   final VoidCallback? onTap;
+  final String? userType;
+  final String? verificationStatus;
 
   const AdminActivityItem({
     super.key,
@@ -20,11 +22,14 @@ class AdminActivityItem extends StatelessWidget {
     required this.title,
     required this.date,
     this.amount,
-    this.showArrow = false, // Changed default to false since it's not clickable
+    this.showArrow = false,
     this.backgroundColor,
     this.loanId,
     this.studentName,
-    this.onTap, required String providerName,
+    this.onTap,
+    required String providerName,
+    this.userType,
+    this.verificationStatus,
   });
 
   @override
@@ -71,6 +76,34 @@ class AdminActivityItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Verification status badge
+                if (verificationStatus != null) ...[
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: verificationStatus == 'verified'
+                          ? AppConstants.successColor.withOpacity(0.1)
+                          : AppConstants.warningColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      verificationStatus == 'verified'
+                          ? 'VERIFIED'
+                          : 'UNVERIFIED',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: verificationStatus == 'verified'
+                            ? AppConstants.successColor
+                            : AppConstants.warningColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+
                 // Title
                 Text(
                   title,
@@ -114,6 +147,19 @@ class AdminActivityItem extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                         color: AppConstants.primaryColor,
                       ),
+                    ),
+                  ),
+                ],
+
+                // User type if available
+                if (userType != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '${userType == 'student' ? 'Student' : 'Provider'} Account',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 12,
+                      color: AppConstants.textSecondaryColor,
                     ),
                   ),
                 ],
