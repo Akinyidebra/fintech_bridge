@@ -3,6 +3,7 @@ import 'package:fintech_bridge/models/loan_model.dart';
 import 'package:fintech_bridge/models/transaction_model.dart' as tm;
 import 'package:fintech_bridge/models/student_model.dart';
 import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
+import 'package:fintech_bridge/screens/admin/admin_provider_details_screen.dart';
 import 'package:fintech_bridge/screens/admin/admin_student_details_screen.dart';
 import 'package:fintech_bridge/screens/loading_screen.dart';
 import 'package:fintech_bridge/services/database_service.dart';
@@ -674,8 +675,8 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
                 // Navigator.push(
                 //   context,
                 //   MaterialPageRoute(
-                //     builder: (context) => AdminStudentDetailsScreen(
-                //       studentId: student.id,
+                //     builder: (context) => AdminProviderDetailsScreen(
+                //       providerId: provider.id,
                 //     ),
                 //   ),
                 // );
