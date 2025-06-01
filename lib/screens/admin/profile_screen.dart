@@ -17,7 +17,7 @@ class AdminProfileScreen extends StatefulWidget {
 }
 
 class _AdminProfileScreenState extends State<AdminProfileScreen> {
-  int _currentIndex = 5;
+  int _currentIndex = 3;
   late List<Widget> _screens;
 
   // Bottom navigation items for admin dashboard
@@ -66,7 +66,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               showLogo: true,
               showProfile: true,
               onProfileTap: () {
-                setState(() => _currentIndex = 5); // Navigate to profile tab
+                setState(() => _currentIndex = 3);
               },
             ),
             // Screen content
