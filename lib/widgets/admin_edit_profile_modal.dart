@@ -53,6 +53,9 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
   // Add loading state variable
   bool _isLoading = true;
 
+  // Track if profile image has changed
+  bool _hasProfileImageChanged = false;
+
   @override
   void initState() {
     super.initState();
@@ -217,7 +220,10 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
               label: 'Full Name',
               icon: Icons.person,
               validator: (value) {
-                if (value?.isEmpty ?? true) return 'Full name is required';
+                // Only validate if field is not empty or if it's being modified
+                if (value != null && value.isNotEmpty && value.trim().isEmpty) {
+                  return 'Full name cannot be empty';
+                }
                 return null;
               },
             ),
@@ -229,10 +235,11 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
               icon: Icons.email,
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
-                if (value?.isEmpty ?? true) return 'Admin email is required';
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                    .hasMatch(value!)) {
-                  return 'Enter a valid email address';
+                // Only validate if field is not empty or if it's being modified
+                if (value != null && value.isNotEmpty) {
+                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    return 'Enter a valid email address';
+                  }
                 }
                 return null;
               },
@@ -244,6 +251,7 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
               label: 'Phone Number (Optional)',
               icon: Icons.phone,
               keyboardType: TextInputType.phone,
+              // No validator needed for optional field
             ),
             const SizedBox(height: 16),
 
@@ -252,10 +260,7 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
               label: 'Role',
               icon: Icons.admin_panel_settings,
               readOnly: true, // Admin role should not be editable
-              validator: (value) {
-                if (value?.isEmpty ?? true) return 'Role is required';
-                return null;
-              },
+              // No validator needed for read-only field
             ),
             const SizedBox(height: 32),
 
@@ -555,6 +560,7 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
       if (image != null) {
         setState(() {
           _profileImage = File(image.path);
+          _hasProfileImageChanged = true;
         });
       }
     } catch (e) {
@@ -563,7 +569,16 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
   }
 
   Future<void> _updateProfile() async {
+    // Check if form is valid (with relaxed validation)
     if (!_formKey.currentState!.validate()) return;
+
+    // Check if any changes were made
+    bool hasChanges = _hasAnyChanges();
+    
+    if (!hasChanges) {
+      _showErrorSnackBar('No changes detected. Please modify at least one field to update.');
+      return;
+    }
 
     setState(() {
       _isUpdatingProfile = true;
@@ -580,19 +595,30 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
       }
 
       final adminId = widget.admin.id;
+      final Map<String, dynamic> updateData = {};
 
-      final updateData = {
-        'fullName': _fullNameController.text.trim(),
-        'adminEmail': _adminEmailController.text.trim(),
-        'phone': _phoneController.text.trim().isNotEmpty
+      // Only include fields that have actually changed
+      if (_fullNameController.text.trim() != widget.admin.fullName) {
+        updateData['fullName'] = _fullNameController.text.trim();
+      }
+
+      if (_adminEmailController.text.trim() != widget.admin.adminEmail) {
+        updateData['adminEmail'] = _adminEmailController.text.trim();
+      }
+
+      String currentPhone = widget.admin.phone ?? '';
+      if (_phoneController.text.trim() != currentPhone) {
+        updateData['phone'] = _phoneController.text.trim().isNotEmpty
             ? _phoneController.text.trim()
-            : null,
-        'role': _roleController.text.trim(),
-        'updatedAt': DateTime.now(),
-      };
+            : null;
+      }
+
+      if (_roleController.text.trim() != widget.admin.role) {
+        updateData['role'] = _roleController.text.trim();
+      }
 
       // Handle profile image upload if a new image is selected
-      if (_profileImage != null) {
+      if (_hasProfileImageChanged && _profileImage != null) {
         try {
           final bytes = await _profileImage!.readAsBytes();
           final base64String = base64Encode(bytes);
@@ -604,9 +630,17 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
         }
       }
 
+      // Only proceed if there are actual changes to update
+      if (updateData.isEmpty) {
+        _showErrorSnackBar('No changes detected.');
+        return;
+      }
+
+      // Add updatedAt timestamp
+      updateData['updatedAt'] = DateTime.now();
+
       // Call the service method with correct parameters
-      final result =
-          await dbService.updateAdminProfile(adminId, updateData);
+      final result = await dbService.updateAdminProfile(adminId, updateData);
 
       if (result['success']) {
         _showSuccessSnackBar('Admin profile updated successfully');
@@ -622,6 +656,22 @@ class _AdminEditProfileModalState extends State<AdminEditProfileModal>
         _isUpdatingProfile = false;
       });
     }
+  }
+
+  bool _hasAnyChanges() {
+    // Check if profile image changed
+    if (_hasProfileImageChanged) return true;
+
+    // Check if any text field changed
+    if (_fullNameController.text.trim() != widget.admin.fullName) return true;
+    if (_adminEmailController.text.trim() != widget.admin.adminEmail) return true;
+    
+    String currentPhone = widget.admin.phone ?? '';
+    if (_phoneController.text.trim() != currentPhone) return true;
+    
+    if (_roleController.text.trim() != widget.admin.role) return true;
+
+    return false;
   }
 
   Future<void> _changePassword() async {
