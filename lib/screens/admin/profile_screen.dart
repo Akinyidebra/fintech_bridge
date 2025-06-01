@@ -9,15 +9,15 @@ import 'package:fintech_bridge/widgets/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class ProvidersScreen extends StatefulWidget {
-  const ProvidersScreen({super.key});
+class AdminProfileScreen extends StatefulWidget {
+  const AdminProfileScreen({super.key});
 
   @override
-  State<ProvidersScreen> createState() => _ProvidersScreenState();
+  State<AdminProfileScreen> createState() => _AdminProfileScreenState();
 }
 
-class _ProvidersScreenState extends State<ProvidersScreen> {
-  int _currentIndex = 2;
+class _AdminProfileScreenState extends State<AdminProfileScreen> {
+  int _currentIndex = 5;
   late List<Widget> _screens;
 
   // Bottom navigation items for admin dashboard
