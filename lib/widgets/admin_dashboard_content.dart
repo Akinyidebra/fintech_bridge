@@ -672,34 +672,18 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
               website: provider.website,
               createdAt: provider.createdAt,
               onViewPressed: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => AdminProviderDetailsScreen(
-                //       providerId: provider.id,
-                //     ),
-                //   ),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AdminProviderDetailsScreen(
+                      providerId: provider.id,
+                    ),
+                  ),
+                );
               },
             );
           }
         }).toList(),
-
-        if (pendingVerifications.length > 3) ...[
-          const SizedBox(height: 12),
-          Center(
-            child: TextButton.icon(
-              onPressed: () =>
-                  Navigator.pushNamed(context, '/admin/verification'),
-              icon: const Icon(Icons.visibility_rounded),
-              label: Text(
-                  'View all ${pendingVerifications.length} pending verifications'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppConstants.primaryColor,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
