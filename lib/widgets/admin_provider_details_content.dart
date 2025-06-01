@@ -1,37 +1,36 @@
-import 'package:fintech_bridge/models/student_model.dart';
+import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 import 'package:fintech_bridge/screens/loading_screen.dart';
-import 'package:fintech_bridge/widgets/admin_academic_info_section.dart';
-import 'package:fintech_bridge/widgets/admin_student_action_buttons.dart';
-import 'package:fintech_bridge/widgets/admin_student_detail_section.dart';
-import 'package:fintech_bridge/widgets/admin_student_header_card_widget.dart';
-import 'package:fintech_bridge/widgets/admin_student_summary_card.dart';
-import 'package:fintech_bridge/widgets/admin_student_verification_modal.dart';
+import 'package:fintech_bridge/widgets/admin_provider_action_buttons.dart';
+import 'package:fintech_bridge/widgets/admin_provider_detail_section.dart';
+import 'package:fintech_bridge/widgets/admin_provider_header_card_widget.dart';
+import 'package:fintech_bridge/widgets/admin_provider_summary_card.dart';
+import 'package:fintech_bridge/widgets/admin_provider_verification_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fintech_bridge/services/database_service.dart';
 import 'package:fintech_bridge/utils/constants.dart';
 
-class AdminStudentDetailsContent extends StatefulWidget {
-  final String studentId;
+class AdminProviderDetailsContent extends StatefulWidget {
+  final String providerId;
 
-  const AdminStudentDetailsContent({super.key, required this.studentId});
+  const AdminProviderDetailsContent({super.key, required this.providerId});
 
   @override
-  State<AdminStudentDetailsContent> createState() => _AdminStudentDetailsContentState();
+  State<AdminProviderDetailsContent> createState() => _AdminProviderDetailsContentState();
 }
 
-class _AdminStudentDetailsContentState extends State<AdminStudentDetailsContent> {
+class _AdminProviderDetailsContentState extends State<AdminProviderDetailsContent> {
   bool _isLoading = true;
   String? _errorMessage;
-  Student? _student;
+  provider_model.Provider? _provider;
 
   @override
   void initState() {
     super.initState();
-    _loadStudentData();
+    _loadProviderData();
   }
 
-  Future<void> _loadStudentData() async {
+  Future<void> _loadProviderData() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -39,29 +38,29 @@ class _AdminStudentDetailsContentState extends State<AdminStudentDetailsContent>
 
     try {
       final dbService = Provider.of<DatabaseService>(context, listen: false);
-      final result = await dbService.getStudentById(widget.studentId);
+      final result = await dbService.getProviderById(widget.providerId);
 
       if (result['success']) {
         setState(() {
-          _student = result['data'] as Student;
+          _provider = result['data'] as provider_model.Provider;
           _isLoading = false;
         });
       } else {
         setState(() {
-          _errorMessage = result['message'] ?? 'Student not found';
+          _errorMessage = result['message'] ?? 'Provider not found';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error loading student: ${e.toString()}';
+        _errorMessage = 'Error loading provider: ${e.toString()}';
         _isLoading = false;
       });
     }
   }
 
   Future<void> _refreshData() async {
-    await _loadStudentData();
+    await _loadProviderData();
   }
 
   @override
@@ -69,46 +68,40 @@ class _AdminStudentDetailsContentState extends State<AdminStudentDetailsContent>
     // Show loading screen while data is being fetched
     if (_isLoading) {
       return const LoadingScreen(
-        message: 'Loading student details...',
+        message: 'Loading provider details...',
         isFullScreen: false,
       );
     }
 
     // Show error state with retry option
-    if (_errorMessage != null || _student == null) {
+    if (_errorMessage != null || _provider == null) {
       return _buildErrorState();
     }
 
-    final registrationDays = DateTime.now().difference(_student!.createdAt).inDays;
+    final registrationDays = DateTime.now().difference(_provider!.createdAt).inDays;
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdminStudentsHeaderCardWidget(student: _student!,),
+          AdminProvidersHeaderCardWidget(provider: _provider!,),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AdminStudentSummaryCard(student: _student!, registrationDays: registrationDays,),
-                const SizedBox(height: 24),
-                AdminStudentDetailSection(student: _student!),
-                const SizedBox(height: 24),
-                const Padding(
-                  padding: EdgeInsets.only(left: 4, bottom: 16),
-                  child: Text(
-                    'Academic Information',
-                    style: AppConstants.headlineSmall,
-                  ),
+                AdminProviderSummaryCard(
+                  provider: _provider!, 
+                  registrationDays: registrationDays,
                 ),
-                AdminAcademicInfoSection(student: _student!),
                 const SizedBox(height: 24),
-                AdminStudentActionButtons(
-                  student: _student!,
-                  onVerifyStudent: () => _showVerificationModal(context),
-                  onEditStudent: () => _editStudent(),
+                AdminProviderDetailSection(provider: _provider!),
+                const SizedBox(height: 24),
+                AdminProviderActionButtons(
+                  provider: _provider!,
+                  onVerifyProvider: () => _showVerificationModal(context),
+                  onEditProvider: () => _editProvider(),
                   onRefresh: _refreshData,
                 ),
                 const SizedBox(height: 24),
@@ -155,7 +148,7 @@ class _AdminStudentDetailsContentState extends State<AdminStudentDetailsContent>
             ),
             const SizedBox(height: 8),
             Text(
-              _errorMessage ?? 'Student not found',
+              _errorMessage ?? 'Provider not found',
               style: AppConstants.bodyMedium.copyWith(
                 color: AppConstants.textSecondaryColor,
               ),
@@ -201,7 +194,7 @@ class _AdminStudentDetailsContentState extends State<AdminStudentDetailsContent>
                     ),
                   ),
                   child: const Text(
-                    'Back to Students',
+                    'Back to Providers',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
@@ -221,15 +214,15 @@ class _AdminStudentDetailsContentState extends State<AdminStudentDetailsContent>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AdminStudentVerificationModal(
-        student: _student!,
+      builder: (context) => AdminProviderVerificationModal(
+        provider: _provider!,
         onVerificationSuccess: () {
           _refreshData();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(_student!.verified 
-                ? 'Student unverified successfully!' 
-                : 'Student verified successfully!'),
+              content: Text(_provider!.verified 
+                ? 'Provider unverified successfully!' 
+                : 'Provider verified successfully!'),
               backgroundColor: AppConstants.successColor,
             ),
           );
@@ -246,11 +239,11 @@ class _AdminStudentDetailsContentState extends State<AdminStudentDetailsContent>
     );
   }
 
-  void _editStudent() {
-    // Implement edit student logic
+  void _editProvider() {
+    // Implement edit provider logic
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Student editing will be available soon'),
+        content: Text('Provider editing will be available soon'),
         backgroundColor: AppConstants.primaryColor,
       ),
     );

@@ -672,34 +672,18 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
               website: provider.website,
               createdAt: provider.createdAt,
               onViewPressed: () {
-                // Navigator.push(
-                //   context,
-                //   MaterialPageRoute(
-                //     builder: (context) => AdminProviderDetailsScreen(
-                //       providerId: provider.id,
-                //     ),
-                //   ),
-                // );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AdminProviderDetailsScreen(
+                      providerId: provider.id,
+                    ),
+                  ),
+                );
               },
             );
           }
         }).toList(),
-
-        if (pendingVerifications.length > 3) ...[
-          const SizedBox(height: 12),
-          Center(
-            child: TextButton.icon(
-              onPressed: () =>
-                  Navigator.pushNamed(context, '/admin/verification'),
-              icon: const Icon(Icons.visibility_rounded),
-              label: Text(
-                  'View all ${pendingVerifications.length} pending verifications'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppConstants.primaryColor,
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
@@ -775,9 +759,23 @@ class _AdminDashboardContentState extends State<AdminDashboardContent> {
       case 'PENALTY':
         return 'Penalty charged: $studentName to $providerName';
       case 'VERIFICATION':
-        return 'Account verified for $studentName';
+        // Check if this is a provider or student verification
+        if (transaction.userType == 'provider' ||
+            (providerName != 'Unknown Provider' &&
+                studentName == 'Unknown Student')) {
+          return 'Provider account verified: $providerName';
+        } else {
+          return 'Student account verified: $studentName';
+        }
       case 'UNVERIFICATION':
-        return 'Account unverified for $studentName';
+        // Check if this is a provider or student unverification
+        if (transaction.userType == 'provider' ||
+            (providerName != 'Unknown Provider' &&
+                studentName == 'Unknown Student')) {
+          return 'Provider account unverified: $providerName';
+        } else {
+          return 'Student account unverified: $studentName';
+        }
       default:
         return '${transaction.description} - $studentName & $providerName';
     }

@@ -1,4 +1,4 @@
-import 'package:fintech_bridge/widgets/admin_student_details_content.dart';
+import 'package:fintech_bridge/widgets/admin_provider_details_content.dart';
 import 'package:fintech_bridge/widgets/custom_app_bar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:fintech_bridge/utils/constants.dart';
@@ -13,14 +13,14 @@ class AdminProviderDetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       appBar: CustomAppBar(
-        title: 'Student Details',
+        title: 'Provider Details',
         showHelp: true,
         onHelpPressed: () {
           // Show help information
           _showHelpDialog(context);
         },
       ),
-      body: AdminStudentDetailsContent(providerId: providerId),
+      body: AdminProviderDetailsContent(providerId: providerId),
     );
   }
 
@@ -30,14 +30,14 @@ class AdminProviderDetailsScreen extends StatelessWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text(
-            'Student Details Help',
+            'Provider Details Help',
             style: TextStyle(
               fontFamily: 'Poppins',
               fontWeight: FontWeight.w600,
             ),
           ),
           content: const Text(
-            'Here you can view student information, manage verification status, and track their academic progress. Use the action buttons to verify students or update their information.',
+            'Here you can view loan provider information, manage verification status, and review their business details. Use the action buttons to verify providers, check their documentation, or update their status.',
             style: TextStyle(fontFamily: 'Poppins'),
           ),
           actions: [
