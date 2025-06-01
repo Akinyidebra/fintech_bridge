@@ -66,7 +66,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
               showLogo: true,
               showProfile: true,
               onProfileTap: () {
-                setState(() => _currentIndex = 5); // Navigate to profile tab
+                setState(() => _currentIndex = 3);
               },
             ),
             // Screen content
