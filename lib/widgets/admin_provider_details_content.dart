@@ -2,7 +2,7 @@ import 'package:fintech_bridge/models/provider_model.dart' as provider_model;
 import 'package:fintech_bridge/screens/loading_screen.dart';
 import 'package:fintech_bridge/widgets/admin_provider_action_buttons.dart';
 import 'package:fintech_bridge/widgets/admin_provider_detail_section.dart';
-import 'package:fintech_bridge/widgets/admin_provider_header_card.dart';
+import 'package:fintech_bridge/widgets/admin_provider_header_card_widget.dart';
 import 'package:fintech_bridge/widgets/admin_provider_summary_card.dart';
 import 'package:fintech_bridge/widgets/admin_provider_verification_modal.dart';
 import 'package:flutter/material.dart';
@@ -85,7 +85,7 @@ class _AdminProviderDetailsContentState extends State<AdminProviderDetailsConten
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AdminProvidersHeaderCard(),
+          AdminProvidersHeaderCardWidget(provider: _provider!,),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(

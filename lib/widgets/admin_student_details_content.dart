@@ -3,7 +3,7 @@ import 'package:fintech_bridge/screens/loading_screen.dart';
 import 'package:fintech_bridge/widgets/admin_academic_info_section.dart';
 import 'package:fintech_bridge/widgets/admin_student_action_buttons.dart';
 import 'package:fintech_bridge/widgets/admin_student_detail_section.dart';
-import 'package:fintech_bridge/widgets/admin_student_header_card.dart';
+import 'package:fintech_bridge/widgets/admin_student_header_card_widget.dart';
 import 'package:fintech_bridge/widgets/admin_student_summary_card.dart';
 import 'package:fintech_bridge/widgets/admin_student_verification_modal.dart';
 import 'package:flutter/material.dart';
@@ -86,7 +86,7 @@ class _AdminStudentDetailsContentState extends State<AdminStudentDetailsContent>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AdminStudentsHeaderCard(),
+          AdminStudentsHeaderCardWidget(student: _student!,),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
